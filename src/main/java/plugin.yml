@@ -1,0 +1,123 @@
+name: OverPermissions
+main: com.overmc.overpermissions.OverPermissions
+version: 1.0.5
+authors: [OverCaste]
+load: STARTUP
+website: "dev.overmc.com"
+softdepend: [WorldEdit]
+commands:
+  groupcreate:
+    description: Creates a group with the specified priority. If no world is selected it will be global.
+    aliases: [gc]
+    permission: overpermissions.groupadd
+    usage: "&cProper usage: /groupcreate [group] [priority] (world)"
+  groupdelete:
+    description: Deletes a specified group. You can't delete the default group.
+    aliases: [gd, groupdel]
+    permission: overpermissions.groupdelete
+    usage: "&cProper usage: /groupdelete [group]"
+  groupsetmeta:
+    description: Sets a group's meta at the specified key to the specified value or 'clear' for nothing.
+    aliases: [gsm]
+    permission: overpermissions.groupsetmeta
+    usage: "&cProper usage: /groupsetmeta [group] [key] [value|'clear']"
+  groupaddparent:
+    description: Adds a parent to a group, so the group inherits it's permissions and metadata.
+    aliases: [gsm]
+    permission: overpermissions.groupaddparent
+    usage: "&cProper usage: /groupaddparent [group] [parent]"
+  groupremoveparent:
+    description: Removes a parent from a group.
+    aliases: [gsm]
+    permission: overpermissions.groupremoveparent
+    usage: "&cProper usage: /groupremoveparent [group] [parent]"
+  groupadd:
+    description: Adds a node to a group's permissions.
+    aliases: [ga]
+    permission: overpermissions.groupadd
+    usage: "&cProper usage: /groupadd [group] [permission]"
+  groupaddtemp:
+    description: Adds a temporary node to a group's permissions.
+    aliases: [gat]
+    permission: overpermissions.groupaddtemp
+    usage: "&cProper usage: /groupaddtemp [group] [permission] [time]"
+  groupremove:
+    description: Removes a node to from group's permissions.
+    aliases: [gr]
+    permission: overpermissions.groupremove
+    usage: "&cProper usage: /groupremove [group] [permission]"
+  groupinfo:
+    description: Finds basic or specific information about a group.
+    aliases: [gi]
+    permission: overpermissions.groupinfo
+    usage: "&cProper usage: /groupinfo [group] ('meta:'value | permission)"
+  playersetgroup:
+    description: Removes all of a player's groups and sets them to the specified one.
+    aliases: [groupset, playerset, psg]
+    permission: overpermissions.playersetgroup
+    usage: "&cProper usage: /playersetgroup [player] [group]"
+  playeraddgroup:
+    description: Adds the player to the specified group.
+    aliases: [pag]
+    permission: overpermissions.playeraddgroup
+    usage: "&cProper usage: /playeraddgroup [player] [group]"
+  playerpromote:
+    description: Promotes the player to the next available group. If a fork exists a choice is required.
+    aliases: [promote]
+    permission: overpermissions.promote
+    usage: "&cProper usage: /playerpromote [player] (choice) (world)"
+  playersetmeta:
+    description: Sets a player's meta at the specified key to the specified value or 'clear' for nothing.
+    aliases: [psm]
+    permission: overpermissions.playersetmeta
+    usage: "&cProper usage: /playersetmeta [player] [key] (world) [value|'clear']"
+  playeradd:
+    description: Adds a node to a player's permissions.
+    aliases: [pa]
+    permission: overpermissions.playeradd
+    usage: "&cProper usage: /playeradd [player] [permission] (world)"
+  playeraddtemp:
+    description: Adds a temporary node to a player's permissions.
+    aliases: [pat]
+    permission: overpermissions.playeraddtemp
+    usage: "&cProper usage: /playeraddtemp [player] [permission] [time] (world)"
+  playerremove:
+    description: Removes a node from a player's permissions.
+    aliases: [pr]
+    permission: overpermissions.playerremove
+    usage: "&cProper usage: /playerremove [player] [permission] (world)"
+  playercheck:
+    description: Finds information about a specific node for a player.
+    aliases: [pc]
+    permission: overpermissions.playercheck
+    usage: "&cProper usage: /playercheck [player] [permission] (world)"
+  overpermissions:
+    description: A utility command to find information about the plugin.
+    aliases: [overperms]
+    permission: overpermissions.info
+    usage: "&cProper usage: /overpermissions ['debug'|'info']"
+permissions:
+  overpermissions.*:
+    description: Gives access to all overpermissions commands.
+    children:
+      overpermissions.groupadd: true
+      overpermissions.groupdelete: true
+      overpermissions.playersetgroup: true
+      overpermissions.groupsetmeta: true
+      overpermissions.groupadd: true
+      overpermissions.groupremove: true
+      overpermissions.playersetmeta: true
+      overpermissions.playeradd: true
+      overpermissions.playerremove: true
+  overpermissions.groupadd:
+    default: false
+  overpermissions.groupdelete:
+    default: false
+  overpermissions.playersetgroup:
+    default: false
+  overpermissions.groupsetmeta:
+    default: false
+  overpermissions.groupadd:
+    default: false
+  overpermissions.groupremove:
+    default: false

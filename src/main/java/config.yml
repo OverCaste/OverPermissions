@@ -1,0 +1,9 @@
+# www.overmc.com
+default-group: 'default'
+kick-on-failure: true
+sql:
+  type: mysql
+  address: "localhost"
+  dbname: "OverPermissions"
+  dbusername: "root"
+  dbpassword: ""
