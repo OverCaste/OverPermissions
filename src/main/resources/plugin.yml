@@ -1,6 +1,6 @@
 name: OverPermissions
 main: com.overmc.overpermissions.OverPermissions
-version: 1.0.5
+version: $VERSION
 authors: [OverCaste]
 load: STARTUP
 website: "dev.overmc.com"
