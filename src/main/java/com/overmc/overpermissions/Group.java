@@ -1,16 +1,17 @@
 package com.overmc.overpermissions;
 
-import java.util.*;
-
-import org.bukkit.World;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import com.google.common.base.Joiner;
 
 public class Group implements Comparable<Group> {
 	private final OverPermissions plugin;
 
-	public final World world;
-	private final int worldId;
 	private final int id;
 	private final String name;
 	private int priority;
@@ -22,9 +23,7 @@ public class Group implements Comparable<Group> {
 	private final HashMap<String, String> meta = new HashMap<String, String>();
 	private final HashSet<PlayerPermissionData> playersInGroup = new HashSet<PlayerPermissionData>();
 
-	public Group(OverPermissions plugin, World world, String name, int priority, int id) {
-		this.world = world;
-		worldId = (world == null) ? -1 : plugin.getSQLManager().getWorldId(world);
+	public Group(OverPermissions plugin, String name, int priority, int id) {
 		this.id = id;
 		this.name = name;
 		this.plugin = plugin;
@@ -32,36 +31,36 @@ public class Group implements Comparable<Group> {
 	}
 
 	public boolean hasPermission(String permission) {
-		return permissions.containsKey(permission);
+		return this.permissions.containsKey(permission);
 	}
 
 	public boolean getPermission(String permission) {
-		return permissions.get(permission);
+		return this.permissions.get(permission);
 	}
 
 	public boolean hasMeta(String key) {
-		return meta.containsKey(key);
+		return this.meta.containsKey(key);
 	}
 
 	public String getMeta(String key) {
-		return meta.get(key);
+		return this.meta.get(key);
 	}
 
 	public void recalculatePermissions( ) {
-		priority = plugin.getSQLManager().getGroupPriority(id);
-		permissions.clear();
-		nodes.clear();
-		nodes.addAll(plugin.getSQLManager().getGroupPermissions(id));
-		nodes.addAll(plugin.getTempManager().getGroupNodes(this));
-		for (String permission : nodes) {
+		this.priority = this.plugin.getSQLManager().getGroupPriority(this.id);
+		this.permissions.clear();
+		this.nodes.clear();
+		this.nodes.addAll(this.plugin.getSQLManager().getGroupPermissions(this.id));
+		this.nodes.addAll(this.plugin.getTempManager().getGroupNodes(this));
+		for (String permission : this.nodes) {
 			if (permission.startsWith("-")) {
-				permissions.put(permission.substring(1), false);
+				this.permissions.put(permission.substring(1), false);
 			} else {
 				if (permission.startsWith("+")) { // regardless, +perm will ALWAYS be true
-					permissions.put(permission.substring(1), true);
+					this.permissions.put(permission.substring(1), true);
 				} else {
-					if (!nodes.contains("-" + permission)) { // doesn't contain neg
-						permissions.put(permission, true);
+					if (!this.nodes.contains("-" + permission)) { // doesn't contain neg
+						this.permissions.put(permission, true);
 					}
 				}
 			}
@@ -73,17 +72,17 @@ public class Group implements Comparable<Group> {
 	}
 
 	public void recalculateMeta( ) {
-		meta.clear();
-		meta.putAll(plugin.getSQLManager().getGroupMeta(id));
+		this.meta.clear();
+		this.meta.putAll(this.plugin.getSQLManager().getGroupMeta(this.id));
 		for (PlayerPermissionData p : getAllPlayerChildren()) {
 			p.recalculateMeta();
 		}
 	}
 
 	public void recalculateParents( ) {
-		parents.clear();
-		parents.addAll(plugin.getSQLManager().getGroupParents(id));
-		for (PlayerPermissionData p : playersInGroup) {
+		this.parents.clear();
+		this.parents.addAll(this.plugin.getSQLManager().getGroupParents(this.id));
+		for (PlayerPermissionData p : this.playersInGroup) {
 			p.recalculateGroups();
 		}
 		recalculateChildren();
@@ -92,8 +91,8 @@ public class Group implements Comparable<Group> {
 	}
 
 	public void recalculateChildren( ) {
-		children.clear();
-		children.addAll(plugin.getSQLManager().getGroupChildren(id));
+		this.children.clear();
+		this.children.addAll(this.plugin.getSQLManager().getGroupChildren(this.id));
 		for (Group group : getAllChildren()) {
 			group.recalculateParents();
 		}
@@ -103,24 +102,24 @@ public class Group implements Comparable<Group> {
 	}
 
 	protected void addPlayerToGroup(PlayerPermissionData p) {
-		playersInGroup.add(p);
+		this.playersInGroup.add(p);
 	}
 
 	protected void removePlayerFromGroup(PlayerPermissionData p) {
-		playersInGroup.remove(p);
+		this.playersInGroup.remove(p);
 	}
 
 	public Collection<Map.Entry<String, Boolean>> getPermissions( ) {
-		return permissions.entrySet();
+		return this.permissions.entrySet();
 	}
 
 	public Set<Map.Entry<String, String>> getMeta( ) {
-		return meta.entrySet();
+		return this.meta.entrySet();
 	}
 
 	public void setMeta(String node, String value) {
 		if (value != null) {
-			meta.put(node, value);
+			this.meta.put(node, value);
 		}
 	}
 
@@ -130,8 +129,8 @@ public class Group implements Comparable<Group> {
 
 	protected Iterable<Group> getAllParents(ArrayList<Group> ret) {
 		ret.add(this);
-		for (Integer groupId : parents) {
-			Group g = plugin.getGroupManager().getGroup(groupId);
+		for (Integer groupId : this.parents) {
+			Group g = this.plugin.getGroupManager().getGroup(groupId);
 			if ((g != null) && !ret.contains(g)) {
 				g.getAllParents(ret);
 			}
@@ -144,8 +143,8 @@ public class Group implements Comparable<Group> {
 	}
 
 	protected Collection<Group> getAllChildren(ArrayList<Group> ret) {
-		for (Integer groupId : children) {
-			Group g = plugin.getGroupManager().getGroup(groupId);
+		for (Integer groupId : this.children) {
+			Group g = this.plugin.getGroupManager().getGroup(groupId);
 			if ((g != null) && !ret.contains(g)) {
 				ret.add(g);
 				g.getAllChildren(ret);
@@ -155,35 +154,27 @@ public class Group implements Comparable<Group> {
 	}
 
 	public String getName( ) {
-		return name;
-	}
-
-	public World getWorld( ) {
-		return world;
+		return this.name;
 	}
 
 	public int getPriority( ) {
-		return priority;
+		return this.priority;
 	}
 
 	public int getId( ) {
-		return id;
-	}
-
-	public int getWorldId( ) {
-		return worldId;
+		return this.id;
 	}
 
 	public Collection<String> getNodes( ) {
-		return nodes;
+		return this.nodes;
 	}
 
 	public boolean hasNode(String node) {
-		return nodes.contains(node);
+		return this.nodes.contains(node);
 	}
 
 	public Collection<PlayerPermissionData> getPlayersInGroup( ) {
-		return playersInGroup;
+		return this.playersInGroup;
 	}
 
 	public Collection<PlayerPermissionData> getAllPlayerChildren( ) {
@@ -198,17 +189,17 @@ public class Group implements Comparable<Group> {
 	}
 
 	public Collection<Group> getChildren( ) {
-		ArrayList<Group> ret = new ArrayList<Group>(children.size());
-		for (Integer groupId : children) {
-			ret.add(plugin.getGroupManager().getGroup(groupId));
+		ArrayList<Group> ret = new ArrayList<Group>(this.children.size());
+		for (Integer groupId : this.children) {
+			ret.add(this.plugin.getGroupManager().getGroup(groupId));
 		}
 		return ret;
 	}
 
 	public Collection<Group> getParents( ) {
-		ArrayList<Group> ret = new ArrayList<Group>(children.size());
-		for (Integer groupId : parents) {
-			ret.add(plugin.getGroupManager().getGroup(groupId));
+		ArrayList<Group> ret = new ArrayList<Group>(this.children.size());
+		for (Integer groupId : this.parents) {
+			ret.add(this.plugin.getGroupManager().getGroup(groupId));
 		}
 		return ret;
 	}
@@ -216,7 +207,7 @@ public class Group implements Comparable<Group> {
 	public String[] getDebugInfo( ) {
 		ArrayList<String> ret = new ArrayList<String>();
 		ArrayList<String> tempList = new ArrayList<String>();
-		for (PlayerPermissionData d : playersInGroup) {
+		for (PlayerPermissionData d : this.playersInGroup) {
 			tempList.add(d.getPlayerName());
 		}
 		if (tempList.size() > 0) {
@@ -230,8 +221,8 @@ public class Group implements Comparable<Group> {
 			ret.add("All player children in group: [" + Joiner.on(',').join(tempList) + "]");
 		}
 		tempList.clear();
-		for (Integer i : parents) {
-			Group other = plugin.getGroupManager().getGroup(i);
+		for (Integer i : this.parents) {
+			Group other = this.plugin.getGroupManager().getGroup(i);
 			if (other != null) {
 				tempList.add(other.getName());
 			}
@@ -240,8 +231,8 @@ public class Group implements Comparable<Group> {
 			ret.add("Group parents: [" + Joiner.on(',').join(tempList) + "]");
 		}
 		tempList.clear();
-		for (Integer i : children) {
-			Group other = plugin.getGroupManager().getGroup(i);
+		for (Integer i : this.children) {
+			Group other = this.plugin.getGroupManager().getGroup(i);
 			if (other != null) {
 				tempList.add(other.getName());
 			}
@@ -259,27 +250,27 @@ public class Group implements Comparable<Group> {
 			ret.add("All children: [" + Joiner.on(',').join(tempList) + "]");
 		}
 		tempList.clear();
-		ret.add("Group priority: " + priority);
+		ret.add("Group priority: " + this.priority);
 		return ret.toArray(new String[ret.size()]);
 	}
 
 	@Override
 	public int compareTo(Group other) {
-		return other.getPriority() - priority;
+		return other.getPriority() - this.priority;
 	}
 
 	@Override
 	public int hashCode( ) {
-		return id;
+		return this.id;
 	}
 
 	@Override
 	public boolean equals(Object other) {
-		return ((other instanceof Group) && (((Group) other).id == id));
+		return ((other instanceof Group) && (((Group) other).id == this.id));
 	}
 
 	@Override
 	public String toString( ) {
-		return "Group [" + name + ", priority: " + priority + "]";
+		return "Group [" + this.name + ", priority: " + this.priority + "]";
 	}
 }

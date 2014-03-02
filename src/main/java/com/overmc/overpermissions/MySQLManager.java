@@ -1,57 +1,63 @@
 package com.overmc.overpermissions;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 
-import org.bukkit.*;
+import org.bukkit.ChatColor;
+import org.bukkit.World;
 
 import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
+import com.overmc.overpermissions.exceptions.PlayerNotFoundException;
+import com.overmc.overpermissions.exceptions.WorldNotFoundException;
 
-public class MySQLManager implements SQLManager {
+public class MySQLManager extends SimpleJDBCSQLManager {
 	private final OverPermissions plugin;
 
 	protected Connection con = null;
-	private final String dbUrl;
-	private final String dbName;
-	private final String dbUsername;
-	private final String dbPassword;
 
 	public Connection getConnection( ) throws SQLException {
-		if ((con == null) || con.isClosed()) {
-			con = DriverManager.getConnection(dbUrl + dbName, dbUsername, dbPassword);
+		if ((this.con == null) || this.con.isClosed()) {
+			this.con = DriverManager.getConnection(this.dbUrl + this.dbName, this.dbUsername, this.dbPassword);
 		}
-		return con;
+		return this.con;
 	}
 
 	public MySQLManager(OverPermissions plugin, String dbUrl, String dbName, String dbUsername, String dbPassword) throws Throwable {
+		super(dbUrl, dbName, dbUsername, dbPassword);
 		this.plugin = plugin;
-		this.dbUrl = dbUrl;
-		this.dbName = dbName;
-		this.dbUsername = dbUsername;
-		this.dbPassword = dbPassword;
 		initDatabase();
 	}
 
 	private void initDatabase( ) throws Throwable {
 		Class.forName("com.mysql.jdbc.Driver");
 		try {
-			con = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
+			this.con = DriverManager.getConnection(this.dbUrl, this.dbUsername, this.dbPassword);
 		} catch (CommunicationsException e) {
-			throw new StartException(Messages.format(Messages.ERROR_SQL_NOT_CONNECTED, dbUrl));
+			throw new StartException(Messages.format(Messages.ERROR_SQL_NOT_CONNECTED, this.dbUrl));
 		} catch (SQLException e) {
 			if (e.getMessage().startsWith("Unable to open a test connection")) {
-				throw new StartException(Messages.format(Messages.ERROR_SQL_NOT_CONNECTED, dbUrl));
+				throw new StartException(Messages.format(Messages.ERROR_SQL_NOT_CONNECTED, this.dbUrl));
 			}
 		}
 		Statement st = null;
 		try {
-			st = con.createStatement();
-			st.executeUpdate("CREATE DATABASE IF NOT EXISTS " + dbName);
+			st = this.con.createStatement();
+			st.executeUpdate("CREATE DATABASE IF NOT EXISTS " + this.dbName);
 			st.close();
-			st = con.createStatement();
-			st.executeUpdate("USE " + dbName);
+			st = this.con.createStatement();
+			st.executeUpdate("USE " + this.dbName);
 			st.close();
-			st = con.createStatement();
+			st = this.con.createStatement();
 			st.addBatch("CREATE TABLE IF NOT EXISTS Player"
 					+ "("
 					+ "uid int AUTO_INCREMENT PRIMARY KEY,"
@@ -95,24 +101,6 @@ public class MySQLManager implements SQLManager {
 					+ "PRIMARY KEY(world_uid, permission_uid, player_uid)"
 					+ ")");
 
-			st.addBatch("CREATE TABLE IF NOT EXISTS Player_Global_Permission"
-					+ "("
-					+ "permission_uid int NOT NULL,"
-					+ "player_uid int NOT NULL,"
-					+ "FOREIGN KEY(permission_uid) REFERENCES Permission(uid),"
-					+ "FOREIGN KEY(player_uid) REFERENCES Player(uid),"
-					+ "PRIMARY KEY(permission_uid, player_uid)"
-					+ ")");
-			st.addBatch("CREATE TABLE IF NOT EXISTS Player_Global_Permission_Timeout"
-					+ "("
-					+ "permission_uid int NOT NULL,"
-					+ "player_uid int NOT NULL,"
-					+ "timeout bigint NOT NULL,"
-					+ "FOREIGN KEY(permission_uid) REFERENCES Permission(uid),"
-					+ "FOREIGN KEY(player_uid) REFERENCES Player(uid),"
-					+ "PRIMARY KEY(permission_uid, player_uid)"
-					+ ")");
-
 			st.addBatch("CREATE TABLE IF NOT EXISTS Player_Meta"
 					+ "("
 					+ "world_uid int NOT NULL,"
@@ -123,15 +111,6 @@ public class MySQLManager implements SQLManager {
 					+ "FOREIGN KEY(player_uid) REFERENCES Player(uid),"
 					+ "PRIMARY KEY(world_uid, player_uid, meta_key)"
 					+ ")");
-			st.addBatch("CREATE TABLE IF NOT EXISTS Player_Global_Meta"
-					+ "("
-					+ "player_uid int NOT NULL,"
-					+ "meta_key varchar(50) NOT NULL,"
-					+ "meta_value varchar(50) NOT NULL,"
-					+ "FOREIGN KEY(player_uid) REFERENCES Player(uid),"
-					+ "PRIMARY KEY(player_uid, meta_key)"
-					+ ")");
-
 			// Groups and their data
 			st.addBatch("CREATE TABLE IF NOT EXISTS Permission_Group"
 					+ "("
@@ -187,6 +166,141 @@ public class MySQLManager implements SQLManager {
 	}
 
 	@Override
+	public String[] getWorlds( ) {
+		return (new MySQLPreparedWrapper<String[]>(this) {
+			@Override
+			public String[] execute( ) throws SQLException {
+				ArrayList<String> ret = new ArrayList<String>();
+				PreparedStatement pst = createPreparedStatement("SELECT name FROM World");
+				ResultSet rs = createResultSet(pst);
+				while (rs.next()) {
+					ret.add(rs.getString("name"));
+				}
+				return ret.toArray(new String[ret.size()]);
+			}
+		}).call(new String[0]);
+	}
+
+	@Override
+	public String getWorldName(final int id) {
+		return (new MySQLPreparedWrapper<String>(this) {
+			@Override
+			public String execute( ) throws SQLException {
+				PreparedStatement pst = createPreparedStatement("SELECT name FROM World WHERE uid=?");
+				pst.setInt(1, id);
+				ResultSet rs = createResultSet(pst);
+				if (rs.next()) {
+					return rs.getString("name");
+				}
+				return null;
+			}
+		}).call(null);
+	}
+
+	@Override
+	public int getWorldId(final String worldname, final boolean makeNew) throws WorldNotFoundException {
+		if (worldname == null) {
+			throw new WorldNotFoundException("World can't be null!");
+		}
+		int uid = (new MySQLPreparedWrapper<Integer>(this) {
+			@Override
+			public Integer execute( ) throws SQLException {
+				PreparedStatement selectWorldStatement = createPreparedStatement("SELECT uid FROM World WHERE name=?");
+				selectWorldStatement.setString(1, worldname.toLowerCase());
+				ResultSet rs = createResultSet(selectWorldStatement);
+				if (rs.next()) {
+					return rs.getInt("uid");
+				} else if (makeNew) {
+					PreparedStatement insertWorldStatement = createPreparedStatement("INSERT INTO World(name) VALUES (?)", Statement.RETURN_GENERATED_KEYS);
+					insertWorldStatement.setString(1, worldname.toLowerCase());
+					insertWorldStatement.executeUpdate();
+					ResultSet generatedKeys = getGeneratedKeys(insertWorldStatement);
+					if (generatedKeys.next()) {
+						return generatedKeys.getInt(1);
+					} else {
+						throw new RuntimeException("GENERATED_KEY was empty! This should never happen!");
+					}
+				}
+				return -1;
+			}
+		}).call(-1);
+		if (uid < 0) {
+			throw new WorldNotFoundException("A world by that name wasn't found.");
+		}
+		return uid;
+	}
+
+	@Override
+	public int getWorldId(String worldname) {
+		return getWorldId(worldname, false);
+	}
+
+	@Override
+	public String getPlayerName(final int id) throws PlayerNotFoundException {
+		String playerName = (new MySQLPreparedWrapper<String>(this) {
+			@Override
+			public String execute( ) throws SQLException {
+				PreparedStatement selectPlayerStatement = createPreparedStatement("SELECT username FROM Player WHERE uid=?");
+				selectPlayerStatement.setInt(1, id);
+				ResultSet rs = selectPlayerStatement.executeQuery();
+				if (rs.next()) {
+					return rs.getString("username");
+				}
+				return null;
+			}
+		}).call(null);
+		if (playerName == null) {
+			throw new PlayerNotFoundException("No player by that name was found.");
+		}
+		return playerName;
+	}
+
+	@Override
+	public int getPlayerId(final String username, final boolean makeNew) {
+		if ((username == null) || (username.length() == 0) || (username.length() > 16)) {
+			if (makeNew) {
+				throw new IllegalArgumentException("username: " + username);
+			} else {
+				return -1;
+			}
+		}
+		return (new MySQLPreparedWrapper<Integer>(this) {
+			@Override
+			public Integer execute( ) throws SQLException {
+				int uid = -1;
+				PreparedStatement selectUidStatement = createPreparedStatement("SELECT uid FROM Player WHERE username=?");
+				selectUidStatement.setString(1, username.toLowerCase());
+				ResultSet rs = createResultSet(selectUidStatement);
+				if (rs.next()) {
+					uid = rs.getInt("uid");
+				} else if (makeNew) {
+					PreparedStatement insertPlayerStatement = createPreparedStatement("INSERT INTO Player(username, creationtime) VALUES (?, ?)", Statement.RETURN_GENERATED_KEYS);
+					insertPlayerStatement.setString(1, username);
+					insertPlayerStatement.setDate(2, new java.sql.Date(System.currentTimeMillis()));
+					insertPlayerStatement.executeUpdate();
+					ResultSet generatedKeys = getGeneratedKeys(insertPlayerStatement);
+					if (generatedKeys.next()) {
+						uid = generatedKeys.getInt(1);
+					} else {
+						throw new RuntimeException("GENERATED_KEY was empty! This should never happen!");
+					}
+				}
+				return uid;
+			}
+		}).call(-1);
+	}
+
+	@Override
+	public int getPlayerId(String username) {
+		return getPlayerId(username, false);
+	}
+
+	@Override
+	public int getNextServerId( ) {
+
+	}
+
+	@Override
 	public ArrayList<String> getPlayerPermissions(int playerId, int worldId) {
 		ArrayList<String> ret = new ArrayList<String>();
 		PreparedStatement pst = null;
@@ -212,37 +326,13 @@ public class MySQLManager implements SQLManager {
 	}
 
 	@Override
-	public ArrayList<String> getGlobalPlayerPermissions(int playerId) {
-		ArrayList<String> ret = new ArrayList<String>();
-		PreparedStatement pst = null;
-		ResultSet rs = null;
-		try {
-			pst = getConnection().prepareStatement("SELECT permission_uid FROM Player_Global_Permission WHERE player_uid=?");
-			pst.setInt(1, playerId);
-			rs = pst.executeQuery();
-			while (rs.next()) {
-				String perm = getPermissionValue(rs.getInt("permission_uid"));
-				if (perm.length() != 0) {
-					ret.add(perm);
-				}
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			attemptClose(rs);
-			attemptClose(pst);
-		}
-		return ret;
-	}
-
-	@Override
 	public List<Group> getPlayerEffectiveGroups(int playerId, int worldId) {
 		List<Group> effectiveGroups = new ArrayList<Group>();
 		World world = getWorld(worldId);
 		for (Integer i : getPlayerGroups(playerId)) {
-			Group parent = plugin.getGroupManager().getGroup(i);
+			Group parent = this.plugin.getGroupManager().getGroup(i);
 			if (parent == null) {
-				plugin.getLogger().warning("Invalid group found while checking player id (" + playerId + ")'s effective groups. Group id: " + i);
+				this.plugin.getLogger().warning("Invalid group found while checking player id (" + playerId + ")'s effective groups. Group id: " + i);
 				continue;
 			}
 			for (Group group : parent.getAllParents()) {
@@ -338,8 +428,8 @@ public class MySQLManager implements SQLManager {
 			}
 		}
 		tempArray.clear();
-		ArrayList<String> effectiveNodes = plugin.getSQLManager().getGlobalPlayerPermissions(playerId);
-		effectiveNodes.addAll(plugin.getSQLManager().getPlayerPermissions(playerId, worldId));
+		ArrayList<String> effectiveNodes = this.plugin.getSQLManager().getGlobalPlayerPermissions(playerId);
+		effectiveNodes.addAll(this.plugin.getSQLManager().getPlayerPermissions(playerId, worldId));
 		for (String nodei : effectiveNodes) {
 			String nodeival = ((nodei.startsWith("-") || nodei.startsWith("+")) ? nodei.substring(1) : nodei);
 			if (nodeival.equalsIgnoreCase(node)) {
@@ -403,69 +493,40 @@ public class MySQLManager implements SQLManager {
 	}
 
 	@Override
-	public boolean checkPlayerPermissionExists(int playerId, int worldId, String permission) {
-		PreparedStatement pst = null;
-		ResultSet rs = null;
-		try {
-			int permissionId = getPermissionValue(permission, false);
-			pst = getConnection().prepareStatement("SELECT EXISTS(SELECT 1 FROM Player_Permission WHERE player_uid=? AND world_uid=? AND permission_uid=? LIMIT 1)");
-			pst.setInt(1, playerId);
-			pst.setInt(2, worldId);
-			pst.setInt(3, permissionId);
-			rs = pst.executeQuery();
-			if (rs.next()) {
-				return rs.getBoolean(1);
+	public boolean checkPlayerPermissionExists(final int playerId, final int worldId, final String permission) {
+		return (new MySQLPreparedWrapper<Boolean>(this) {
+			@Override
+			public Boolean execute( ) throws SQLException {
+				int permissionId = getPermissionValue(permission, false);
+				PreparedStatement pst = createPreparedStatement("SELECT EXISTS(SELECT 1 FROM Player_Permission WHERE player_uid=? AND world_uid=? AND permission_uid=? LIMIT 1)");
+				pst.setInt(1, playerId);
+				pst.setInt(2, worldId);
+				pst.setInt(3, permissionId);
+				ResultSet rs = createResultSet(pst);
+				if (rs.next()) {
+					return rs.getBoolean(1);
+				}
+				return false;
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			attemptClose(rs);
-			attemptClose(pst);
-		}
-		return false;
+		}).call(false);
 	}
 
 	@Override
-	public HashMap<String, String> getPlayerMeta(int playerId, int worldId) {
-		HashMap<String, String> ret = new HashMap<String, String>();
-		PreparedStatement pst = null;
-		ResultSet rs = null;
-		try {
-			pst = getConnection().prepareStatement("SELECT meta_key, meta_value FROM Player_Meta WHERE player_uid=? AND world_uid=?");
-			pst.setInt(1, playerId);
-			pst.setInt(2, worldId);
-			rs = pst.executeQuery();
-			while (rs.next()) {
-				ret.put(rs.getString("meta_key"), rs.getString("meta_value"));
+	public HashMap<String, String> getPlayerMeta(final int playerId, final int worldId) {
+		return (new MySQLPreparedWrapper<HashMap<String, String>>(this) {
+			@Override
+			public HashMap<String, String> execute( ) throws SQLException {
+				HashMap<String, String> ret = new HashMap<String, String>();
+				PreparedStatement pst = createPreparedStatement("SELECT meta_key, meta_value FROM Player_Meta WHERE player_uid=? AND world_uid=?");
+				pst.setInt(1, playerId);
+				pst.setInt(2, worldId);
+				ResultSet rs = createResultSet(pst);
+				while (rs.next()) {
+					ret.put(rs.getString("meta_key"), rs.getString("meta_value"));
+				}
+				return ret;
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			attemptClose(rs);
-			attemptClose(pst);
-		}
-		return ret;
-	}
-
-	@Override
-	public HashMap<String, String> getGlobalPlayerMeta(int playerId) {
-		HashMap<String, String> ret = new HashMap<String, String>();
-		PreparedStatement pst = null;
-		ResultSet rs = null;
-		try {
-			pst = getConnection().prepareStatement("SELECT meta_key, meta_value FROM Player_Global_Meta WHERE player_uid=?");
-			pst.setInt(1, playerId);
-			rs = pst.executeQuery();
-			while (rs.next()) {
-				ret.put(rs.getString("meta_key"), rs.getString("meta_value"));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			attemptClose(rs);
-			attemptClose(pst);
-		}
-		return ret;
+		}).call(new HashMap<String, String>(0));
 	}
 
 	@Override
@@ -479,7 +540,7 @@ public class MySQLManager implements SQLManager {
 		String value = null;
 		List<Group> effectiveGroups = new ArrayList<Group>();
 		for (Integer i : getPlayerGroups(playerId)) {
-			for (Group group : plugin.getGroupManager().getGroup(i).getAllParents()) {
+			for (Group group : this.plugin.getGroupManager().getGroup(i).getAllParents()) {
 				if ((group.getWorld() == null) || ((group.getWorldId() == worldId) && !effectiveGroups.contains(group))) {
 					effectiveGroups.add(group);
 				}
@@ -525,25 +586,6 @@ public class MySQLManager implements SQLManager {
 	}
 
 	@Override
-	public boolean addGlobalPlayerPermission(int playerId, String permission) {
-		PreparedStatement pst = null;
-		ResultSet rs = null;
-		try {
-			int permId = getPermissionValue(permission, true);
-			pst = getConnection().prepareStatement("INSERT IGNORE INTO Player_Global_Permission(permission_uid, player_uid) VALUES (?, ?)");
-			pst.setInt(1, permId);
-			pst.setInt(2, playerId);
-			return (pst.executeUpdate() > 0);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			attemptClose(rs);
-			attemptClose(pst);
-		}
-		return false;
-	}
-
-	@Override
 	public boolean addPlayerPermissionTimeout(int playerId, int worldId, String permission, long timeInSeconds) {
 		PreparedStatement pst = null;
 		try {
@@ -558,29 +600,6 @@ public class MySQLManager implements SQLManager {
 			pst.setInt(3, playerId);
 			pst.setInt(4, worldId);
 			pst.setLong(5, time);
-			return (pst.executeUpdate() > 0);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			attemptClose(pst);
-		}
-		return false;
-	}
-
-	@Override
-	public boolean addGlobalPlayerPermissionTimeout(int playerId, String permission, long timeInSeconds) {
-		PreparedStatement pst = null;
-		try {
-			int permId = getPermissionValue(permission, false);
-			if (permId < 0) {
-				return false;
-			}
-			long time = (System.currentTimeMillis() / 1000L) + timeInSeconds;
-			pst = getConnection().prepareStatement("INSERT INTO Player_Global_Permission_Timeout(timeout, permission_uid, player_uid) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE timeout=?");
-			pst.setLong(1, time);
-			pst.setInt(2, permId);
-			pst.setInt(3, playerId);
-			pst.setLong(4, time);
 			return (pst.executeUpdate() > 0);
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -606,26 +625,6 @@ public class MySQLManager implements SQLManager {
 			} else {
 				pst.setInt(3, worldId);
 			}
-			return pst.executeUpdate() > 0;
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			attemptClose(pst);
-		}
-		return false;
-	}
-
-	@Override
-	public boolean removeGlobalPlayerPermissionTimeout(int playerId, String permission) {
-		PreparedStatement pst = null;
-		try {
-			int permissionId = getPermissionValue(permission, false);
-			if (permissionId <= 0) {
-				return false;
-			}
-			pst = getConnection().prepareStatement("DELETE FROM Player_Global_Permission_Timeout WHERE permission_uid=? AND player_uid=?");
-			pst.setInt(1, permissionId);
-			pst.setInt(2, playerId);
 			return pst.executeUpdate() > 0;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -799,7 +798,7 @@ public class MySQLManager implements SQLManager {
 			attemptClose(pst);
 		}
 		if (ret.size() == 0) {
-			ret.add(plugin.getDefaultGroupId());
+			ret.add(this.plugin.getDefaultGroupId());
 		}
 		return ret;
 	}
@@ -889,30 +888,14 @@ public class MySQLManager implements SQLManager {
 	}
 
 	@Override
-	public boolean setGroup(String groupName, int priority, int world) {
-		if (world < 0) {
-			world = -1;
-		}
+	public boolean createGroup(String groupName, int priority) {
 		PreparedStatement pst = null;
 		ResultSet rs = null;
 		try {
-			pst = getConnection().prepareStatement("UPDATE Permission_Group SET priority=?, world_uid=? WHERE name=?");
+			pst = getConnection().prepareStatement("INSERT IGNORE INTO Permission_Group(priority, name) VALUES (?, ?)");
 			pst.setInt(1, priority);
-			pst.setInt(2, world);
-			pst.setString(3, groupName);
-			if (pst.executeUpdate() == 0) {
-				pst.close();
-				pst = getConnection().prepareStatement("INSERT INTO Permission_Group(priority, world_uid, name) VALUES (?, ?, ?)");
-				pst.setInt(1, priority);
-				if (world < 0) {
-					world = -1;
-				}
-				pst.setInt(2, world);
-				pst.setString(3, groupName);
-				pst.executeUpdate();
-				return true;
-			}
-			return true;
+			pst.setString(2, groupName);
+			return pst.executeUpdate() > 0;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
@@ -967,7 +950,7 @@ public class MySQLManager implements SQLManager {
 			pst = getConnection().prepareStatement("SELECT world_uid, uid, priority, name FROM Permission_Group");
 			rs = pst.executeQuery();
 			while (rs.next()) {
-				ret.add(new Group(plugin, getWorld(rs.getInt("world_uid")), rs.getString("name"), rs.getInt("priority"), rs.getInt("uid")));
+				ret.add(new Group(this.plugin, getWorld(rs.getInt("world_uid")), rs.getString("name"), rs.getInt("priority"), rs.getInt("uid")));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -1348,173 +1331,11 @@ public class MySQLManager implements SQLManager {
 	}
 
 	@Override
-	public String[] getWorlds( ) {
-		ArrayList<String> ret = new ArrayList<String>();
-		PreparedStatement pst = null;
-		ResultSet rs = null;
-		try {
-			pst = getConnection().prepareStatement("SELECT name FROM World");
-			rs = pst.executeQuery();
-			while (rs.next()) {
-				ret.add(rs.getString("name"));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			attemptClose(rs);
-			attemptClose(pst);
-		}
-		return ret.toArray(new String[ret.size()]);
-	}
-
-	@Override
-	public org.bukkit.World getWorld(int id) {
-		if (id <= 0) {
-			return null;
-		}
-		return Bukkit.getWorld(getWorldName(id));
-	}
-
-	@Override
-	public String getWorldName(int id) {
-		PreparedStatement pst = null;
-		ResultSet rs = null;
-		try {
-			pst = getConnection().prepareStatement("SELECT name FROM World WHERE uid=?");
-			pst.setInt(1, id);
-			rs = pst.executeQuery();
-			if (rs.next()) {
-				return rs.getString("name");
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			attemptClose(rs);
-			attemptClose(pst);
-		}
-		return null;
-	}
-
-	@Override
-	public int getWorldId(String worldname, boolean makeNew) {
-		if (worldname == null) {
-			return -1;
-		}
-		worldname = worldname.toLowerCase();
-		PreparedStatement pst = null;
-		ResultSet rs = null;
-		int uid = -1;
-		try {
-			pst = getConnection().prepareStatement("SELECT uid FROM World WHERE name=?");
-			pst.setString(1, worldname);
-			rs = pst.executeQuery();
-			if (rs.next()) {
-				uid = rs.getInt("uid");
-			} else if (makeNew) {
-				rs.close();
-				pst.close();
-				pst = getConnection().prepareStatement("INSERT INTO World(name) VALUES (?)", Statement.RETURN_GENERATED_KEYS);
-				pst.setString(1, worldname);
-				pst.executeUpdate();
-				rs = pst.getGeneratedKeys();
-				if (rs.next()) {
-					uid = rs.getInt(1);
-				} else {
-					throw new RuntimeException("GENERATED_KEY was empty! This should never happen!");
-				}
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			attemptClose(rs);
-			attemptClose(pst);
-		}
-		return uid;
-	}
-
-	@Override
-	public int getWorldId(String worldname) {
-		return getWorldId(worldname, false);
-	}
-
-	@Override
 	public int getWorldId(World world) {
 		if (world == null) {
 			return -1;
 		}
 		return getWorldId(world.getName(), true);
-	}
-
-	@Override
-	public int getPlayerId(String username, boolean makeNew) {
-		if ((username == null) || (username.length() == 0) || (username.length() > 16)) {
-			if (makeNew) {
-				throw new IllegalArgumentException("username: " + username);
-			} else {
-				return -1;
-			}
-		}
-		username = username.toLowerCase();
-		PreparedStatement pst = null;
-		ResultSet rs = null;
-		int uid = -1;
-		try {
-			pst = getConnection().prepareStatement("SELECT uid FROM Player WHERE username=?");
-			pst.setString(1, username);
-			rs = pst.executeQuery();
-			if (rs.next()) {
-				uid = rs.getInt("uid");
-			} else if (makeNew) {
-				rs.close();
-				pst.close();
-				pst = getConnection().prepareStatement("INSERT INTO Player(username, creationtime) VALUES (?, ?)", Statement.RETURN_GENERATED_KEYS);
-				pst.setString(1, username);
-				pst.setDate(2, new java.sql.Date(System.currentTimeMillis()));
-				pst.executeUpdate();
-				rs = pst.getGeneratedKeys();
-				if (rs.next()) {
-					uid = rs.getInt(1);
-				} else {
-					throw new RuntimeException("GENERATED_KEY was empty! This should never happen!");
-				}
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			attemptClose(rs);
-			attemptClose(pst);
-		}
-		return uid;
-	}
-
-	@Override
-	public int getPlayerId(String username) {
-		return getPlayerId(username, false);
-	}
-
-	@Override
-	public org.bukkit.entity.Player getPlayer(int id) {
-		return Bukkit.getPlayerExact(getPlayerName(id));
-	}
-
-	@Override
-	public String getPlayerName(int id) {
-		PreparedStatement pst = null;
-		ResultSet rs = null;
-		try {
-			pst = getConnection().prepareStatement("SELECT username FROM Player WHERE uid=?");
-			pst.setInt(1, id);
-			rs = pst.executeQuery();
-			if (rs.next()) {
-				return rs.getString("username");
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			attemptClose(rs);
-			attemptClose(pst);
-		}
-		return null;
 	}
 
 	@Override
@@ -1545,36 +1366,6 @@ public class MySQLManager implements SQLManager {
 			e.printStackTrace();
 		} finally {
 			attemptClose(st);
-		}
-	}
-
-	public static void attemptClose(PreparedStatement pst) {
-		try {
-			if (pst != null) {
-				pst.close();
-			}
-		} catch (Throwable t) {
-
-		}
-	}
-
-	public static void attemptClose(Statement st) {
-		try {
-			if (st != null) {
-				st.close();
-			}
-		} catch (Throwable t) {
-
-		}
-	}
-
-	public static void attemptClose(ResultSet rs) {
-		try {
-			if (rs != null) {
-				rs.close();
-			}
-		} catch (Throwable t) {
-
 		}
 	}
 }
