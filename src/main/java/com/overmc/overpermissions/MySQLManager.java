@@ -58,6 +58,10 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 			st.executeUpdate("USE " + this.dbName);
 			st.close();
 			st = this.con.createStatement();
+			st.addBatch("CREATE TABLE IF NOT EXISTS Server"
+					+ "("
+					+ "uid int AUTO_INCREMENT PRIMARY KEY"
+					+ ")");
 			st.addBatch("CREATE TABLE IF NOT EXISTS Player"
 					+ "("
 					+ "uid int AUTO_INCREMENT PRIMARY KEY,"
@@ -69,7 +73,9 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 					+ "("
 					+ "uid int AUTO_INCREMENT PRIMARY KEY,"
 					+ "name varchar(16) NOT NULL,"
-					+ "INDEX name (name ASC)"
+					+ "server_uid int NOT NULL,"
+					+ "FOREIGN KEY(server_uid) REFERENCES Server(uid),"
+					+ "INDEX worldIndex (name,server_uid ASC)"
 					+ ")");
 
 			st.addBatch("CREATE TABLE IF NOT EXISTS Permission"
@@ -116,7 +122,6 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 					+ "("
 					+ "uid int AUTO_INCREMENT PRIMARY KEY,"
 					+ "priority int NOT NULL,"
-					+ "world_uid int,"
 					+ "name varchar(50) NOT NULL"
 					+ ")");
 			st.addBatch("CREATE TABLE IF NOT EXISTS Group_Parent"
@@ -129,27 +134,33 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 					+ ")");
 			st.addBatch("CREATE TABLE IF NOT EXISTS Group_Permission"
 					+ "("
+					+ "world_uid int NOT NULL,"
 					+ "permission_uid int NOT NULL,"
 					+ "group_uid int NOT NULL,"
+					+ "FOREIGN KEY(world_uid) REFERENCES World(uid),"
 					+ "FOREIGN KEY(group_uid) REFERENCES Permission_Group(uid),"
-					+ "PRIMARY KEY(permission_uid, group_uid)"
+					+ "PRIMARY KEY(world_uid,permission_uid, group_uid)"
 					+ ")");
 			st.addBatch("CREATE TABLE IF NOT EXISTS Group_Permission_Timeout"
 					+ "("
+					+ "world_uid int NOT NULL,"
 					+ "permission_uid int NOT NULL,"
 					+ "group_uid int NOT NULL,"
 					+ "timeout bigint NOT NULL,"
+					+ "FOREIGN KEY(world_uid) REFERENCES World(uid),"
 					+ "FOREIGN KEY(permission_uid) REFERENCES Permission(uid),"
 					+ "FOREIGN KEY(group_uid) REFERENCES Permission_Group(uid),"
-					+ "PRIMARY KEY(permission_uid, group_uid)"
+					+ "PRIMARY KEY(world_uid, permission_uid, group_uid)"
 					+ ")");
 			st.addBatch("CREATE TABLE IF NOT EXISTS Group_Meta"
 					+ "("
+					+ "world_uid int NOT NULL,"
 					+ "group_uid int NOT NULL,"
 					+ "meta_key varchar(50) NOT NULL,"
 					+ "meta_value varchar(50) NOT NULL,"
+					+ "FOREIGN KEY(world_uid) REFERENCES World(uid),"
 					+ "FOREIGN KEY(group_uid) REFERENCES Permission_Group(uid),"
-					+ "PRIMARY KEY(group_uid, meta_key)"
+					+ "PRIMARY KEY(world_uid, group_uid, meta_key)"
 					+ ")");
 			st.addBatch("CREATE TABLE IF NOT EXISTS Player_Group"
 					+ "("
@@ -182,12 +193,13 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 	}
 
 	@Override
-	public String getWorldName(final int id) {
+	public String getWorldName(final int id, final int serverId) {
 		return (new MySQLPreparedWrapper<String>(this) {
 			@Override
 			public String execute( ) throws SQLException {
-				PreparedStatement pst = createPreparedStatement("SELECT name FROM World WHERE uid=?");
+				PreparedStatement pst = createPreparedStatement("SELECT name FROM World WHERE uid=? AND server_uid=?");
 				pst.setInt(1, id);
+				pst.setInt(2, serverId);
 				ResultSet rs = createResultSet(pst);
 				if (rs.next()) {
 					return rs.getString("name");
@@ -198,28 +210,25 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 	}
 
 	@Override
-	public int getWorldId(final String worldname, final boolean makeNew) throws WorldNotFoundException {
+	public int getWorldId(final String worldname, final int serverId, final boolean makeNew) throws WorldNotFoundException {
 		if (worldname == null) {
 			throw new WorldNotFoundException("World can't be null!");
 		}
 		int uid = (new MySQLPreparedWrapper<Integer>(this) {
 			@Override
 			public Integer execute( ) throws SQLException {
-				PreparedStatement selectWorldStatement = createPreparedStatement("SELECT uid FROM World WHERE name=?");
+				PreparedStatement selectWorldStatement = createPreparedStatement("SELECT uid FROM World WHERE name=? AND server_uid=?");
 				selectWorldStatement.setString(1, worldname.toLowerCase());
+				selectWorldStatement.setInt(2, serverId);
 				ResultSet rs = createResultSet(selectWorldStatement);
 				if (rs.next()) {
 					return rs.getInt("uid");
 				} else if (makeNew) {
-					PreparedStatement insertWorldStatement = createPreparedStatement("INSERT INTO World(name) VALUES (?)", Statement.RETURN_GENERATED_KEYS);
+					PreparedStatement insertWorldStatement = createPreparedStatement("INSERT INTO World(name, server_uid) VALUES (?, ?)", Statement.RETURN_GENERATED_KEYS);
 					insertWorldStatement.setString(1, worldname.toLowerCase());
+					insertWorldStatement.setInt(2, serverId);
 					insertWorldStatement.executeUpdate();
-					ResultSet generatedKeys = getGeneratedKeys(insertWorldStatement);
-					if (generatedKeys.next()) {
-						return generatedKeys.getInt(1);
-					} else {
-						throw new RuntimeException("GENERATED_KEY was empty! This should never happen!");
-					}
+					return getGeneratedKey(insertWorldStatement);
 				}
 				return -1;
 			}
@@ -231,8 +240,8 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 	}
 
 	@Override
-	public int getWorldId(String worldname) {
-		return getWorldId(worldname, false);
+	public int getWorldId(String worldname, int serverId) {
+		return getWorldId(worldname, serverId, false);
 	}
 
 	@Override
@@ -268,9 +277,9 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 			@Override
 			public Integer execute( ) throws SQLException {
 				int uid = -1;
-				PreparedStatement selectUidStatement = createPreparedStatement("SELECT uid FROM Player WHERE username=?");
-				selectUidStatement.setString(1, username.toLowerCase());
-				ResultSet rs = createResultSet(selectUidStatement);
+				PreparedStatement selectPlayerUidStatement = createPreparedStatement("SELECT uid FROM Player WHERE username=?");
+				selectPlayerUidStatement.setString(1, username.toLowerCase());
+				ResultSet rs = createResultSet(selectPlayerUidStatement);
 				if (rs.next()) {
 					uid = rs.getInt("uid");
 				} else if (makeNew) {
@@ -278,12 +287,7 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 					insertPlayerStatement.setString(1, username);
 					insertPlayerStatement.setDate(2, new java.sql.Date(System.currentTimeMillis()));
 					insertPlayerStatement.executeUpdate();
-					ResultSet generatedKeys = getGeneratedKeys(insertPlayerStatement);
-					if (generatedKeys.next()) {
-						uid = generatedKeys.getInt(1);
-					} else {
-						throw new RuntimeException("GENERATED_KEY was empty! This should never happen!");
-					}
+					uid = getGeneratedKey(insertPlayerStatement);
 				}
 				return uid;
 			}
@@ -297,52 +301,37 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 
 	@Override
 	public int getNextServerId( ) {
-
+		return (new MySQLPreparedWrapper<Integer>(this) {
+			@Override
+			public Integer execute( ) throws SQLException {
+				PreparedStatement insertDummyStatement = createPreparedStatement("INSERT INTO Server() VALUES()", Statement.RETURN_GENERATED_KEYS); // Just increment the UID field, this will do it automatically.
+				insertDummyStatement.executeUpdate();
+				return getGeneratedKey(insertDummyStatement);
+			}
+		}).call(-1);
 	}
 
 	@Override
-	public ArrayList<String> getPlayerPermissions(int playerId, int worldId) {
-		ArrayList<String> ret = new ArrayList<String>();
-		PreparedStatement pst = null;
-		ResultSet rs = null;
-		try {
-			pst = getConnection().prepareStatement("SELECT permission_uid FROM Player_Permission WHERE player_uid=? AND world_uid=?");
-			pst.setInt(1, playerId);
-			pst.setInt(2, worldId);
-			rs = pst.executeQuery();
-			while (rs.next()) {
-				String perm = getPermissionValue(rs.getInt("permission_uid"));
-				if (perm.length() != 0) {
-					ret.add(perm);
+	public List<String> getPlayerPermissions(final int playerId, final int worldId, final boolean includeGlobals) {
+		return (new MySQLPreparedWrapper<List<String>>(this) {
+			@Override
+			public ArrayList<String> execute( ) throws SQLException {
+				ArrayList<String> ret = new ArrayList<String>();
+				PreparedStatement selectPlayerUidStatement = (includeGlobals ?
+						createPreparedStatement("SELECT permission_uid FROM Player_Permission WHERE player_uid=? AND (world_uid=? OR world_uid=" + GLOBAL_WORLD_ID + ")") :
+						createPreparedStatement("SELECT permission_uid FROM Player_Permission WHERE player_uid=? AND world_uid=?"));
+				selectPlayerUidStatement.setInt(1, playerId);
+				selectPlayerUidStatement.setInt(2, worldId);
+				ResultSet rs = createResultSet(selectPlayerUidStatement);
+				while (rs.next()) {
+					String perm = getPermissionValue(rs.getInt("permission_uid"));
+					if (perm.length() != 0) {
+						ret.add(perm);
+					}
 				}
+				return ret;
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			attemptClose(rs);
-			attemptClose(pst);
-		}
-		return ret;
-	}
-
-	@Override
-	public List<Group> getPlayerEffectiveGroups(int playerId, int worldId) {
-		List<Group> effectiveGroups = new ArrayList<Group>();
-		World world = getWorld(worldId);
-		for (Integer i : getPlayerGroups(playerId)) {
-			Group parent = this.plugin.getGroupManager().getGroup(i);
-			if (parent == null) {
-				this.plugin.getLogger().warning("Invalid group found while checking player id (" + playerId + ")'s effective groups. Group id: " + i);
-				continue;
-			}
-			for (Group group : parent.getAllParents()) {
-				if (((group.getWorld() == null) || group.getWorld().equals(world)) && !effectiveGroups.contains(group)) {
-					effectiveGroups.add(group);
-				}
-			}
-		}
-		Collections.sort(effectiveGroups);
-		return effectiveGroups;
+		}).call(new ArrayList<String>(0));
 	}
 
 	@Override
@@ -353,12 +342,12 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 		boolean value = false;
 		boolean negSet = false;
 		boolean posSet = false;
-		for (Group g : getPlayerEffectiveGroups(playerId, worldId)) {
-			if (!posSet && g.hasNode("+" + permission)) {
+		for (Group g : getPlayerEffectiveGroups(playerId)) {
+			if (!posSet && g.hasNode("+" + permission, worldId)) {
 				posSet = true;
 				break;
 			}
-			if (!negSet && g.hasNode("-" + permission)) {
+			if (!negSet && g.hasNode("-" + permission, worldId)) {
 				negSet = true;
 			}
 			if (g.hasPermission(permission)) {
@@ -394,6 +383,25 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 			value = true;
 		}
 		return value;
+	}
+
+	@Override
+	public List<Group> getPlayerEffectiveGroups(final int playerId) {
+		List<Group> effectiveGroups = new ArrayList<Group>();
+		for (Integer i : getPlayerGroups(playerId)) {
+			Group parent = this.plugin.getGroupManager().getGroup(i);
+			if (parent == null) {
+				this.plugin.getLogger().warning("Invalid group found while checking player id (" + playerId + ")'s effective groups. Group id: " + i);
+				continue;
+			}
+			for (Group group : parent.getAllParents()) {
+				if (/* ((group.getWorld() == null) || group.getWorld().equals(world)) && */!effectiveGroups.contains(group)) { // There are no longer world based groups.
+					effectiveGroups.add(group);
+				}
+			}
+		}
+		Collections.sort(effectiveGroups);
+		return effectiveGroups;
 	}
 
 	@Override

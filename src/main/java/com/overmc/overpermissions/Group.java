@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 public class Group implements Comparable<Group> {
 	private final OverPermissions plugin;
@@ -18,7 +20,7 @@ public class Group implements Comparable<Group> {
 	private final ArrayList<Integer> parents = new ArrayList<Integer>(1);
 	private final ArrayList<Integer> children = new ArrayList<Integer>(1);
 
-	private final HashSet<String> nodes = new HashSet<String>();
+	private final Multimap<Integer, String> nodes = HashMultimap.create();
 	private final HashMap<String, Boolean> permissions = new HashMap<String, Boolean>();
 	private final HashMap<String, String> meta = new HashMap<String, String>();
 	private final HashSet<PlayerPermissionData> playersInGroup = new HashSet<PlayerPermissionData>();
@@ -169,7 +171,7 @@ public class Group implements Comparable<Group> {
 		return this.nodes;
 	}
 
-	public boolean hasNode(String node) {
+	public boolean hasNode(String node, int worldId) {
 		return this.nodes.contains(node);
 	}
 

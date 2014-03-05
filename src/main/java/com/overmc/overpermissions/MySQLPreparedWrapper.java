@@ -126,4 +126,12 @@ public abstract class MySQLPreparedWrapper<T> {
 		this.resultSets.add(rs);
 		return rs;
 	}
+
+	protected int getGeneratedKey(Statement st) throws SQLException {
+		ResultSet generatedKeys = getGeneratedKeys(st);
+		if (generatedKeys.next()) {
+			return generatedKeys.getInt(1);
+		}
+		throw new RuntimeException("An invalid key was requested! This should never happen!");
+	}
 }

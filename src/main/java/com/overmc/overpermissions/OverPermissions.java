@@ -2,13 +2,33 @@ package com.overmc.overpermissions;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.overmc.overpermissions.commands.*;
+import com.overmc.overpermissions.commands.GroupAddCommand;
+import com.overmc.overpermissions.commands.GroupAddParentCommand;
+import com.overmc.overpermissions.commands.GroupAddTempCommand;
+import com.overmc.overpermissions.commands.GroupCreateCommand;
+import com.overmc.overpermissions.commands.GroupDeleteCommand;
+import com.overmc.overpermissions.commands.GroupRemoveCommand;
+import com.overmc.overpermissions.commands.GroupRemoveParentCommand;
+import com.overmc.overpermissions.commands.GroupSetMetaCommand;
+import com.overmc.overpermissions.commands.OverPermissionsCommand;
+import com.overmc.overpermissions.commands.PlayerAddCommand;
+import com.overmc.overpermissions.commands.PlayerAddGroupCommand;
+import com.overmc.overpermissions.commands.PlayerAddTempCommand;
+import com.overmc.overpermissions.commands.PlayerCheckCommand;
+import com.overmc.overpermissions.commands.PlayerPromoteCommand;
+import com.overmc.overpermissions.commands.PlayerRemoveCommand;
+import com.overmc.overpermissions.commands.PlayerSetGroupCommand;
+import com.overmc.overpermissions.commands.PlayerSetMetaCommand;
 import com.overmc.overpermissions.metrics.MetricsLite;
 
 public class OverPermissions extends JavaPlugin {
@@ -38,11 +58,11 @@ public class OverPermissions extends JavaPlugin {
 			initPlayers();
 			getLogger().info(ChatColor.GREEN + "Successfully enabled!");
 		} catch (StartException e) {
-			failureStarting = true;
+			this.failureStarting = true;
 			getLogger().severe(ChatColor.RED + "Failed to start: " + e.getSimpleMessage());
 		} catch (Throwable t) {
 			t.printStackTrace();
-			failureStarting = true;
+			this.failureStarting = true;
 		}
 	}
 
@@ -74,7 +94,7 @@ public class OverPermissions extends JavaPlugin {
 		if (type.equalsIgnoreCase("sqlite")) {
 			// TODO sqlManager = new SQLiteManager(this)
 		} else if (type.equalsIgnoreCase("mysql")) {
-			sqlManager = new MySQLManager(this,
+			this.sqlManager = new MySQLManager(this,
 					"jdbc:mysql://" + getConfig().getString("sql.address", "localhost") + "/",
 					getConfig().getString("sql.dbname", "OverPermissions"),
 					getConfig().getString("sql.dbusername", "root"),
@@ -83,19 +103,19 @@ public class OverPermissions extends JavaPlugin {
 			getLogger().warning("Type value " + type + " wasn't recognized. Defaulting to sqlite.");
 		}
 		initDefaultGroup();
-		tempManager = new TimedPermissionManager(this);
-		groupManager = new GroupManager(this);
-		groupManager.recalculateGroups();
+		this.tempManager = new TimedPermissionManager(this);
+		this.groupManager = new GroupManager(this);
+		this.groupManager.recalculateGroups();
 	}
 
 	private void initDefaultGroup( ) {
-		defaultGroup = getConfig().getString("default-group", "default");
-		if (sqlManager.getGroupId(defaultGroup) < 0) { // group doesn't exist.
-			sqlManager.setGroup(defaultGroup, 0, -1);
-			getLogger().info("Successfully created default group: " + defaultGroup);
+		this.defaultGroup = getConfig().getString("default-group", "default");
+		if (this.sqlManager.getGroupId(this.defaultGroup) < 0) { // group doesn't exist.
+			this.sqlManager.createGroup(this.defaultGroup, SQLManager.GLOBAL_WORLD_ID);
+			getLogger().info("Successfully created default group: " + this.defaultGroup);
 		}
-		defaultGroupId = sqlManager.getGroupId(defaultGroup);
-		sqlManager.setGroup(defaultGroup, sqlManager.getGroupPriority(defaultGroupId), -1); // Force default group to global, things would seriously mess up otherwise.
+		this.defaultGroupId = this.sqlManager.getGroupId(this.defaultGroup);
+		// sqlManager.setGroup(defaultGroup, sqlManager.getGroupPriority(defaultGroupId), -1); // Force default group to global, things would seriously mess up otherwise. (groups don't have worlds anymore.)
 	}
 
 	private void initCommands( ) throws Throwable {
@@ -125,13 +145,13 @@ public class OverPermissions extends JavaPlugin {
 	}
 
 	private void initAPI( ) {
-		permissionsAPI = new OverPermissionsAPI(this);
+		this.permissionsAPI = new OverPermissionsAPI(this);
 	}
 
 	private void initMetrics( ) {
 		try {
-			metrics = new MetricsLite(this);
-			metrics.start();
+			this.metrics = new MetricsLite(this);
+			this.metrics.start();
 			getLogger().info("Successfully connected to metrics!");
 		} catch (IOException e) {
 			getLogger().warning("Failed to connect to the metrics server!");
@@ -151,7 +171,7 @@ public class OverPermissions extends JavaPlugin {
 	 * @see #getAPI()
 	 */
 	public SQLManager getSQLManager( ) {
-		return sqlManager;
+		return this.sqlManager;
 	}
 
 	/**
@@ -160,7 +180,7 @@ public class OverPermissions extends JavaPlugin {
 	 * @see #getAPI()
 	 */
 	public GroupManager getGroupManager( ) {
-		return groupManager;
+		return this.groupManager;
 	}
 
 	/**
@@ -169,7 +189,7 @@ public class OverPermissions extends JavaPlugin {
 	 * @see #getAPI()
 	 */
 	public TimedPermissionManager getTempManager( ) {
-		return tempManager;
+		return this.tempManager;
 	}
 
 	/**
@@ -198,7 +218,7 @@ public class OverPermissions extends JavaPlugin {
 		if (players.containsKey(player) || playerFutures.containsKey(player)) {
 			return;
 		}
-		tempManager.init(player);
+		this.tempManager.init(player);
 		playerFutures.put(player, getPlayerFuture(player));
 	}
 
@@ -206,7 +226,8 @@ public class OverPermissions extends JavaPlugin {
 		return exec.submit(new Callable<PlayerPermissionData>() {
 			@Override
 			public PlayerPermissionData call( ) throws Exception {
-				PlayerPermissionData playerData = new PlayerPermissionData(OverPermissions.this, sqlManager.getPlayerId(player.getName(), true), sqlManager.getWorldId(player.getWorld().getName(), true),
+				PlayerPermissionData playerData = new PlayerPermissionData(OverPermissions.this, OverPermissions.this.sqlManager.getPlayerId(player.getName(), true), OverPermissions.this.sqlManager
+						.getWorldId(player.getWorld().getName(), true),
 						player);
 				playerData.recalculateGroups();
 				playerData.recalculatePermissions();
@@ -217,7 +238,7 @@ public class OverPermissions extends JavaPlugin {
 	}
 
 	protected void deinitPlayer(Player player) {
-		tempManager.deinit(player);
+		this.tempManager.deinit(player);
 		if (players.containsKey(player)) {
 			players.get(player).unset();
 			players.remove(player);
@@ -227,19 +248,19 @@ public class OverPermissions extends JavaPlugin {
 
 	// API
 	public OverPermissionsAPI getAPI( ) {
-		return permissionsAPI;
+		return this.permissionsAPI;
 	}
 
 	public boolean checkFailure( ) {
-		return failureStarting;
+		return this.failureStarting;
 	}
 
 	public int getDefaultGroupId( ) {
-		return defaultGroupId;
+		return this.defaultGroupId;
 	}
 
 	public String getDefaultGroup( ) {
-		return defaultGroup;
+		return this.defaultGroup;
 	}
 
 	public ExecutorService getExecutor( ) {
