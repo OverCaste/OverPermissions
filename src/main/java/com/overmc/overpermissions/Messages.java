@@ -31,7 +31,7 @@ public class Messages {
 	public static final String ERROR_SQL_NOT_CONNECTED = "Failed to connect to the MySQL database at \"%s.\" Please ensure it is turned on.";
 
 	/* Success messages */
-	public static final String SUCCESS_GROUP_CREATE = GREEN + "Successfully created group \"%s\" with priority %s in world %s.";
+	public static final String SUCCESS_GROUP_CREATE = GREEN + "Successfully created group \"%s\" with priority %s.";
 	public static final String SUCCESS_GROUP_DELETE = GREEN + "Successfully deleted group \"%s.\"";
 	public static final String SUCCESS_GROUP_META_SET = GREEN + "Successfully set metadata key %s to value %s.";
 	public static final String SUCCESS_GROUP_META_CLEAR = GREEN + "Successfully unset metadata at key %s.";

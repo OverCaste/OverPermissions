@@ -5,8 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 
 public interface SQLManager {
-	public static final int GLOBAL_WORLD_ID = 1;
-
 	// @formatter:off
 	// Global methods
 	//  - World stuff
@@ -15,6 +13,7 @@ public interface SQLManager {
 	 * @return
 	 */
 	public String[] getWorlds( );
+	public int[] getWorldIds( );
 	public String getWorldName(int id, int serverId);
 	public int getWorldId(String worldname, int serverId, boolean makeNew);
 	public int getWorldId(String worldname, int serverId);
@@ -29,7 +28,7 @@ public interface SQLManager {
 	
 	// Player permission methods
 	public List<String> getPlayerPermissions(int playerId, int worldId, boolean includeGlobals);
-	public boolean checkPlayerPermission(int playerId, int worldIdId, int serverId, String permission);
+	public boolean checkPlayerPermission(int playerId, int worldIdId, String permission);
 	public Collection<String> getTotalPlayerNodes(int playerId, int worldId);
 	public boolean checkPlayerPermissionExists(int playerId, int worldId, String permission);
 	public boolean addPlayerPermission(int playerId, int worldId, String permission);
@@ -39,7 +38,8 @@ public interface SQLManager {
 	public List<TimedPlayerPermission> getPlayerPermissionTimeouts(int playerId);
 	
 	// Player metadata methods
-	public HashMap<String, String> getPlayerMeta(int playerId, int worldId);
+	public HashMap<String, String> getPlayerMeta(int playerId, int worldId, boolean includeGlobals);
+	public HashMap<String, String> getGlobalPlayerMeta(int playerId);
 	public String getPlayerMetaValue(int playerId, int worldId, String key);
 	public void setPlayerMeta(int playerId, int world, String key, String value);
 	public boolean delPlayerMeta(int playerId, int world, String key);
@@ -71,12 +71,14 @@ public interface SQLManager {
 	public boolean removeGroupPermissionTimeout(int groupId, int worldId, String permission);
 	public boolean addGroupPermission(int groupId, String permission, int worldId);
 	public boolean addGroupPermissionTimeout(int groupId, String permission, int worldId, long timeout);
-	public List<String> getGroupPermissions(int groupId, int worldId);
+	public List<String> getGroupPermissions(int groupId, int worldId, boolean includeGlobals);
+	public List<String> getGlobalGroupPermissions(int groupId);
 	public List<TimedGroupPermission> getGroupPermissionTimeouts(int groupId, int worldId);
 
 	// Group meta methods
 	public void setGroupMeta(int groupId, String key, String value);
 	public boolean removeGroupMeta(int groupId, String key);
-	public HashMap<String, String> getGroupMeta(int groupId);
+	public HashMap<String, String> getGroupMeta(int groupId, int worldId, boolean includeGlobals);
+	public HashMap<String, String> getGlobalGroupMeta(int groupId);
 	//@formatter:on
 }

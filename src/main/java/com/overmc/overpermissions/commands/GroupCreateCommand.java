@@ -2,14 +2,19 @@ package com.overmc.overpermissions.commands;
 
 import static com.overmc.overpermissions.Messages.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.bukkit.*;
-import org.bukkit.command.*;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
 
-import com.overmc.overpermissions.*;
+import com.overmc.overpermissions.Group;
+import com.overmc.overpermissions.Messages;
+import com.overmc.overpermissions.OverPermissions;
 
-// ./groupcreate [group] [priority] (world)
+// /groupcreate [group] [priority] [parent]
 public class GroupCreateCommand implements TabExecutor {
 	private final OverPermissions plugin;
 
@@ -18,14 +23,14 @@ public class GroupCreateCommand implements TabExecutor {
 	}
 
 	public GroupCreateCommand register( ) {
-		PluginCommand command = plugin.getCommand("groupcreate");
+		PluginCommand command = this.plugin.getCommand("groupcreate");
 		command.setExecutor(this);
 		command.setTabCompleter(this);
 		return this;
 	}
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+	public boolean onCommand(final CommandSender sender, Command command, String label, final String[] args) {
 		if (!sender.hasPermission(command.getPermission())) {
 			sender.sendMessage(ERROR_NO_PERMISSION);
 			return true;
@@ -34,35 +39,39 @@ public class GroupCreateCommand implements TabExecutor {
 			sender.sendMessage(Messages.getUsage(command));
 			return true;
 		}
-		World world;
-		if (args.length < 3) {
-			world = null;
-		} else {
-			if ("global".equalsIgnoreCase(args[2])) {
-				world = null;
-			} else {
-				world = Bukkit.getWorld(args[2]);
-				if (world == null) {
-					sender.sendMessage(Messages.format(ERROR_INVALID_WORLD, args[2]));
-					return true;
-				}
-			}
-		}
-		int worldId = plugin.getSQLManager().getWorldId(world);
-		if (plugin.getGroupManager().getGroup(args[0]) != null) {
-			sender.sendMessage(Messages.format(ERROR_GROUP_ALREADY_EXISTS, plugin.getGroupManager().getGroup(args[0]).getName()));
+		if (this.plugin.getGroupManager().getGroup(args[0]) != null) {
+			sender.sendMessage(Messages.format(ERROR_GROUP_ALREADY_EXISTS, this.plugin.getGroupManager().getGroup(args[0]).getName()));
 			return true;
 		}
-		int priority = 0;
+		final int priority;
 		try {
 			priority = Integer.parseInt(args[1]);
 		} catch (NumberFormatException e) {
 			sender.sendMessage(Messages.format(ERROR_INVALID_INTEGER, args[1]));
 			return true;
 		}
-		plugin.getSQLManager().setGroup(args[0], priority, worldId);
-		sender.sendMessage(Messages.format(SUCCESS_GROUP_CREATE, args[0], priority, (world == null ? "global" : world.getName())));
-		plugin.getGroupManager().recalculateGroups();
+		final Group parent;
+		if (args.length == 3) {
+			parent = this.plugin.getGroupManager().getGroup(args[2]);
+			if (parent == null) {
+				sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, args[2]));
+				return true;
+			}
+		} else {
+			parent = null;
+		}
+		this.plugin.getExecutor().execute(new Runnable() {
+			@Override
+			public void run( ) {
+				GroupCreateCommand.this.plugin.getSQLManager().createGroup(args[0], priority);
+				if (parent != null) {
+					int groupId = GroupCreateCommand.this.plugin.getSQLManager().getGroupId(args[0]);
+					GroupCreateCommand.this.plugin.getSQLManager().addGroupParent(groupId, parent.getId());
+				}
+				sender.sendMessage(Messages.format(SUCCESS_GROUP_CREATE, args[0], priority));
+				GroupCreateCommand.this.plugin.getGroupManager().recalculateGroups();
+			}
+		});
 		return true;
 	}
 
@@ -75,12 +84,11 @@ public class GroupCreateCommand implements TabExecutor {
 		int index = args.length - 1;
 		String value = args[index].toLowerCase();
 		if (index == 2) {
-			for (org.bukkit.World w : plugin.getServer().getWorlds()) {
-				if (w.getName().toLowerCase().startsWith(value)) {
-					ret.add(w.getName());
+			for (Group g : this.plugin.getGroupManager().getGroups()) {
+				if (g.getName().toLowerCase().startsWith(value)) {
+					ret.add(g.getName());
 				}
 			}
-			ret.add("global");
 		}
 		return ret;
 	}

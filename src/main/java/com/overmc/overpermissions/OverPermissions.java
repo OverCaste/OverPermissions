@@ -32,6 +32,11 @@ import com.overmc.overpermissions.commands.PlayerSetMetaCommand;
 import com.overmc.overpermissions.metrics.MetricsLite;
 
 public class OverPermissions extends JavaPlugin {
+	public static final int GLOBAL_WORLD_ID = 1;
+	private static HashMap<Player, PlayerPermissionData> players = new HashMap<Player, PlayerPermissionData>();
+	private static HashMap<Player, Future<PlayerPermissionData>> playerFutures = new HashMap<Player, Future<PlayerPermissionData>>();
+	public static final ExecutorService exec = Executors.newCachedThreadPool();
+
 	private SQLManager sqlManager;
 	private GroupManager groupManager;
 	private TimedPermissionManager tempManager;
@@ -41,9 +46,6 @@ public class OverPermissions extends JavaPlugin {
 	private int defaultGroupId;
 
 	private boolean failureStarting = false;
-	private static HashMap<Player, PlayerPermissionData> players = new HashMap<Player, PlayerPermissionData>();
-	private static HashMap<Player, Future<PlayerPermissionData>> playerFutures = new HashMap<Player, Future<PlayerPermissionData>>();
-	public static final ExecutorService exec = Executors.newCachedThreadPool();
 
 	@Override
 	public void onEnable( ) {
@@ -111,7 +113,7 @@ public class OverPermissions extends JavaPlugin {
 	private void initDefaultGroup( ) {
 		this.defaultGroup = getConfig().getString("default-group", "default");
 		if (this.sqlManager.getGroupId(this.defaultGroup) < 0) { // group doesn't exist.
-			this.sqlManager.createGroup(this.defaultGroup, SQLManager.GLOBAL_WORLD_ID);
+			this.sqlManager.createGroup(this.defaultGroup, GLOBAL_WORLD_ID);
 			getLogger().info("Successfully created default group: " + this.defaultGroup);
 		}
 		this.defaultGroupId = this.sqlManager.getGroupId(this.defaultGroup);

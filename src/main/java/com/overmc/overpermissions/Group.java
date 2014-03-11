@@ -4,12 +4,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 
 public class Group implements Comparable<Group> {
 	private final OverPermissions plugin;
@@ -20,10 +18,11 @@ public class Group implements Comparable<Group> {
 	private final ArrayList<Integer> parents = new ArrayList<Integer>(1);
 	private final ArrayList<Integer> children = new ArrayList<Integer>(1);
 
-	private final Multimap<Integer, String> nodes = HashMultimap.create();
-	private final HashMap<String, Boolean> permissions = new HashMap<String, Boolean>();
-	private final HashMap<String, String> meta = new HashMap<String, String>();
 	private final HashSet<PlayerPermissionData> playersInGroup = new HashSet<PlayerPermissionData>();
+	private final HashMap<Integer, GroupWorldData> worldData = new HashMap<Integer, GroupWorldData>();
+	private final HashSet<String> globalNodes = new HashSet<String>();
+	private final HashMap<String, Boolean> globalPermissions = new HashMap<String, Boolean>();
+	private final HashMap<String, String> globalMeta = new HashMap<String, String>();
 
 	public Group(OverPermissions plugin, String name, int priority, int id) {
 		this.id = id;
@@ -32,50 +31,170 @@ public class Group implements Comparable<Group> {
 		this.priority = priority;
 	}
 
+	/**
+	 * Checks for a permission in the global permission list.
+	 * 
+	 * @param permission The permission to check for
+	 * @return true if it exists, false otherwise
+	 */
 	public boolean hasPermission(String permission) {
-		return this.permissions.containsKey(permission);
+		return this.globalPermissions.containsKey(permission);
 	}
 
+	/**
+	 * Checks for a permission in both the global permission list and the specified world's local permissions.
+	 * 
+	 * @param world The world to check permissions for
+	 * @param permission The permission to check for
+	 * @return true if it exists, false otherwise
+	 */
+	public boolean hasPermission(int world, String permission) {
+		GroupWorldData d = this.worldData.get(world);
+		if (d == null) {
+			return hasPermission(permission);
+		}
+		return d.permissions.containsKey(permission) || hasPermission(permission);
+	}
+
+	/**
+	 * Gets the permission value in the global permission list.
+	 * 
+	 * @param permission The permission to check the value of
+	 * @return The value of the permission
+	 */
 	public boolean getPermission(String permission) {
-		return this.permissions.get(permission);
+		if (this.globalPermissions.containsKey(permission)) {
+			return this.globalPermissions.get(permission);
+		}
+		return false;
 	}
 
+	/**
+	 * Gets the permission value in both the global permission list and the specified world's local permissions.
+	 * 
+	 * @param world The world to check permissions for
+	 * @param permission The permission node to check the value of
+	 * @return The value of the permission
+	 */
+	public boolean getPermission(int world, String permission) {
+		GroupWorldData d = this.worldData.get(world);
+		if (d == null) {
+			return getPermission(permission);
+		}
+		if (d.permissions.containsKey(permission)) {
+			return d.permissions.get(permission);
+		}
+		return getPermission(permission);
+	}
+
+	/**
+	 * Checks for a specified value in the global metadata list.
+	 * 
+	 * @param key The metadata to check for
+	 * @return Whether or not the specified metadata value exists
+	 */
 	public boolean hasMeta(String key) {
-		return this.meta.containsKey(key);
+		return this.globalMeta.containsKey(key);
 	}
 
+	/**
+	 * Checks for a specified value in both the global metadata list and the specified world's metadata list.
+	 * 
+	 * @param world The world to check the metadata for
+	 * @param key The metadata value to check for
+	 * @return Whether or not the specifed metadata value exists
+	 */
+	public boolean hasMeta(int world, String key) {
+		GroupWorldData d = this.worldData.get(world);
+		if (d == null) {
+			return hasMeta(key);
+		}
+		return d.meta.containsKey(key) || hasMeta(key);
+	}
+
+	public Collection<Map.Entry<String, String>> getAllMeta( ) {
+		return this.globalMeta.entrySet();
+	}
+
+	public Collection<Map.Entry<String, String>> getAllMeta(int world) {
+		GroupWorldData d = this.worldData.get(world);
+		if (d == null) {
+			return getAllMeta();
+		}
+		HashMap<String, String> ret = new HashMap<String, String>();
+		ret.putAll(this.globalMeta);
+		ret.putAll(d.meta);
+		return ret.entrySet();
+	}
+
+	/**
+	 * Retrieves the metadata value in the global list.
+	 * 
+	 * @param key The key of the metadata value to retrieve
+	 * @return The value of the metadata in the global store at that location.
+	 */
 	public String getMeta(String key) {
-		return this.meta.get(key);
+		return this.globalMeta.get(key);
+	}
+
+	/**
+	 * Retrieves the metadata value in either the local or the global list.
+	 * 
+	 * @param world The world to check for.
+	 * @param key The key of the metadata value to retrieve.
+	 * @return The value of the metadata in the specified world, or globally.
+	 */
+	public String getMeta(int world, String key) {
+		GroupWorldData d = this.worldData.get(world);
+		if ((d == null) || !d.meta.containsKey(key)) {
+			return getMeta(key);
+		}
+		return d.meta.get(key);
 	}
 
 	public void recalculatePermissions( ) {
 		this.priority = this.plugin.getSQLManager().getGroupPriority(this.id);
-		this.permissions.clear();
-		this.nodes.clear();
-		this.nodes.addAll(this.plugin.getSQLManager().getGroupPermissions(this.id));
-		this.nodes.addAll(this.plugin.getTempManager().getGroupNodes(this));
-		for (String permission : this.nodes) {
-			if (permission.startsWith("-")) {
-				this.permissions.put(permission.substring(1), false);
-			} else {
-				if (permission.startsWith("+")) { // regardless, +perm will ALWAYS be true
-					this.permissions.put(permission.substring(1), true);
-				} else {
-					if (!this.nodes.contains("-" + permission)) { // doesn't contain neg
-						this.permissions.put(permission, true);
-					}
+		for (GroupWorldData d : this.worldData.values()) { // Clear local permissions
+			d.permissions.clear();
+			d.nodes.clear();
+		}
+		this.globalPermissions.clear();
+		this.globalNodes.clear(); // Clear global permissions
+		for (int worldId : this.plugin.getSQLManager().getWorldIds()) { // Calculate the local nodes
+			GroupWorldData d = this.worldData.get(worldId);
+			List<String> groupNodes = this.plugin.getSQLManager().getGroupPermissions(this.id, worldId, false); // Don't retrieve the global nodes.
+			groupNodes.addAll(this.plugin.getTempManager().getGroupNodes(this));
+			if (!groupNodes.isEmpty()) {
+				if (d == null) {
+					d = new GroupWorldData();
+					this.worldData.put(worldId, d);
 				}
+				d.nodes.addAll(groupNodes);
+				d.permissions.putAll(PermissionUtils.getPermissionValues(groupNodes));
 			}
 		}
-
+		this.globalNodes.addAll(this.plugin.getSQLManager().getGlobalGroupPermissions(this.id));
 		for (PlayerPermissionData p : getAllPlayerChildren()) {
 			p.recalculatePermissions();
 		}
 	}
 
 	public void recalculateMeta( ) {
-		this.meta.clear();
-		this.meta.putAll(this.plugin.getSQLManager().getGroupMeta(this.id));
+		for (GroupWorldData d : this.worldData.values()) { // Clear local meta
+			d.meta.clear();
+		}
+		this.globalMeta.clear(); // Clear global meta
+		for (int worldId : this.plugin.getSQLManager().getWorldIds()) {
+			HashMap<String, String> meta = this.plugin.getSQLManager().getGroupMeta(this.id);
+			if (!meta.isEmpty()) {
+				GroupWorldData d = this.worldData.get(worldId);
+				if (d == null) {
+					d = new GroupWorldData();
+					this.worldData.put(worldId, d);
+				}
+				d.meta.putAll(meta);
+			}
+		}
 		for (PlayerPermissionData p : getAllPlayerChildren()) {
 			p.recalculateMeta();
 		}
@@ -111,18 +230,20 @@ public class Group implements Comparable<Group> {
 		this.playersInGroup.remove(p);
 	}
 
-	public Collection<Map.Entry<String, Boolean>> getPermissions( ) {
-		return this.permissions.entrySet();
-	}
-
-	public Set<Map.Entry<String, String>> getMeta( ) {
-		return this.meta.entrySet();
-	}
-
-	public void setMeta(String node, String value) {
-		if (value != null) {
-			this.meta.put(node, value);
+	public Collection<Map.Entry<String, Boolean>> getPermissions(int worldId) {
+		GroupWorldData d = this.worldData.get(worldId);
+		if (d.permissions == null) {
+			return new ArrayList<Map.Entry<String, Boolean>>(0);
 		}
+		return d.permissions.entrySet();
+	}
+
+	public Collection<Map.Entry<String, String>> getMeta(int worldId) {
+		GroupWorldData d = this.worldData.get(worldId);
+		if (d.permissions == null) {
+			return new ArrayList<Map.Entry<String, String>>(0);
+		}
+		return d.meta.entrySet();
 	}
 
 	public Iterable<Group> getAllParents( ) {
@@ -167,12 +288,20 @@ public class Group implements Comparable<Group> {
 		return this.id;
 	}
 
-	public Collection<String> getNodes( ) {
-		return this.nodes;
+	public Collection<String> getNodes(int worldId) {
+		GroupWorldData d = this.worldData.get(worldId);
+		if (d == null) {
+			return new ArrayList<String>(0);
+		}
+		return d.nodes;
 	}
 
-	public boolean hasNode(String node, int worldId) {
-		return this.nodes.contains(node);
+	public boolean hasNode(int worldId, String node) {
+		GroupWorldData d = this.worldData.get(worldId);
+		if (d == null) {
+			return false;
+		}
+		return d.nodes.contains(node);
 	}
 
 	public Collection<PlayerPermissionData> getPlayersInGroup( ) {
@@ -274,5 +403,11 @@ public class Group implements Comparable<Group> {
 	@Override
 	public String toString( ) {
 		return "Group [" + this.name + ", priority: " + this.priority + "]";
+	}
+
+	private class GroupWorldData {
+		final HashSet<String> nodes = new HashSet<String>();
+		final HashMap<String, Boolean> permissions = new HashMap<String, Boolean>();
+		final HashMap<String, String> meta = new HashMap<String, String>();
 	}
 }

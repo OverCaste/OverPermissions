@@ -7,10 +7,10 @@ website: "dev.overmc.com"
 softdepend: [WorldEdit]
 commands:
   groupcreate:
-    description: Creates a group with the specified priority. If no world is selected it will be global.
+    description: Creates a group with the specified priority and optional parent.
     aliases: [gc]
     permission: overpermissions.groupadd
-    usage: "&cProper usage: /groupcreate [group] [priority] (world)"
+    usage: "&cProper usage: /groupcreate [group] [priority] (parent)"
   groupdelete:
     description: Deletes a specified group. You can't delete the default group.
     aliases: [gd, groupdel]
@@ -20,7 +20,7 @@ commands:
     description: Sets a group's meta at the specified key to the specified value or 'clear' for nothing.
     aliases: [gsm]
     permission: overpermissions.groupsetmeta
-    usage: "&cProper usage: /groupsetmeta [group] [key] [value|'clear']"
+    usage: "&cProper usage: /groupsetmeta [group] [key] [value|'clear'] ((server:)world)"
   groupaddparent:
     description: Adds a parent to a group, so the group inherits it's permissions and metadata.
     aliases: [gsm]
@@ -102,22 +102,55 @@ permissions:
     children:
       overpermissions.groupadd: true
       overpermissions.groupdelete: true
-      overpermissions.playersetgroup: true
       overpermissions.groupsetmeta: true
+      overpermissions.groupaddparent: true
+      overpermissions.groupremoveparent: true
       overpermissions.groupadd: true
+      overpermissions.groupaddtemp: true
       overpermissions.groupremove: true
+      overpermissions.groupinfo: true
+      overpermissions.playersetgroup: true
+      overpermissions.playeraddgroup: true
+      overpermissions.promote: true
       overpermissions.playersetmeta: true
       overpermissions.playeradd: true
+      overpermissions.playeraddtemp: true
       overpermissions.playerremove: true
+      overpermissions.playercheck: true
+      overpermissions.info: true
   overpermissions.groupadd:
     default: false
   overpermissions.groupdelete:
     default: false
-  overpermissions.playersetgroup:
-    default: false
   overpermissions.groupsetmeta:
+    default: false
+  overpermissions.groupaddparent:
+    default: false
+  overpermissions.groupremoveparent:
     default: false
   overpermissions.groupadd:
     default: false
+  overpermissions.groupaddtemp:
+    default: false
   overpermissions.groupremove:
+    default: false
+  overpermissions.groupinfo:
+    default: false
+  overpermissions.playersetgroup:
+    default: false
+  overpermissions.playeraddgroup:
+    default: false
+  overpermissions.promote:
+    default: false
+  overpermissions.playersetmeta:
+    default: false
+  overpermissions.playeradd:
+    default: false
+  overpermissions.playeraddtemp:
+    default: false
+  overpermissions.playerremove:
+    default: false
+  overpermissions.playercheck:
+    default: false
+  overpermissions.info:
     default: false

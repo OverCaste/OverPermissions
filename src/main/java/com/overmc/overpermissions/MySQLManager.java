@@ -16,6 +16,7 @@ import java.util.List;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 
+import com.google.common.primitives.Ints;
 import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 import com.overmc.overpermissions.exceptions.PlayerNotFoundException;
 import com.overmc.overpermissions.exceptions.WorldNotFoundException;
@@ -193,6 +194,22 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 	}
 
 	@Override
+	public int[] getWorldIds( ) {
+		return (new MySQLPreparedWrapper<int[]>(this) {
+			@Override
+			public int[] execute( ) throws SQLException {
+				ArrayList<Integer> ret = new ArrayList<Integer>();
+				PreparedStatement pst = createPreparedStatement("SELECT uid FROM World");
+				ResultSet rs = createResultSet(pst);
+				while (rs.next()) {
+					ret.add(rs.getInt("uid"));
+				}
+				return Ints.toArray(ret);
+			}
+		}).call(new int[0]);
+	}
+
+	@Override
 	public String getWorldName(final int id, final int serverId) {
 		return (new MySQLPreparedWrapper<String>(this) {
 			@Override
@@ -335,7 +352,7 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 	}
 
 	@Override
-	public boolean checkPlayerPermission(int playerId, int worldId, String permission) {
+	public boolean checkPlayerPermission(int playerId, int worldId, String permission) { // TODO fix this
 		if (permission.startsWith("+") || permission.startsWith("-")) {
 			permission = permission.substring(1);
 		}
@@ -354,17 +371,14 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 				value = g.getPermission(permission);
 			}
 		}
-		ArrayList<String> worldPermissions = getGlobalPlayerPermissions(playerId);
-		if (worldId >= 0) {
-			worldPermissions.addAll(getPlayerPermissions(playerId, worldId));
-		}
+		List<String> worldPermissions = getPlayerPermissions(playerId, worldId, true);
 		if (!posSet) {
-			if (checkPlayerPermissionExists(playerId, worldId, "+" + permission)) {
+			if (worldPermissions.contains("+" + permission) || checkPlayerPermissionExists(playerId, worldId, "+" + permission)) {
 				posSet = true;
-			} else if (!negSet && checkPlayerPermissionExists(playerId, worldId, "-" + permission)) {
+			} else if (!negSet && (worldPermissions.contains("-" + permission) || checkPlayerPermissionExists(playerId, worldId, "-" + permission))) {
 				negSet = true;
 			} else {
-				if (checkPlayerPermissionExists(playerId, worldId, "-" + permission)) {
+				if (checkPlayerPermissionExists(playerId, worldId, permission)) {
 					value = true;
 				}
 			}
@@ -383,6 +397,22 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 			value = true;
 		}
 		return value;
+	}
+
+	@Override
+	public Collection<String> getTotalPlayerNodes(int playerId, int worldId) {
+		HashSet<String> ret = new HashSet<String>();
+		if (playerId < 0) {
+			return ret;
+		}
+		for (Group g : getPlayerEffectiveGroups(playerId)) {
+			ret.addAll(g.getNodes(worldId));
+		}
+		ret.addAll(getGlobalPlayerPermissions(playerId));
+		if (worldId >= 0) {
+			ret.addAll(getPlayerPermissions(playerId, worldId));
+		}
+		return ret;
 	}
 
 	@Override
@@ -480,22 +510,6 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 			for (String s : tempArray) {
 				ret.add(Messages.format(Messages.PLAYER_TEMP_NODE_VALUE, s));
 			}
-		}
-		return ret;
-	}
-
-	@Override
-	public Collection<String> getTotalPlayerNodes(int playerId, int worldId) {
-		HashSet<String> ret = new HashSet<String>();
-		if (playerId < 0) {
-			return ret;
-		}
-		for (Group g : getPlayerEffectiveGroups(playerId, worldId)) {
-			ret.addAll(g.getNodes());
-		}
-		ret.addAll(getGlobalPlayerPermissions(playerId));
-		if (worldId >= 0) {
-			ret.addAll(getPlayerPermissions(playerId, worldId));
 		}
 		return ret;
 	}
@@ -1196,27 +1210,45 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 	}
 
 	@Override
-	public ArrayList<String> getGroupPermissions(int groupId) {
-		ArrayList<String> ret = new ArrayList<String>();
-		PreparedStatement pst = null;
-		ResultSet rs = null;
-		try {
-			pst = getConnection().prepareStatement("SELECT permission_uid FROM Group_Permission WHERE group_uid=?");
-			pst.setInt(1, groupId);
-			rs = pst.executeQuery();
-			while (rs.next()) {
-				String perm = getPermissionValue(rs.getInt("permission_uid"));
-				if (perm.length() != 0) {
-					ret.add(perm);
+	public ArrayList<String> getGroupPermissions(final int groupId, final int worldId, final boolean includeGlobals) {
+		return (new MySQLPreparedWrapper<ArrayList<String>>(this) {
+			@Override
+			public ArrayList<String> execute( ) throws SQLException {
+				ArrayList<String> ret = new ArrayList<String>();
+				PreparedStatement pst = includeGlobals ?
+						createPreparedStatement("SELECT permission_uid FROM Group_Permission WHERE group_uid=? AND (world_uid=? OR world_uid=" + OverPermissions.GLOBAL_WORLD_ID + ")") :
+						createPreparedStatement("SELECT permission_uid FROM Group_Permission WHERE group_uid=? AND world_uid=?");
+				pst.setInt(1, groupId);
+				ResultSet rs = createResultSet(pst);
+				while (rs.next()) {
+					String perm = getPermissionValue(rs.getInt("permission_uid"));
+					if (perm.length() != 0) {
+						ret.add(perm);
+					}
 				}
+				return ret;
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			attemptClose(rs);
-			attemptClose(pst);
-		}
-		return ret;
+		}).call(new ArrayList<String>(0));
+	}
+
+	@Override
+	public ArrayList<String> getGlobalGroupPermissions(final int groupId) {
+		return (new MySQLPreparedWrapper<ArrayList<String>>(this) {
+			@Override
+			public ArrayList<String> execute( ) throws SQLException {
+				ArrayList<String> ret = new ArrayList<String>();
+				PreparedStatement pst = createPreparedStatement("SELECT permission_uid FROM Group_Permission WHERE group_uid=? AND world_uid=" + OverPermissions.GLOBAL_WORLD_ID);
+				pst.setInt(1, groupId);
+				ResultSet rs = createResultSet(pst);
+				while (rs.next()) {
+					String perm = getPermissionValue(rs.getInt("permission_uid"));
+					if (perm.length() != 0) {
+						ret.add(perm);
+					}
+				}
+				return ret;
+			}
+		}).call(new ArrayList<String>(0));
 	}
 
 	@Override
@@ -1241,24 +1273,22 @@ public class MySQLManager extends SimpleJDBCSQLManager {
 	}
 
 	@Override
-	public HashMap<String, String> getGroupMeta(int groupId) {
-		HashMap<String, String> ret = new HashMap<String, String>();
-		PreparedStatement pst = null;
-		ResultSet rs = null;
-		try {
-			pst = getConnection().prepareStatement("SELECT meta_key, meta_value FROM Group_Meta WHERE group_uid=?");
-			pst.setInt(1, groupId);
-			rs = pst.executeQuery();
-			while (rs.next()) {
-				ret.put(rs.getString("meta_key"), rs.getString("meta_value"));
+	public HashMap<String, String> getGroupMeta(final int groupId, int worldId, final boolean includeGlobals) {
+		return (new MySQLPreparedWrapper<HashMap<String, String>>(this) {
+			@Override
+			public HashMap<String, String> execute( ) throws SQLException {
+				HashMap<String, String> ret = new HashMap<String, String>();
+				PreparedStatement pst = includeGlobals ?
+						createPreparedStatement("SELECT meta_key, meta_value FROM Group_Meta WHERE group_uid=? AND (world_uid=? OR world_uid=" + OverPermissions.GLOBAL_WORLD_ID + ")") :
+						createPreparedStatement("SELECT meta_key, meta_value FROM Group_Meta WHERE group_uid=? AND world_uid=?");
+				pst.setInt(1, groupId);
+				ResultSet rs = createResultSet(pst);
+				while (rs.next()) {
+					ret.put(rs.getString("meta_key"), rs.getString("meta_value"));
+				}
+				return ret;
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			attemptClose(rs);
-			attemptClose(pst);
-		}
-		return ret;
+		}).call(new HashMap<String, String>(0));
 	}
 
 	@Override

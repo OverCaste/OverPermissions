@@ -10,12 +10,16 @@ public class PlayerGroupChangeEvent extends Event {
 
 	private final String playerName;
 	private final String group;
+	private final int groupPriority;
+	private final EventType type;
 
 	private boolean enabled = false;
 
-	public PlayerGroupChangeEvent(String playerName, String group) {
+	public PlayerGroupChangeEvent(String playerName, String group, int groupPriority, EventType type) {
 		this.playerName = playerName;
 		this.group = group;
+		this.groupPriority = groupPriority;
+		this.type = type;
 	}
 
 	/**
@@ -34,6 +38,14 @@ public class PlayerGroupChangeEvent extends Event {
 		return this.group;
 	}
 
+	public int getGroupPriority( ) {
+		return this.groupPriority;
+	}
+
+	public EventType getType( ) {
+		return this.type;
+	}
+
 	public boolean isEnabled( ) {
 		return this.enabled;
 	}
@@ -49,5 +61,9 @@ public class PlayerGroupChangeEvent extends Event {
 
 	public static HandlerList getStaticHandlers( ) {
 		return handlers;
+	}
+
+	public static enum EventType {
+		SET, ADD, REMOVE
 	}
 }

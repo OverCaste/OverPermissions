@@ -43,16 +43,17 @@ public class PlayerSetGroupCommand implements TabExecutor {
 			return true;
 		}
 		String victim = args[0];
-		int group = this.plugin.getSQLManager().getGroupId(args[1]);
-		if (group <= 0) {
+		int groupId = this.plugin.getSQLManager().getGroupId(args[1]);
+		if (groupId <= 0) {
 			sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, args[1]));
 			return true;
 		}
 		int victimId = this.plugin.getSQLManager().getPlayerId(victim, true);
-		PlayerGroupChangeEvent event = new PlayerGroupChangeEvent(victim, this.plugin.getGroupManager().getGroup(group).getName());
+		Group group = this.plugin.getGroupManager().getGroup(groupId);
+		PlayerGroupChangeEvent event = new PlayerGroupChangeEvent(victim, group.getName(), group.getPriority(), PlayerGroupChangeEvent.EventType.SET);
 		this.plugin.getServer().getPluginManager().callEvent(event);
 		if (event.isEnabled()) {
-			this.plugin.getSQLManager().setPlayerGroup(victimId, group);
+			this.plugin.getSQLManager().setPlayerGroup(victimId, groupId);
 			Player p = Bukkit.getPlayerExact(victim);
 			if (p != null) {
 				this.plugin.getPlayerPermissions(p).recalculateGroups();

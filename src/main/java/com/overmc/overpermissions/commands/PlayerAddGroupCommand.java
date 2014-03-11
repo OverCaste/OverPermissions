@@ -2,13 +2,20 @@ package com.overmc.overpermissions.commands;
 
 import static com.overmc.overpermissions.Messages.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.bukkit.Bukkit;
-import org.bukkit.command.*;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
-import com.overmc.overpermissions.*;
+import com.overmc.overpermissions.Group;
+import com.overmc.overpermissions.Messages;
+import com.overmc.overpermissions.OverPermissions;
+import com.overmc.overpermissions.events.PlayerGroupChangeEvent;
 
 // ./playeraddgroup [player] [group]
 public class PlayerAddGroupCommand implements TabExecutor {
@@ -19,7 +26,7 @@ public class PlayerAddGroupCommand implements TabExecutor {
 	}
 
 	public PlayerAddGroupCommand register( ) {
-		PluginCommand command = plugin.getCommand("playeraddgroup");
+		PluginCommand command = this.plugin.getCommand("playeraddgroup");
 		command.setExecutor(this);
 		command.setTabCompleter(this);
 		return this;
@@ -36,20 +43,25 @@ public class PlayerAddGroupCommand implements TabExecutor {
 			return true;
 		}
 		String victim = args[0];
-		int groupId = plugin.getSQLManager().getGroupId(args[1]);
+		int groupId = this.plugin.getSQLManager().getGroupId(args[1]);
 		if (groupId < 0) {
 			sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, args[1]));
 			return true;
 		}
-		int victimId = plugin.getSQLManager().getPlayerId(victim, true);
-		if (plugin.getSQLManager().addPlayerGroup(victimId, groupId)) {
-			sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADD_GROUP, victim, args[1]));
-			Player p = Bukkit.getPlayerExact(victim);
-			if (p != null) {
-				plugin.getPlayerPermissions(p).recalculateGroups();
+		int victimId = this.plugin.getSQLManager().getPlayerId(victim, true);
+		Group group = this.plugin.getGroupManager().getGroup(groupId);
+		PlayerGroupChangeEvent event = new PlayerGroupChangeEvent(victim, group.getName(), group.getPriority(), PlayerGroupChangeEvent.EventType.ADD);
+		this.plugin.getServer().getPluginManager().callEvent(event);
+		if (event.isEnabled()) {
+			if (this.plugin.getSQLManager().addPlayerGroup(victimId, groupId)) {
+				sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADD_GROUP, victim, args[1]));
+				Player p = Bukkit.getPlayerExact(victim);
+				if (p != null) {
+					this.plugin.getPlayerPermissions(p).recalculateGroups();
+				}
+			} else {
+				sender.sendMessage(Messages.format(ERROR_PLAYER_ALREADY_IN_GROUP, victim, args[1]));
 			}
-		} else {
-			sender.sendMessage(Messages.format(ERROR_PLAYER_ALREADY_IN_GROUP, victim, args[1]));
 		}
 		return true;
 	}
@@ -70,7 +82,7 @@ public class PlayerAddGroupCommand implements TabExecutor {
 				}
 			}
 		} else if (index == 1) {
-			for (Group g : plugin.getGroupManager().getGroups()) {
+			for (Group g : this.plugin.getGroupManager().getGroups()) {
 				ret.add(g.getName());
 			}
 		}
