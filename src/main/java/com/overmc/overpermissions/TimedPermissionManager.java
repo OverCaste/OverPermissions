@@ -1,10 +1,14 @@
 package com.overmc.overpermissions;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.*;
+import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.scheduler.BukkitTask;
 
 import com.google.common.collect.Maps;
 
@@ -136,7 +140,7 @@ public class TimedPermissionManager {
 
 	private ArrayList<TimedPlayerPermission> loadPlayerTempPermissions(final Player p) {
 		ArrayList<TimedPlayerPermission> playerTimedPermissions = new ArrayList<TimedPlayerPermission>();
-		final int playerId = plugin.getSQLManager().getPlayerId(p.getName(), false);
+		final int playerId = plugin.getSQLManager().getPlayerId(p.getUniqueId());
 		if (playerId < 0) {
 			return playerTimedPermissions;
 		}

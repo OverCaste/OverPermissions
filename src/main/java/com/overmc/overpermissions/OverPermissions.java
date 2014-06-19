@@ -2,19 +2,41 @@ package com.overmc.overpermissions;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.overmc.overpermissions.commands.*;
+import com.overmc.overpermissions.commands.GroupAddCommand;
+import com.overmc.overpermissions.commands.GroupAddParentCommand;
+import com.overmc.overpermissions.commands.GroupAddTempCommand;
+import com.overmc.overpermissions.commands.GroupCreateCommand;
+import com.overmc.overpermissions.commands.GroupDeleteCommand;
+import com.overmc.overpermissions.commands.GroupRemoveCommand;
+import com.overmc.overpermissions.commands.GroupRemoveParentCommand;
+import com.overmc.overpermissions.commands.GroupSetMetaCommand;
+import com.overmc.overpermissions.commands.OverPermissionsCommand;
+import com.overmc.overpermissions.commands.PlayerAddCommand;
+import com.overmc.overpermissions.commands.PlayerAddGroupCommand;
+import com.overmc.overpermissions.commands.PlayerAddTempCommand;
+import com.overmc.overpermissions.commands.PlayerCheckCommand;
+import com.overmc.overpermissions.commands.PlayerPromoteCommand;
+import com.overmc.overpermissions.commands.PlayerRemoveCommand;
+import com.overmc.overpermissions.commands.PlayerSetGroupCommand;
+import com.overmc.overpermissions.commands.PlayerSetMetaCommand;
 import com.overmc.overpermissions.metrics.MetricsLite;
+import com.overmc.overpermissions.uuid.UUIDManager;
 
 public class OverPermissions extends JavaPlugin {
 	private SQLManager sqlManager;
 	private GroupManager groupManager;
 	private TimedPermissionManager tempManager;
+	private UUIDManager uuidManager;
 	private OverPermissionsAPI permissionsAPI;
 	private MetricsLite metrics;
 	private String defaultGroup;
@@ -86,6 +108,7 @@ public class OverPermissions extends JavaPlugin {
 		tempManager = new TimedPermissionManager(this);
 		groupManager = new GroupManager(this);
 		groupManager.recalculateGroups();
+		uuidManager = new UUIDManager(this);
 	}
 
 	private void initDefaultGroup( ) {
@@ -171,6 +194,15 @@ public class OverPermissions extends JavaPlugin {
 	public TimedPermissionManager getTempManager( ) {
 		return tempManager;
 	}
+	
+    /**
+     * Only use this if you know what you're doing, the API layer is much safer.
+     * 
+     * @see #getAPI()
+     */
+	public UUIDManager getUuidManager( ) {
+	    return uuidManager;
+	}
 
 	/**
 	 * Only use this if you know what you're doing, the API layer is much safer.
@@ -206,7 +238,7 @@ public class OverPermissions extends JavaPlugin {
 		return exec.submit(new Callable<PlayerPermissionData>() {
 			@Override
 			public PlayerPermissionData call( ) throws Exception {
-				PlayerPermissionData playerData = new PlayerPermissionData(OverPermissions.this, sqlManager.getPlayerId(player.getName(), true), sqlManager.getWorldId(player.getWorld().getName(), true),
+				PlayerPermissionData playerData = new PlayerPermissionData(OverPermissions.this, uuidManager.getOrCreateSqlUser(player.getName()), sqlManager.getWorldId(player.getWorld().getName(), true),
 						player);
 				playerData.recalculateGroups();
 				playerData.recalculatePermissions();
@@ -219,8 +251,7 @@ public class OverPermissions extends JavaPlugin {
 	protected void deinitPlayer(Player player) {
 		tempManager.deinit(player);
 		if (players.containsKey(player)) {
-			players.get(player).unset();
-			players.remove(player);
+			players.remove(player).unset();
 		}
 		playerFutures.remove(player);
 	}

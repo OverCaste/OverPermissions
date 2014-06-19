@@ -1,6 +1,10 @@
 package com.overmc.overpermissions;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 
 import org.bukkit.World;
 
@@ -117,10 +121,12 @@ public interface SQLManager {
 
 	public int getWorldId(World world);
 
-	public int getPlayerId(String username, boolean makeNew);
+	public int getPlayerId(UUID uuid, boolean makeNew);
 
+	public int getPlayerId(UUID uuid);
+	
 	public int getPlayerId(String username);
-
+	
 	public org.bukkit.entity.Player getPlayer(int id);
 
 	public String getPlayerName(int id);

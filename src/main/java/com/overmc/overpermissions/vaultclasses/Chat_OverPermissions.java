@@ -5,11 +5,16 @@ import net.milkbowl.vault.permission.Permission;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.event.*;
-import org.bukkit.event.server.*;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.server.PluginDisableEvent;
+import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.plugin.Plugin;
 
-import com.overmc.overpermissions.*;
+import com.overmc.overpermissions.Group;
+import com.overmc.overpermissions.OverPermissions;
+import com.overmc.overpermissions.OverPermissionsAPI;
 
 public class Chat_OverPermissions extends Chat {
 
@@ -235,17 +240,7 @@ public class Chat_OverPermissions extends Chat {
 	@Override
 	public void setPlayerInfoString(String world, String player, String node, String value)
 	{
-		Player p = Bukkit.getPlayerExact(player);
-		int playerId = overPerms.getSQLManager().getPlayerId(player, true);
-		int worldId = overPerms.getSQLManager().getWorldId(player, false);
-		if (worldId < 0) {
-			overPerms.getSQLManager().setGlobalPlayerMeta(playerId, node, value);
-		} else {
-			overPerms.getSQLManager().setPlayerMeta(playerId, worldId, node, value);
-		}
-		if (p != null) {
-			overPerms.getPlayerPermissions(p).recalculateMeta();
-		}
+	    api.setPlayerMeta(world, player, node, value);
 	}
 
 	@Override

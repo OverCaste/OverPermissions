@@ -33,7 +33,7 @@ public class PlayerSetGroupCommand implements TabExecutor {
 	}
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+	public boolean onCommand(final CommandSender sender, Command command, String label, final String[] args) {
 		if (!sender.hasPermission(command.getPermission())) {
 			sender.sendMessage(ERROR_NO_PERMISSION);
 			return true;
@@ -42,23 +42,32 @@ public class PlayerSetGroupCommand implements TabExecutor {
 			sender.sendMessage(Messages.getUsage(command));
 			return true;
 		}
-		String victim = args[0];
-		int group = this.plugin.getSQLManager().getGroupId(args[1]);
-		if (group <= 0) {
-			sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, args[1]));
-			return true;
-		}
-		int victimId = this.plugin.getSQLManager().getPlayerId(victim, true);
-		PlayerGroupChangeEvent event = new PlayerGroupChangeEvent(victim, this.plugin.getGroupManager().getGroup(group).getName());
-		this.plugin.getServer().getPluginManager().callEvent(event);
-		if (event.isEnabled()) {
-			this.plugin.getSQLManager().setPlayerGroup(victimId, group);
-			Player p = Bukkit.getPlayerExact(victim);
-			if (p != null) {
-				this.plugin.getPlayerPermissions(p).recalculateGroups();
-			}
-			sender.sendMessage(Messages.format(SUCCESS_PLAYER_SET_GROUP, victim, args[1]));
-		}
+		plugin.getExecutor().submit(new Runnable() {
+            @Override
+            public void run( ) {
+                String victim = args[0];
+                int group = plugin.getSQLManager().getGroupId(args[1]);
+                if (group < 0) {
+                    sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, args[1]));
+                    return;
+                }
+                int victimId = plugin.getUuidManager().getOrCreateSqlUser(victim);
+                if(victimId < 0) {
+                    sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, victim));
+                    return;
+                }
+                PlayerGroupChangeEvent event = new PlayerGroupChangeEvent(victim, plugin.getGroupManager().getGroup(group).getName());
+                plugin.getServer().getPluginManager().callEvent(event);
+                if (event.isEnabled()) {
+                    plugin.getSQLManager().setPlayerGroup(victimId, group);
+                    Player p = Bukkit.getPlayerExact(victim);
+                    if (p != null) {
+                        plugin.getPlayerPermissions(p).recalculateGroups();
+                    }
+                    sender.sendMessage(Messages.format(SUCCESS_PLAYER_SET_GROUP, victim, args[1]));
+                }
+            }
+		});
 		return true;
 	}
 

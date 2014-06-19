@@ -2,14 +2,22 @@ package com.overmc.overpermissions.commands;
 
 import static com.overmc.overpermissions.Messages.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.bukkit.*;
-import org.bukkit.command.*;
+import org.bukkit.Bukkit;
+import org.bukkit.World;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
-import com.overmc.overpermissions.*;
-import com.overmc.overpermissions.events.*;
+import com.overmc.overpermissions.Messages;
+import com.overmc.overpermissions.OverPermissions;
+import com.overmc.overpermissions.PermissionChangeCause;
+import com.overmc.overpermissions.events.PlayerPermissionAddByPlayerEvent;
+import com.overmc.overpermissions.events.PlayerPermissionAddEvent;
 
 // ./playeradd [player] [permission] (world)
 public class PlayerAddCommand implements TabExecutor {
@@ -27,64 +35,74 @@ public class PlayerAddCommand implements TabExecutor {
 	}
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		if (!sender.hasPermission(command.getPermission())) {
-			sender.sendMessage(ERROR_NO_PERMISSION);
-			return true;
-		}
-		if ((args.length < 2) || (args.length > 3)) {
-			sender.sendMessage(Messages.getUsage(command));
-			return true;
-		}
-		Player p = plugin.getServer().getPlayerExact(args[0]);
-		World world;
-		if (args.length < 3) {
-			if (sender instanceof Player) {
-				world = ((Player) sender).getWorld();
-			} else {
-				world = null;
-			}
-		} else {
-			if ("global".equalsIgnoreCase(args[2])) {
-				world = null;
-			} else {
-				world = Bukkit.getWorld(args[2]);
-				if (world == null) {
-					sender.sendMessage(Messages.format(ERROR_INVALID_WORLD, args[2]));
-					return true;
-				}
-			}
-		}
-		PlayerPermissionAddEvent e;
-		if (sender instanceof Player) {
-			e = new PlayerPermissionAddByPlayerEvent(args[0], (world == null) ? null : world.getName(), args[1], (Player) sender);
-		} else {
-			e = new PlayerPermissionAddEvent(args[0], (world == null) ? null : world.getName(), args[1], PermissionChangeCause.CONSOLE);
-		}
-		plugin.getServer().getPluginManager().callEvent(e);
-		if (e.isCancelled()) {
-			return true;
-		}
-		int playerId = (p == null) ? plugin.getSQLManager().getPlayerId(args[0], true) : plugin.getPlayerPermissions(p).getId();
-		boolean success;
-		if (world == null) {
-			success = plugin.getSQLManager().addGlobalPlayerPermission(playerId, args[1]);
-		} else {
-			int worldId = plugin.getSQLManager().getWorldId(world);
-			success = plugin.getSQLManager().addPlayerPermission(playerId, worldId, args[1]);
-		}
-		if (success) {
-			if (world == null) {
-				sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADD, args[1], args[0]));
-			} else {
-				sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADD_WORLD, args[1], args[0], world.getName()));
-			}
-			if (p != null) {
-				plugin.getPlayerPermissions(p).recalculatePermissions();
-			}
-		} else {
-			sender.sendMessage(Messages.format(ERROR_PLAYER_PERMISSION_ALREADY_SET, args[1]));
-		}
+	public boolean onCommand(final CommandSender sender, Command command, String label, final String[] args) {
+        if (!sender.hasPermission(command.getPermission())) {
+            sender.sendMessage(ERROR_NO_PERMISSION);
+            return true;
+        }
+        if ((args.length < 2) || (args.length > 3)) {
+            sender.sendMessage(Messages.getUsage(command));
+            return true;
+        }
+	    plugin.getExecutor().submit(new Runnable() {
+            @Override
+            public void run( ) {
+                Player p = plugin.getServer().getPlayerExact(args[0]);
+                World world;
+                if (args.length < 3) {
+                    if (sender instanceof Player) {
+                        world = ((Player) sender).getWorld();
+                    } else {
+                        world = null;
+                    }
+                } else {
+                    if ("global".equalsIgnoreCase(args[2])) {
+                        world = null;
+                    } else {
+                        world = Bukkit.getWorld(args[2]);
+                        if (world == null) {
+                            sender.sendMessage(Messages.format(ERROR_INVALID_WORLD, args[2]));
+                            return;
+                        }
+                    }
+                }
+                PlayerPermissionAddEvent e;
+                if (sender instanceof Player) {
+                    e = new PlayerPermissionAddByPlayerEvent(args[0], (world == null) ? null : world.getName(), args[1], (Player) sender);
+                } else {
+                    e = new PlayerPermissionAddEvent(args[0], (world == null) ? null : world.getName(), args[1], PermissionChangeCause.CONSOLE);
+                }
+                plugin.getServer().getPluginManager().callEvent(e);
+                if (e.isCancelled()) {
+                    return;
+                }
+                int playerId = plugin.getUuidManager().getOrCreateSqlUser(args[0]);
+                if(playerId < 0) {
+                    sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, args[0]));
+                    return;
+                }
+                boolean success;
+                if (world == null) {
+                    success = plugin.getSQLManager().addGlobalPlayerPermission(playerId, args[1]);
+                } else {
+                    int worldId = plugin.getSQLManager().getWorldId(world);
+                    success = plugin.getSQLManager().addPlayerPermission(playerId, worldId, args[1]);
+                }
+                if (success) {
+                    if (world == null) {
+                        sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADD, args[1], args[0]));
+                    } else {
+                        sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADD_WORLD, args[1], args[0], world.getName()));
+                    }
+                    if (p != null) {
+                        plugin.getPlayerPermissions(p).recalculatePermissions();
+                    }
+                } else {
+                    sender.sendMessage(Messages.format(ERROR_PLAYER_PERMISSION_ALREADY_SET, args[1]));
+                }                
+            }
+	    });
+
 		return true;
 	}
 

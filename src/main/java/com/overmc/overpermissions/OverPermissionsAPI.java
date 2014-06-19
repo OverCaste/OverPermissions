@@ -6,7 +6,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import com.google.common.collect.Iterables;
-import com.overmc.overpermissions.events.*;
+import com.overmc.overpermissions.events.PlayerPermissionAddEvent;
+import com.overmc.overpermissions.events.PlayerPermissionRemoveEvent;
 
 public class OverPermissionsAPI {
 	private final OverPermissions plugin;
@@ -35,7 +36,10 @@ public class OverPermissionsAPI {
 			return false;
 		}
 		Player p = plugin.getServer().getPlayerExact(playerName);
-		int playerId = (p == null) ? plugin.getSQLManager().getPlayerId(playerName, true) : plugin.getPlayerPermissions(p).getId();
+		int playerId = (p == null) ? plugin.getUuidManager().getOrCreateSqlUser(playerName) : plugin.getPlayerPermissions(p).getId();
+        if(playerId < 0) {
+            return false; //Player uid doesn't exist
+        }
 		boolean value;
 		if ((worldName == null) || (worldName.length() == 0)) {
 			value = plugin.getSQLManager().addGlobalPlayerPermission(playerId, permission);
@@ -60,7 +64,16 @@ public class OverPermissionsAPI {
 			return false;
 		}
 		Player p = plugin.getServer().getPlayerExact(playerName);
-		int playerId = (p == null) ? plugin.getSQLManager().getPlayerId(playerName, true) : plugin.getPlayerPermissions(p).getId();
+		int playerId;
+		// = (p == null) ? plugin.getSQLManager().getPlayerId(playerName, true) : plugin.getPlayerPermissions(p).getId();
+		if(p == null) {
+             playerId = plugin.getUuidManager().getOrCreateSqlUser(playerName);
+            if(playerId < 0) {
+                return false;
+            }
+		} else {
+		    playerId = plugin.getPlayerPermissions(p).getId();
+		}
 		boolean value;
 		if ((worldName == null) || (worldName.length() == 0)) {
 			value = plugin.getSQLManager().removeGlobalPlayerPermission(playerId, permission);
@@ -258,10 +271,19 @@ public class OverPermissionsAPI {
 		return ret;
 	}
 
-	public void setPlayerMeta(String worldName, String playerName, String node, String value)
+	public boolean setPlayerMeta(String worldName, String playerName, String node, String value)
 	{
 		Player p = Bukkit.getPlayerExact(playerName);
-		int playerId = plugin.getSQLManager().getPlayerId(playerName, true);
+		int playerId;
+		//= plugin.getSQLManager().getPlayerId(playerName, true);
+		if(p == null) {
+             playerId = plugin.getUuidManager().getOrCreateSqlUser(playerName);
+            if(playerId < 0) {
+                return false;
+            }
+		} else {
+		    playerId = plugin.getPlayerPermissions(p).getId();
+		}
 		int worldId = plugin.getSQLManager().getWorldId(playerName, false);
 		if (worldId < 0) {
 			plugin.getSQLManager().setGlobalPlayerMeta(playerId, node, value);
@@ -271,6 +293,7 @@ public class OverPermissionsAPI {
 		if (p != null) {
 			plugin.getPlayerPermissions(p).recalculateMeta();
 		}
+		return true;
 	}
 
 	public String getGroupMeta(String world, String groupName, String node, String defaultValue)

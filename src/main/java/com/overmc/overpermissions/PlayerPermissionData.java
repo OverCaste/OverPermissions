@@ -1,10 +1,17 @@
 package com.overmc.overpermissions;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionAttachment;
+
+import com.google.common.base.Preconditions;
 
 public class PlayerPermissionData {
 	private final OverPermissions plugin;
@@ -19,6 +26,10 @@ public class PlayerPermissionData {
 	private final List<Group> groups = new ArrayList<Group>();
 
 	public PlayerPermissionData(OverPermissions plugin, int id, int world, Player player) {
+	    Preconditions.checkNotNull(plugin);
+	    Preconditions.checkArgument(id >= 0);
+	    Preconditions.checkArgument(world >= -1); //-1 is global
+	    Preconditions.checkNotNull(player);
 		this.plugin = plugin;
 		this.player = player;
 		this.id = id;
