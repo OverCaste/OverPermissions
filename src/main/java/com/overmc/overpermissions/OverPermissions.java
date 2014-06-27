@@ -238,7 +238,7 @@ public class OverPermissions extends JavaPlugin {
 		return exec.submit(new Callable<PlayerPermissionData>() {
 			@Override
 			public PlayerPermissionData call( ) throws Exception {
-				PlayerPermissionData playerData = new PlayerPermissionData(OverPermissions.this, uuidManager.getOrCreateSqlUser(player.getName()), sqlManager.getWorldId(player.getWorld().getName(), true),
+				PlayerPermissionData playerData = new PlayerPermissionData(OverPermissions.this, sqlManager.getPlayerId(player.getUniqueId()), sqlManager.getWorldId(player.getWorld().getName(), true),
 						player);
 				playerData.recalculateGroups();
 				playerData.recalculatePermissions();

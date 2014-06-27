@@ -1,6 +1,7 @@
 # www.overmc.com
 default-group: 'default'
 kick-on-failure: true
+sql-schema-version: 1
 sql:
   type: mysql
   address: "localhost"

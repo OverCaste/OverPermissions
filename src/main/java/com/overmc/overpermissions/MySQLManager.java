@@ -20,7 +20,7 @@ import org.bukkit.World;
 
 import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 
-public class MySQLManager implements SQLManager {
+public final class MySQLManager implements SQLManager {
     private final OverPermissions plugin;
 
     protected Connection con = null;
@@ -68,7 +68,7 @@ public class MySQLManager implements SQLManager {
             st.addBatch("CREATE TABLE IF NOT EXISTS Player"
                     + "("
                     + "uid int AUTO_INCREMENT PRIMARY KEY,"
-                    + "lastseen_username varchar(16) NOT NULL,"
+                    + "last_seen_username varchar(16),"
                     + "lower_uid BIGINT NOT NULL,"
                     + "upper_uid BIGINT NOT NULL,"
                     + "INDEX username (lower_uid, upper_uid)"
