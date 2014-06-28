@@ -21,15 +21,17 @@ public class UUIDManager {
      * @param name
      * @return The UID if it's retrievable, or -1 if the player's UUID wasn't retrievable.
      */
+    @SuppressWarnings("deprecation")
     public int getOrCreateSqlUser(String name) {
         Player p = Bukkit.getPlayerExact(name);
+        Bukkit.getPlayer(p.getUniqueId());
         int playerId = (p == null) ? plugin.getSQLManager().getPlayerId(name) : plugin.getPlayerPermissions(p).getId();
         if (playerId >= 0) {
             return playerId;
         }
         // Doesn't exist in SQL and isn't online
         try {
-            UUID playerUuid = UUIDFetcher.getUUIDOf(name);
+            UUID playerUuid = Bukkit.getOnlineMode() ? UUIDFetcher.getUUIDOf(name) : Bukkit.getOfflinePlayer(name).getUniqueId();
             return plugin.getSQLManager().getPlayerId(playerUuid, true);
         } catch (IOException ex) {
             ex.printStackTrace();

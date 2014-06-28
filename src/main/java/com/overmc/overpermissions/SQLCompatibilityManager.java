@@ -77,7 +77,7 @@ public class SQLCompatibilityManager {
                     plugin.getLogger().info("Migration: Renaming player table...");
                     executeStatement(con, "RENAME TABLE Player TO PlayerOld");
                     plugin.getLogger().info("Creating new Player table structure...");
-                    executeStatement(con, "CREATE TABLE Player" //TODO eventually refactor the entire SQLManager class...
+                    executeStatement(con, "CREATE TABLE Player" // TODO eventually refactor the entire SQLManager class...
                             + "("
                             + "uid int AUTO_INCREMENT PRIMARY KEY,"
                             + "last_seen_username varchar(16),"

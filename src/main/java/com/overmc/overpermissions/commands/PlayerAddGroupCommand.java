@@ -57,6 +57,7 @@ public class PlayerAddGroupCommand implements TabExecutor {
                 }
                 if (plugin.getSQLManager().addPlayerGroup(victimId, groupId)) {
                     sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADD_GROUP, victim, args[1]));
+                    @SuppressWarnings("deprecation")
                     Player p = Bukkit.getPlayerExact(victim);
                     if (p != null) {
                         plugin.getPlayerPermissions(p).recalculateGroups();

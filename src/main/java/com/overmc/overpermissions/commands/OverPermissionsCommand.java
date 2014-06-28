@@ -3,68 +3,75 @@ package com.overmc.overpermissions.commands;
 import static com.overmc.overpermissions.Messages.*;
 
 import org.bukkit.Bukkit;
-import org.bukkit.command.*;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 
 import com.google.common.base.Joiner;
-import com.overmc.overpermissions.*;
+import com.overmc.overpermissions.Group;
+import com.overmc.overpermissions.Messages;
+import com.overmc.overpermissions.OverPermissions;
+import com.overmc.overpermissions.PlayerPermissionData;
 
 // ./overpermissions ['debug'|'info']
 public class OverPermissionsCommand implements CommandExecutor {
-	private final OverPermissions plugin;
+    private final OverPermissions plugin;
 
-	public OverPermissionsCommand(OverPermissions plugin) {
-		this.plugin = plugin;
-	}
+    public OverPermissionsCommand(OverPermissions plugin) {
+        this.plugin = plugin;
+    }
 
-	public OverPermissionsCommand register( ) {
-		PluginCommand command = plugin.getCommand("overpermissions");
-		command.setExecutor(this);
-		return this;
-	}
+    public OverPermissionsCommand register( ) {
+        PluginCommand command = plugin.getCommand("overpermissions");
+        command.setExecutor(this);
+        return this;
+    }
 
-	@Override
-	public boolean onCommand(final CommandSender sender, Command command, String label, String[] args) {
-		if (!sender.hasPermission(command.getPermission())) {
-			sender.sendMessage(ERROR_NO_PERMISSION);
-			return true;
-		}
+    @Override
+    public boolean onCommand(final CommandSender sender, Command command, String label, String[] args) {
+        if (!sender.hasPermission(command.getPermission())) {
+            sender.sendMessage(ERROR_NO_PERMISSION);
+            return true;
+        }
 
-		if ((args.length == 0) || ((args.length == 1) && "info".equalsIgnoreCase(args[0]))) {
-			sender.sendMessage(Messages.format(PLUGIN_INFO_MESSAGE, plugin.getName(), plugin.getDescription().getVersion(), Joiner.on(',').join(plugin.getDescription().getAuthors())));
-			return true;
-		}
-		if ("debug".equalsIgnoreCase(args[0])) {
-			if (args.length == 1) {
-				sender.sendMessage("debug commands: ");
-				sender.sendMessage("/overperms debug group [group]");
-				sender.sendMessage("/overperms debug player [player]");
-				return true;
-			}
-			else if ((args.length == 3)) {
-				if ("group".equalsIgnoreCase(args[1])) {
-					Group group = plugin.getGroupManager().getGroup(args[2]);
-					if (group != null) {
-						sender.sendMessage(group.getDebugInfo());
-						return true;
-					} else {
-						sender.sendMessage(Messages.format(Messages.ERROR_GROUP_NOT_FOUND, args[2]));
-					}
-					return true;
-				} else if ("player".equalsIgnoreCase(args[1])) {
-					Player player = Bukkit.getPlayerExact(args[2]);
-					if (player == null) {
-						sender.sendMessage("Player not found.");
-						return true;
-					}
-					PlayerPermissionData playerData = plugin.getPlayerPermissions(player);
-					sender.sendMessage("Player effective groups: " + Joiner.on(' ').join(playerData.getEffectiveGroups()));
-					sender.sendMessage("Player actual groups: " + Joiner.on(' ').join(playerData.getGroups()));
-					return true;
-				}
-			}
-		}
-		sender.sendMessage(Messages.getUsage(command));
-		return true;
-	}
+        if ((args.length == 0) || ((args.length == 1) && "info".equalsIgnoreCase(args[0]))) {
+            sender.sendMessage(Messages.format(PLUGIN_INFO_MESSAGE, plugin.getName(), plugin.getDescription().getVersion(), Joiner.on(',').join(plugin.getDescription().getAuthors())));
+            return true;
+        }
+        if ("debug".equalsIgnoreCase(args[0])) {
+            if (args.length == 1) {
+                sender.sendMessage("debug commands: ");
+                sender.sendMessage("/overperms debug group [group]");
+                sender.sendMessage("/overperms debug player [player]");
+                return true;
+            }
+            else if ((args.length == 3)) {
+                if ("group".equalsIgnoreCase(args[1])) {
+                    Group group = plugin.getGroupManager().getGroup(args[2]);
+                    if (group != null) {
+                        sender.sendMessage(group.getDebugInfo());
+                        return true;
+                    } else {
+                        sender.sendMessage(Messages.format(Messages.ERROR_GROUP_NOT_FOUND, args[2]));
+                    }
+                    return true;
+                } else if ("player".equalsIgnoreCase(args[1])) {
+                    @SuppressWarnings("deprecation")
+                    Player player = Bukkit.getPlayerExact(args[2]);
+                    if (player == null) {
+                        sender.sendMessage("Player not found.");
+                        return true;
+                    }
+                    PlayerPermissionData playerData = plugin.getPlayerPermissions(player);
+                    sender.sendMessage("Player effective groups: " + Joiner.on(' ').join(playerData.getEffectiveGroups()));
+                    sender.sendMessage("Player actual groups: " + Joiner.on(' ').join(playerData.getGroups()));
+                    return true;
+                }
+            }
+        }
+        sender.sendMessage(Messages.getUsage(command));
+        return true;
+    }
 }

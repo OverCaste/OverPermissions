@@ -21,21 +21,21 @@ import com.overmc.overpermissions.events.PlayerPermissionAddEvent;
 
 // ./playeradd [player] [permission] (world)
 public class PlayerAddCommand implements TabExecutor {
-	private final OverPermissions plugin;
+    private final OverPermissions plugin;
 
-	public PlayerAddCommand(OverPermissions plugin) {
-		this.plugin = plugin;
-	}
+    public PlayerAddCommand(OverPermissions plugin) {
+        this.plugin = plugin;
+    }
 
-	public PlayerAddCommand register( ) {
-		PluginCommand command = plugin.getCommand("playeradd");
-		command.setExecutor(this);
-		command.setTabCompleter(this);
-		return this;
-	}
+    public PlayerAddCommand register( ) {
+        PluginCommand command = plugin.getCommand("playeradd");
+        command.setExecutor(this);
+        command.setTabCompleter(this);
+        return this;
+    }
 
-	@Override
-	public boolean onCommand(final CommandSender sender, Command command, String label, final String[] args) {
+    @Override
+    public boolean onCommand(final CommandSender sender, Command command, String label, final String[] args) {
         if (!sender.hasPermission(command.getPermission())) {
             sender.sendMessage(ERROR_NO_PERMISSION);
             return true;
@@ -44,9 +44,10 @@ public class PlayerAddCommand implements TabExecutor {
             sender.sendMessage(Messages.getUsage(command));
             return true;
         }
-	    plugin.getExecutor().submit(new Runnable() {
+        plugin.getExecutor().submit(new Runnable() {
             @Override
             public void run( ) {
+                @SuppressWarnings("deprecation")
                 Player p = plugin.getServer().getPlayerExact(args[0]);
                 World world;
                 if (args.length < 3) {
@@ -77,7 +78,7 @@ public class PlayerAddCommand implements TabExecutor {
                     return;
                 }
                 int playerId = plugin.getUuidManager().getOrCreateSqlUser(args[0]);
-                if(playerId < 0) {
+                if (playerId < 0) {
                     sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, args[0]));
                     return;
                 }
@@ -99,35 +100,35 @@ public class PlayerAddCommand implements TabExecutor {
                     }
                 } else {
                     sender.sendMessage(Messages.format(ERROR_PLAYER_PERMISSION_ALREADY_SET, args[1]));
-                }                
+                }
             }
-	    });
+        });
 
-		return true;
-	}
+        return true;
+    }
 
-	@Override
-	public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-		ArrayList<String> ret = new ArrayList<String>();
-		if (!sender.hasPermission(command.getPermission())) {
-			return ret;
-		}
-		int index = args.length - 1;
-		String value = args[index].toLowerCase();
-		if (index == 0) {
-			for (Player p : plugin.getServer().getOnlinePlayers()) {
-				if (p.getName().toLowerCase().startsWith(value)) {
-					ret.add(p.getName());
-				}
-			}
-		} else if (index == 2) {
-			for (World w : plugin.getServer().getWorlds()) {
-				if (w.getName().toLowerCase().startsWith(value)) {
-					ret.add(w.getName());
-				}
-				ret.add("global");
-			}
-		}
-		return ret;
-	}
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+        ArrayList<String> ret = new ArrayList<String>();
+        if (!sender.hasPermission(command.getPermission())) {
+            return ret;
+        }
+        int index = args.length - 1;
+        String value = args[index].toLowerCase();
+        if (index == 0) {
+            for (Player p : plugin.getServer().getOnlinePlayers()) {
+                if (p.getName().toLowerCase().startsWith(value)) {
+                    ret.add(p.getName());
+                }
+            }
+        } else if (index == 2) {
+            for (World w : plugin.getServer().getWorlds()) {
+                if (w.getName().toLowerCase().startsWith(value)) {
+                    ret.add(w.getName());
+                }
+                ret.add("global");
+            }
+        }
+        return ret;
+    }
 }

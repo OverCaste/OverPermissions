@@ -45,6 +45,7 @@ public class PlayerCheckCommand implements TabExecutor {
         plugin.getExecutor().execute(new Runnable() { // This is entirely safe because getSQLManager() should never change, and Player.sendMessage should be threadsafe.
             @Override
             public void run( ) {
+                @SuppressWarnings("deprecation")
                 Player p = Bukkit.getPlayerExact(args[0]);
                 final PlayerPermissionData playerData = (p == null ? null : plugin.getPlayerPermissions(p));
                 int playerId = (playerData == null) ? plugin.getUuidManager().getOrCreateSqlUser(args[0]) : playerData.getId();
@@ -94,6 +95,7 @@ public class PlayerCheckCommand implements TabExecutor {
                 }
             }
         } else if (index == 1) {
+            @SuppressWarnings("deprecation")
             Player p = plugin.getServer().getPlayerExact(args[0]);
             if (p != null) {
                 for (String node : plugin.getPlayerPermissions(p).getNodes()) {

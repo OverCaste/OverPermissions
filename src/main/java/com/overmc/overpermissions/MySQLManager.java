@@ -1537,7 +1537,27 @@ public final class MySQLManager implements SQLManager {
 
     @Override
     public org.bukkit.entity.Player getPlayer(int id) {
-        return Bukkit.getPlayerExact(getLastSeenPlayerName(id));
+        return Bukkit.getPlayer(getPlayerUuid(id));
+    }
+
+    @Override
+    public UUID getPlayerUuid(int playerId) {
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+        try {
+            pst = getConnection().prepareStatement("SELECT lower_uid, upper_uid FROM Player WHERE uid=?");
+            pst.setInt(1, playerId);
+            rs = pst.executeQuery();
+            if (rs.next()) {
+                return new UUID(rs.getLong("upper_uid"), rs.getLong("lower_uid"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            attemptClose(rs);
+            attemptClose(pst);
+        }
+        return null;
     }
 
     @Override

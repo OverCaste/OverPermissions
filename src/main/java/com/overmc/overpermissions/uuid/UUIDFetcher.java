@@ -37,7 +37,7 @@ public class UUIDFetcher implements Callable<Map<String, UUID>> {
     }
 
     @Override
-    public Map<String, UUID> call() throws IOException {
+    public Map<String, UUID> call( ) throws IOException {
         Map<String, UUID> uuidMap = new HashMap<String, UUID>();
         int requests = (int) Math.ceil(names.size() / PROFILES_PER_REQUEST);
         for (int i = 0; i < requests; i++) {
@@ -58,9 +58,9 @@ public class UUIDFetcher implements Callable<Map<String, UUID>> {
                     Thread.sleep(100L);
                 }
             } catch (ParseException e) {
-                e.printStackTrace(); //Mojang returned the wrong format?
+                e.printStackTrace(); // Mojang returned the wrong format?
             } catch (InterruptedException e) {
-                e.printStackTrace(); //Sleep was interrupted
+                e.printStackTrace(); // Sleep was interrupted
             }
         }
         return uuidMap;
@@ -73,7 +73,7 @@ public class UUIDFetcher implements Callable<Map<String, UUID>> {
         stream.close();
     }
 
-    private static HttpURLConnection createConnection() throws IOException {
+    private static HttpURLConnection createConnection( ) throws IOException {
         URL url = new URL(PROFILE_URL);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("POST");
@@ -85,7 +85,7 @@ public class UUIDFetcher implements Callable<Map<String, UUID>> {
     }
 
     private static UUID getUUID(String id) {
-        return UUID.fromString(id.substring(0, 8) + "-" + id.substring(8, 12) + "-" + id.substring(12, 16) + "-" + id.substring(16, 20) + "-" +id.substring(20, 32));
+        return UUID.fromString(id.substring(0, 8) + "-" + id.substring(8, 12) + "-" + id.substring(12, 16) + "-" + id.substring(16, 20) + "-" + id.substring(20, 32));
     }
 
     public static byte[] toBytes(UUID uuid) {

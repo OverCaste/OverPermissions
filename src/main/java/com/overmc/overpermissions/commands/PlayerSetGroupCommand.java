@@ -19,30 +19,30 @@ import com.overmc.overpermissions.events.PlayerGroupChangeEvent;
 
 // ./groupset [player] [group]
 public class PlayerSetGroupCommand implements TabExecutor {
-	private final OverPermissions plugin;
+    private final OverPermissions plugin;
 
-	public PlayerSetGroupCommand(OverPermissions plugin) {
-		this.plugin = plugin;
-	}
+    public PlayerSetGroupCommand(OverPermissions plugin) {
+        this.plugin = plugin;
+    }
 
-	public PlayerSetGroupCommand register( ) {
-		PluginCommand command = this.plugin.getCommand("playersetgroup");
-		command.setExecutor(this);
-		command.setTabCompleter(this);
-		return this;
-	}
+    public PlayerSetGroupCommand register( ) {
+        PluginCommand command = this.plugin.getCommand("playersetgroup");
+        command.setExecutor(this);
+        command.setTabCompleter(this);
+        return this;
+    }
 
-	@Override
-	public boolean onCommand(final CommandSender sender, Command command, String label, final String[] args) {
-		if (!sender.hasPermission(command.getPermission())) {
-			sender.sendMessage(ERROR_NO_PERMISSION);
-			return true;
-		}
-		if ((args.length < 2) || (args.length > 2)) {
-			sender.sendMessage(Messages.getUsage(command));
-			return true;
-		}
-		plugin.getExecutor().submit(new Runnable() {
+    @Override
+    public boolean onCommand(final CommandSender sender, Command command, String label, final String[] args) {
+        if (!sender.hasPermission(command.getPermission())) {
+            sender.sendMessage(ERROR_NO_PERMISSION);
+            return true;
+        }
+        if ((args.length < 2) || (args.length > 2)) {
+            sender.sendMessage(Messages.getUsage(command));
+            return true;
+        }
+        plugin.getExecutor().submit(new Runnable() {
             @Override
             public void run( ) {
                 String victim = args[0];
@@ -52,7 +52,7 @@ public class PlayerSetGroupCommand implements TabExecutor {
                     return;
                 }
                 int victimId = plugin.getUuidManager().getOrCreateSqlUser(victim);
-                if(victimId < 0) {
+                if (victimId < 0) {
                     sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, victim));
                     return;
                 }
@@ -60,6 +60,7 @@ public class PlayerSetGroupCommand implements TabExecutor {
                 plugin.getServer().getPluginManager().callEvent(event);
                 if (event.isEnabled()) {
                     plugin.getSQLManager().setPlayerGroup(victimId, group);
+                    @SuppressWarnings("deprecation")
                     Player p = Bukkit.getPlayerExact(victim);
                     if (p != null) {
                         plugin.getPlayerPermissions(p).recalculateGroups();
@@ -67,32 +68,32 @@ public class PlayerSetGroupCommand implements TabExecutor {
                     sender.sendMessage(Messages.format(SUCCESS_PLAYER_SET_GROUP, victim, args[1]));
                 }
             }
-		});
-		return true;
-	}
+        });
+        return true;
+    }
 
-	@Override
-	public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-		ArrayList<String> ret = new ArrayList<String>();
-		if (!sender.hasPermission(command.getPermission())) {
-			sender.sendMessage(ERROR_NO_PERMISSION);
-			return ret;
-		}
-		int index = args.length - 1;
-		String value = args[index].toLowerCase();
-		if (index == 0) {
-			for (Player player : Bukkit.getOnlinePlayers()) {
-				if (player.getName().toLowerCase().startsWith(value)) {
-					ret.add(player.getName());
-				}
-			}
-		} else if (index == 1) {
-			for (Group g : this.plugin.getGroupManager().getGroups()) {
-				if (g.getName().toLowerCase().startsWith(value)) {
-					ret.add(g.getName());
-				}
-			}
-		}
-		return ret;
-	}
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+        ArrayList<String> ret = new ArrayList<String>();
+        if (!sender.hasPermission(command.getPermission())) {
+            sender.sendMessage(ERROR_NO_PERMISSION);
+            return ret;
+        }
+        int index = args.length - 1;
+        String value = args[index].toLowerCase();
+        if (index == 0) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (player.getName().toLowerCase().startsWith(value)) {
+                    ret.add(player.getName());
+                }
+            }
+        } else if (index == 1) {
+            for (Group g : this.plugin.getGroupManager().getGroups()) {
+                if (g.getName().toLowerCase().startsWith(value)) {
+                    ret.add(g.getName());
+                }
+            }
+        }
+        return ret;
+    }
 }

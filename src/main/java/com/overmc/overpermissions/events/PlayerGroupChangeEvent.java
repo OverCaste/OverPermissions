@@ -6,48 +6,49 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
 public class PlayerGroupChangeEvent extends Event {
-	private static final HandlerList handlers = new HandlerList();
+    private static final HandlerList handlers = new HandlerList();
 
-	private final String playerName;
-	private final String group;
+    private final String playerName;
+    private final String group;
 
-	private boolean enabled = false;
+    private boolean enabled = false;
 
-	public PlayerGroupChangeEvent(String playerName, String group) {
-		this.playerName = playerName;
-		this.group = group;
-	}
+    public PlayerGroupChangeEvent(String playerName, String group) {
+        this.playerName = playerName;
+        this.group = group;
+    }
 
-	/**
-	 * @return The player who's group changed,
-	 *         null if they aren't online.
-	 */
-	public Player getPlayer( ) {
-		return Bukkit.getPlayerExact(this.playerName);
-	}
+    /**
+     * @return The player who's group changed,
+     *         null if they aren't online.
+     */
+    @SuppressWarnings("deprecation")
+    public Player getPlayer( ) {
+        return Bukkit.getPlayerExact(this.playerName);
+    }
 
-	public String getPlayerName( ) {
-		return this.playerName;
-	}
+    public String getPlayerName( ) {
+        return this.playerName;
+    }
 
-	public String getGroup( ) {
-		return this.group;
-	}
+    public String getGroup( ) {
+        return this.group;
+    }
 
-	public boolean isEnabled( ) {
-		return this.enabled;
-	}
+    public boolean isEnabled( ) {
+        return this.enabled;
+    }
 
-	public void setEnabled(boolean enabled) {
-		this.enabled = enabled;
-	}
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
 
-	@Override
-	public HandlerList getHandlers( ) {
-		return handlers;
-	}
+    @Override
+    public HandlerList getHandlers( ) {
+        return handlers;
+    }
 
-	public static HandlerList getStaticHandlers( ) {
-		return handlers;
-	}
+    public static HandlerList getStaticHandlers( ) {
+        return handlers;
+    }
 }
