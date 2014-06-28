@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.bukkit.Bukkit;
+
 import com.overmc.overpermissions.uuid.UUIDFetcher;
 
 public class SQLCompatibilityManager {
@@ -94,6 +96,7 @@ public class SQLCompatibilityManager {
             }
         }
 
+        @SuppressWarnings("deprecation")
         private void migrateUuids(Connection con) throws Exception {
             HashMap<String, Integer> usernameUidMap = new HashMap<String, Integer>(256);
             ResultSet usernameResults = con.createStatement().executeQuery("SELECT uid, username FROM PlayerOld");
@@ -106,8 +109,16 @@ public class SQLCompatibilityManager {
             } finally {
                 MySQLManager.attemptClose(usernameResults);
             }
-            UUIDFetcher fetcher = new UUIDFetcher(new ArrayList<String>(usernameUidMap.keySet()));
-            Map<String, UUID> uuidMap = fetcher.call(); // Convert usernames to UUIDs
+            Map<String, UUID> uuidMap; // Convert usernames to UUIDs
+            if(Bukkit.getOnlineMode()) {
+                UUIDFetcher fetcher = new UUIDFetcher(new ArrayList<String>(usernameUidMap.keySet()));
+                uuidMap = fetcher.call();
+            } else {
+                uuidMap = new HashMap<String, UUID>(usernameUidMap.size());
+                for(Map.Entry<String, Integer> e : usernameUidMap.entrySet()) {
+                    uuidMap.put(e.getKey(), Bukkit.getOfflinePlayer(e.getKey()).getUniqueId()); //Offline conversion is considerably less elegant.
+                }
+            }
             for (Map.Entry<String, Integer> playerData : usernameUidMap.entrySet()) { // Iterate over usernames.
                 if (uuidMap.containsKey(playerData.getKey().toLowerCase())) { // We've got a match!
                     UUID uuid = uuidMap.get(playerData.getKey().toLowerCase());
