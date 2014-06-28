@@ -74,7 +74,7 @@ public class SQLCompatibilityManager {
                 // Duplicate old tables
                 con.setAutoCommit(false);
                 try {
-                    plugin.getLogger().info("Migration: Renaming  player table...");
+                    plugin.getLogger().info("Migration: Renaming player table...");
                     executeStatement(con, "RENAME TABLE Player TO PlayerOld");
                     plugin.getLogger().info("Creating new Player table structure...");
                     executeStatement(con, "CREATE TABLE Player" //TODO eventually refactor the entire SQLManager class...
@@ -109,8 +109,8 @@ public class SQLCompatibilityManager {
             UUIDFetcher fetcher = new UUIDFetcher(new ArrayList<String>(usernameUidMap.keySet()));
             Map<String, UUID> uuidMap = fetcher.call(); // Convert usernames to UUIDs
             for (Map.Entry<String, Integer> playerData : usernameUidMap.entrySet()) { // Iterate over usernames.
-                if (uuidMap.containsKey(playerData.getKey())) { // We've got a match!
-                    UUID uuid = uuidMap.get(playerData.getKey());
+                if (uuidMap.containsKey(playerData.getKey().toLowerCase())) { // We've got a match!
+                    UUID uuid = uuidMap.get(playerData.getKey().toLowerCase());
                     PreparedStatement pst = null;
                     try {
                         pst = con.prepareStatement("INSERT INTO Player(uid, last_seen_username, lower_uid, upper_uid) VALUES (?, ?, ?, ?)");
@@ -118,6 +118,7 @@ public class SQLCompatibilityManager {
                         pst.setString(2, playerData.getKey());
                         pst.setLong(3, uuid.getLeastSignificantBits());
                         pst.setLong(4, uuid.getMostSignificantBits());
+                        pst.executeUpdate();
                         executeStatement(con, "DELETE FROM PlayerOld WHERE uid=\"" + playerData.getValue() + "\""); // I know... sloppy, but no sqlI here.
                     } finally {
                         MySQLManager.attemptClose(pst);
@@ -131,7 +132,7 @@ public class SQLCompatibilityManager {
             try {
                 tableEmptyStatement = con.createStatement();
                 tableEmpty = tableEmptyStatement.executeQuery("SELECT COUNT(*) FROM PlayerOld");
-                if (tableEmpty.next() && tableEmpty.getBoolean(1)) {
+                if (tableEmpty.next() && (tableEmpty.getInt(1) == 0)) {
                     plugin.getLogger().info("Migration: Deleting empty old player table...");
                     executeStatement(con, "DROP TABLE PlayerOld");
                 } else {

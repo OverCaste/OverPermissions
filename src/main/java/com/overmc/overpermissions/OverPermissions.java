@@ -34,6 +34,7 @@ import com.overmc.overpermissions.uuid.UUIDManager;
 
 public class OverPermissions extends JavaPlugin {
 	private SQLManager sqlManager;
+	private SQLCompatibilityManager sqlCompatManager;
 	private GroupManager groupManager;
 	private TimedPermissionManager tempManager;
 	private UUIDManager uuidManager;
@@ -82,8 +83,6 @@ public class OverPermissions extends JavaPlugin {
 
 	private void initConfig( ) throws Throwable {
 		saveDefaultConfig();
-		getConfig().options().copyDefaults(true);
-		saveConfig();
 		reloadConfig();
 	}
 
@@ -92,7 +91,7 @@ public class OverPermissions extends JavaPlugin {
 	}
 
 	private void initManagers( ) throws Throwable {
-		String type = getConfig().getString("sql.type", "sqlite");
+		String type = getConfig().getString("sql.type", "mysql");
 		if (type.equalsIgnoreCase("sqlite")) {
 			// TODO sqlManager = new SQLiteManager(this)
 		} else if (type.equalsIgnoreCase("mysql")) {
@@ -101,6 +100,8 @@ public class OverPermissions extends JavaPlugin {
 					getConfig().getString("sql.dbname", "OverPermissions"),
 					getConfig().getString("sql.dbusername", "root"),
 					getConfig().getString("sql.dbpassword", ""));
+	         sqlCompatManager = new SQLCompatibilityManager(this);
+	         sqlCompatManager.init();
 		} else {
 			getLogger().warning("Type value " + type + " wasn't recognized. Defaulting to sqlite.");
 		}
