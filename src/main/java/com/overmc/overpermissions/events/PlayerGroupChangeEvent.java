@@ -11,7 +11,7 @@ public class PlayerGroupChangeEvent extends Event {
     private final String playerName;
     private final String group;
 
-    private boolean enabled = false;
+    private boolean enabled = true;
 
     public PlayerGroupChangeEvent(String playerName, String group) {
         this.playerName = playerName;

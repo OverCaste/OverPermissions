@@ -3,6 +3,7 @@ package com.overmc.overpermissions;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -91,6 +92,7 @@ public class OverPermissions extends JavaPlugin {
     }
 
     private void initManagers( ) throws Throwable {
+        uuidManager = new UUIDManager(this);
         String type = getConfig().getString("sql.type", "mysql");
         if (type.equalsIgnoreCase("sqlite")) {
             // TODO sqlManager = new SQLiteManager(this)
@@ -109,7 +111,6 @@ public class OverPermissions extends JavaPlugin {
         tempManager = new TimedPermissionManager(this);
         groupManager = new GroupManager(this);
         groupManager.recalculateGroups();
-        uuidManager = new UUIDManager(this);
     }
 
     private void initDefaultGroup( ) {
@@ -211,20 +212,18 @@ public class OverPermissions extends JavaPlugin {
      * @see #getAPI()
      */
     public PlayerPermissionData getPlayerPermissions(Player player) {
+        PlayerPermissionData d = players.get(player);
         try {
-            PlayerPermissionData d = players.get(player);
             if (d == null) {
-                initPlayer(player);
                 Future<PlayerPermissionData> future = playerFutures.remove(player);
                 PlayerPermissionData playerData = future.get();
                 players.put(player, playerData);
                 return playerData;
             }
-            return d;
-        } catch (Throwable t) {
-            t.printStackTrace();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException("An unexpected exception occured while loading future: " + e.getMessage(), e);
         }
-        return null;
+        return d;
     }
 
     protected void initPlayer(Player player) {
@@ -239,8 +238,7 @@ public class OverPermissions extends JavaPlugin {
         return exec.submit(new Callable<PlayerPermissionData>() {
             @Override
             public PlayerPermissionData call( ) throws Exception {
-                System.out.println("Player id: " + player.getUniqueId() + ": " + sqlManager.getPlayerId(player.getUniqueId()));
-                PlayerPermissionData playerData = new PlayerPermissionData(OverPermissions.this, sqlManager.getPlayerId(player.getUniqueId()),
+                PlayerPermissionData playerData = new PlayerPermissionData(OverPermissions.this, sqlManager.getPlayerId(player.getUniqueId(), true),
                         sqlManager.getWorldId(player.getWorld().getName(), true),
                         player);
                 playerData.recalculateGroups();

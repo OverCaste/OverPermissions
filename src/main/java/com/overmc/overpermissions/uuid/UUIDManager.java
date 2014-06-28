@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import com.google.common.base.Charsets;
 import com.overmc.overpermissions.OverPermissions;
 
 public class UUIDManager {
@@ -24,7 +25,6 @@ public class UUIDManager {
     @SuppressWarnings("deprecation")
     public int getOrCreateSqlUser(String name) {
         Player p = Bukkit.getPlayerExact(name);
-        Bukkit.getPlayer(p.getUniqueId());
         int playerId = (p == null) ? plugin.getSQLManager().getPlayerId(name) : plugin.getPlayerPermissions(p).getId();
         if (playerId >= 0) {
             return playerId;
@@ -37,5 +37,18 @@ public class UUIDManager {
             ex.printStackTrace();
         }
         return -1; // Failed to retrieve even that
+    }
+    
+    public UUID getOfflineUuid(String playername) {
+        return UUID.nameUUIDFromBytes(("OfflinePlayer:" + playername).getBytes(Charsets.UTF_8));
+    }
+
+    public int getPlayerId(UUID uniqueId) {
+        Player p = Bukkit.getPlayer(uniqueId);
+        int playerId = (p == null) ? plugin.getSQLManager().getPlayerId(uniqueId) : plugin.getPlayerPermissions(p).getId();
+        if (playerId >= 0) {
+            return playerId;
+        }
+        return -1; //Fail.
     }
 }

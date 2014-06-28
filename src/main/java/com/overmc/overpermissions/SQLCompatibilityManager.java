@@ -96,7 +96,6 @@ public class SQLCompatibilityManager {
             }
         }
 
-        @SuppressWarnings("deprecation")
         private void migrateUuids(Connection con) throws Exception {
             HashMap<String, Integer> usernameUidMap = new HashMap<String, Integer>(256);
             ResultSet usernameResults = con.createStatement().executeQuery("SELECT uid, username FROM PlayerOld");
@@ -116,7 +115,8 @@ public class SQLCompatibilityManager {
             } else {
                 uuidMap = new HashMap<String, UUID>(usernameUidMap.size());
                 for(Map.Entry<String, Integer> e : usernameUidMap.entrySet()) {
-                    uuidMap.put(e.getKey(), Bukkit.getOfflinePlayer(e.getKey()).getUniqueId()); //Offline conversion is considerably less elegant.
+                    UUID uuid = plugin.getUuidManager().getOfflineUuid(e.getKey());
+                    uuidMap.put(e.getKey().toLowerCase(), uuid);
                 }
             }
             for (Map.Entry<String, Integer> playerData : usernameUidMap.entrySet()) { // Iterate over usernames.
