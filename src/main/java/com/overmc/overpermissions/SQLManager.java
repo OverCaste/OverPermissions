@@ -129,7 +129,7 @@ public interface SQLManager {
 	
 	public org.bukkit.entity.Player getPlayer(int id);
 
-	public String getPlayerName(int id);
+	public String getLastSeenPlayerName(int id);
 
 	public void deleteDatabase( );
 }

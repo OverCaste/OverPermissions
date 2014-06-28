@@ -1507,6 +1507,10 @@ public final class MySQLManager implements SQLManager {
     }
 
     @Override
+    @Deprecated
+    /**
+     * Gets a UID from a given username. Deprecated because the username may change between logins, use {@link #getPlayerId(UUID)}
+     */
     public int getPlayerId(String username) {
         if ((username == null) || (username.length() == 0) || (username.length() > 16)) {
             throw new IllegalArgumentException("username");
@@ -1516,7 +1520,7 @@ public final class MySQLManager implements SQLManager {
         ResultSet rs = null;
         int uid = -1;
         try {
-            pst = getConnection().prepareStatement("SELECT uid FROM Player WHERE username=?");
+            pst = getConnection().prepareStatement("SELECT uid FROM Player WHERE last_seen_username=?");
             pst.setString(1, username);
             rs = pst.executeQuery();
             if (rs.next()) {
@@ -1533,15 +1537,15 @@ public final class MySQLManager implements SQLManager {
 
     @Override
     public org.bukkit.entity.Player getPlayer(int id) {
-        return Bukkit.getPlayerExact(getPlayerName(id));
+        return Bukkit.getPlayerExact(getLastSeenPlayerName(id));
     }
 
     @Override
-    public String getPlayerName(int id) {
+    public String getLastSeenPlayerName(int id) {
         PreparedStatement pst = null;
         ResultSet rs = null;
         try {
-            pst = getConnection().prepareStatement("SELECT username FROM Player WHERE uid=?");
+            pst = getConnection().prepareStatement("SELECT last_seen_username FROM Player WHERE uid=?");
             pst.setInt(1, id);
             rs = pst.executeQuery();
             if (rs.next()) {

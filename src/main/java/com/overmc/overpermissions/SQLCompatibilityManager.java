@@ -74,9 +74,17 @@ public class SQLCompatibilityManager {
                 // Duplicate old tables
                 con.setAutoCommit(false);
                 try {
-                    executeStatement(con, "CREATE TABLE PlayerOld LIKE Player"); // Doesn't transfer stuff over.
                     plugin.getLogger().info("Migration: Renaming  player table...");
                     executeStatement(con, "RENAME TABLE Player TO PlayerOld");
+                    plugin.getLogger().info("Creating new Player table structure...");
+                    executeStatement(con, "CREATE TABLE Player" //TODO eventually refactor the entire SQLManager class...
+                            + "("
+                            + "uid int AUTO_INCREMENT PRIMARY KEY,"
+                            + "last_seen_username varchar(16),"
+                            + "lower_uid BIGINT NOT NULL,"
+                            + "upper_uid BIGINT NOT NULL,"
+                            + "INDEX username (lower_uid, upper_uid)"
+                            + ")");
                     plugin.getLogger().info("Migration: Migrating old table to new syntax...");
                     migrateUuids(con);
                     con.commit(); // Successfully committed.
@@ -99,18 +107,18 @@ public class SQLCompatibilityManager {
                 MySQLManager.attemptClose(usernameResults);
             }
             UUIDFetcher fetcher = new UUIDFetcher(new ArrayList<String>(usernameUidMap.keySet()));
-            Map<String, UUID> uuidMap = fetcher.call(); //Convert usernames to UUIDs
-            for (Map.Entry<String, Integer> playerData : usernameUidMap.entrySet()) { //Iterate over usernames.
-                if (uuidMap.containsKey(playerData.getKey())) { //We've got a match!
+            Map<String, UUID> uuidMap = fetcher.call(); // Convert usernames to UUIDs
+            for (Map.Entry<String, Integer> playerData : usernameUidMap.entrySet()) { // Iterate over usernames.
+                if (uuidMap.containsKey(playerData.getKey())) { // We've got a match!
                     UUID uuid = uuidMap.get(playerData.getKey());
                     PreparedStatement pst = null;
                     try {
-                        pst = con.prepareStatement("INSERT INTO Player(uid, lastseen_username, lower_uid, upper_uid) VALUES (?, ?, ?, ?)");
+                        pst = con.prepareStatement("INSERT INTO Player(uid, last_seen_username, lower_uid, upper_uid) VALUES (?, ?, ?, ?)");
                         pst.setInt(1, playerData.getValue());
                         pst.setString(2, playerData.getKey());
                         pst.setLong(3, uuid.getLeastSignificantBits());
                         pst.setLong(4, uuid.getMostSignificantBits());
-                        executeStatement(con, "DELETE FROM PlayerOld WHERE uid=\"" + playerData.getValue() + "\""); //I know... sloppy, but no sqlI here.
+                        executeStatement(con, "DELETE FROM PlayerOld WHERE uid=\"" + playerData.getValue() + "\""); // I know... sloppy, but no sqlI here.
                     } finally {
                         MySQLManager.attemptClose(pst);
                     }
@@ -123,7 +131,7 @@ public class SQLCompatibilityManager {
             try {
                 tableEmptyStatement = con.createStatement();
                 tableEmpty = tableEmptyStatement.executeQuery("SELECT COUNT(*) FROM PlayerOld");
-                if(tableEmpty.next() && tableEmpty.getBoolean(1)) {
+                if (tableEmpty.next() && tableEmpty.getBoolean(1)) {
                     plugin.getLogger().info("Migration: Deleting empty old player table...");
                     executeStatement(con, "DROP TABLE PlayerOld");
                 } else {
