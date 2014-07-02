@@ -2,11 +2,16 @@ package com.overmc.overpermissions.commands;
 
 import static com.overmc.overpermissions.Messages.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.bukkit.command.*;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
 
-import com.overmc.overpermissions.*;
+import com.overmc.overpermissions.Messages;
+import com.overmc.overpermissions.OverPermissions;
 
 // ./groupdelete [group]
 public class GroupDeleteCommand implements TabExecutor {
@@ -24,7 +29,7 @@ public class GroupDeleteCommand implements TabExecutor {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(final CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission(command.getPermission())) {
             sender.sendMessage(ERROR_NO_PERMISSION);
             return true;
@@ -33,21 +38,25 @@ public class GroupDeleteCommand implements TabExecutor {
             sender.sendMessage(Messages.getUsage(command));
             return true;
         }
-        Group group = plugin.getGroupManager().getGroup(args[0]);
-        if (group == null) {
-            sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, args[0]));
+        final String groupName = args[0];
+        if (!plugin.getGroupManager().doesGroupExist(groupName)) {
+            sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, groupName));
             return true;
         }
-        if (plugin.getDefaultGroupId() == group.getId()) {
-            sender.sendMessage(Messages.format(ERROR_DELETE_DEFAULT_GROUP, args[0]));
+        if (plugin.getDefaultGroupName().equalsIgnoreCase(groupName)) {
+            sender.sendMessage(Messages.format(ERROR_DELETE_DEFAULT_GROUP, groupName));
             return true;
         }
-        if (plugin.getSQLManager().deleteGroup(group.getId())) {
-            sender.sendMessage(Messages.format(SUCCESS_GROUP_DELETE, args[0]));
-            plugin.getGroupManager().recalculateGroups();
-        } else {
-            sender.sendMessage(Messages.format(ERROR_UNKNOWN));
-        }
+        plugin.getExecutor().submit(new Runnable() {
+            @Override
+            public void run( ) {
+                if (plugin.getGroupManager().deleteGroup(groupName)) {
+                    sender.sendMessage(Messages.format(SUCCESS_GROUP_DELETE, groupName));
+                } else {
+                    sender.sendMessage(Messages.format(ERROR_UNKNOWN));
+                }
+            }
+        });
         return true;
     }
 
@@ -60,11 +69,7 @@ public class GroupDeleteCommand implements TabExecutor {
         int index = args.length - 1;
         String value = args[index].toLowerCase();
         if (index == 0) {
-            for (Group g : plugin.getGroupManager().getGroups()) {
-                if (g.getName().toLowerCase().startsWith(value)) {
-                    ret.add(g.getName());
-                }
-            }
+            CommandUtils.loadGroups(plugin.getGroupManager(), value, ret);
         }
         return ret;
     }

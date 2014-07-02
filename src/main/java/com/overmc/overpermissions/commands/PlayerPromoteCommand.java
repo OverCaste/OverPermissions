@@ -6,20 +6,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.bukkit.Bukkit;
-import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
-import org.bukkit.entity.Player;
 
-import com.google.common.collect.Iterators;
-import com.overmc.overpermissions.Group;
+import com.google.common.collect.Iterables;
 import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
+import com.overmc.overpermissions.api.PermissionGroup;
+import com.overmc.overpermissions.api.PermissionUser;
 
-// ./playerpromote [player] (choice) (world)
+// ./playerpromote [player] (choice)
 public class PlayerPromoteCommand implements TabExecutor {
     private final OverPermissions plugin;
 
@@ -35,79 +33,72 @@ public class PlayerPromoteCommand implements TabExecutor {
     }
 
     @Override
-    public boolean onCommand(final CommandSender sender, Command command, String label, final String[] args) {
+    public boolean onCommand(final CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission(command.getPermission())) {
             sender.sendMessage(ERROR_NO_PERMISSION);
             return true;
         }
-        if ((args.length < 1) || (args.length > 3)) {
+        if ((args.length < 1) || (args.length > 2)) {
             sender.sendMessage(Messages.getUsage(command));
             return true;
         }
-
+        final String playerName = args[0];
+        final String choice = (args.length >= 2) ? args[1] : null;
         plugin.getExecutor().submit(new Runnable() {
             @Override
             public void run( ) {
-                World world;
-                if (args.length < 3) {
-                    if (sender instanceof Player) {
-                        world = ((Player) sender).getWorld();
-                    } else {
-                        world = null;
-                    }
-                } else {
-                    if ("global".equalsIgnoreCase(args[2])) {
-                        world = null;
-                    } else {
-                        world = Bukkit.getWorld(args[2]);
-                        if (world == null) {
-                            sender.sendMessage(Messages.format(ERROR_INVALID_WORLD, args[2]));
-                            return;
-                        }
-                    }
-                }
-                int worldId = (world == null ? -1 : plugin.getSQLManager().getWorldId(world));
-                @SuppressWarnings("deprecation")
-                Player player = Bukkit.getPlayerExact(args[0]);
-                int playerId = plugin.getUuidManager().getOrCreateSqlUser(args[0]);
-                if (playerId < 0) {
-                    sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, args[0]));
+                if (plugin.getUserManager().canUserExist(playerName)) {
+                    sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, playerName));
                     return;
                 }
-                String choice = (args.length < 2 ? null : args[1].toLowerCase());
-                Group playerGroup = null;
-                for (int groupId : plugin.getSQLManager().getPlayerGroups(playerId)) {
-                    Group groupi = plugin.getGroupManager().getGroup(groupId);
-                    if (((groupi.getWorldId() == -1) || (groupi.getWorldId() == worldId)) && ((choice == null) || (groupi.getName().toLowerCase().startsWith(choice)))) {
-                        if (playerGroup != null) {
-                            sender.sendMessage(Messages.format(ERROR_PROMOTE_PLAYER_MULTIPLE_GROUPS, args[0]));
-                            return;
-                        } else {
-                            playerGroup = groupi;
-                        }
+                PermissionUser user = plugin.getUserManager().getPermissionUser(playerName);
+                PermissionGroup playerOnlyGroup = null;
+                for (PermissionGroup g : user.getParents()) {
+                    if (playerOnlyGroup != null) {
+                        sender.sendMessage(Messages.format(ERROR_PROMOTE_PLAYER_MULTIPLE_GROUPS, user.getName()));
+                        return;
+                    } else {
+                        playerOnlyGroup = g;
                     }
                 }
-                if (playerGroup != null) {
-                    Collection<Group> children = playerGroup.getChildren();
-                    if (children.size() == 0) {
-                        sender.sendMessage(Messages.format(ERROR_GROUP_NO_CHILDREN, playerGroup.getName()));
-                    } else if (children.size() == 1) {
-                        Group promoteTo = Iterators.getOnlyElement(children.iterator());
-                        if (plugin.getSQLManager().addPlayerGroup(playerId, promoteTo.getId()) && plugin.getSQLManager().removePlayerGroup(playerId, playerGroup.getId())) {
-                            sender.sendMessage(Messages.format(SUCCESS_PLAYER_PROMOTE, args[0], playerGroup.getName(), promoteTo.getName()));
-                            if (player != null) {
-                                plugin.getPlayerPermissions(player).recalculateGroups();
+                if (playerOnlyGroup == null) {
+                    throw new AssertionError("A player wasn't in any groups! (" + user.getName() + ")");
+                }
+                Collection<? extends PermissionGroup> children = playerOnlyGroup.getChildren();
+                if (children.size() == 0) {
+                    sender.sendMessage(Messages.format(ERROR_GROUP_NO_CHILDREN, playerOnlyGroup.getName()));
+                } else if (children.size() == 1) {
+                    PermissionGroup promoteTo = Iterables.getOnlyElement(children);
+                    if (!promoteTo.getName().equalsIgnoreCase(choice)) {
+                        sender.sendMessage(Messages.format(ERROR_PROMOTE_CHOICE_NOT_FOUND, playerName, choice));
+                        return;
+                    }
+                    if (!user.addParent(promoteTo) || !user.removeParent(playerOnlyGroup)) {
+                        throw new AssertionError("A group was it's own parent? (" + promoteTo.getName() + ", " + playerOnlyGroup.getName() + ", " + user.getName() + ")");
+                    }
+                    sender.sendMessage(Messages.format(SUCCESS_PLAYER_PROMOTE, playerName, playerOnlyGroup.getName(), promoteTo.getName()));
+                } else {
+                    for (PermissionGroup g : children) { // A choice and multiple options.
+                        if (g.getName().equalsIgnoreCase(choice)) {
+                            if (!g.getName().equalsIgnoreCase(choice)) {
+                                sender.sendMessage(Messages.format(ERROR_PROMOTE_CHOICE_NOT_FOUND, playerName, choice));
+                                return;
                             }
+                            if (!user.addParent(g) || !user.removeParent(g)) {
+                                throw new AssertionError("A group was it's own parent? (" + g.getName() + ", " + playerOnlyGroup.getName() + ", " + user.getName() + ")");
+                            }
+                            sender.sendMessage(Messages.format(SUCCESS_PLAYER_PROMOTE, playerName, playerOnlyGroup.getName(), g.getName()));
                             return;
                         }
+                    } // Otherwise we've failed.
+                    if (choice == null) {
+                        sender.sendMessage(Messages.format(ERROR_PROMOTE_SUBGROUPS));
                     } else {
-                        sender.sendMessage(Messages.format(PROMOTE_SUBGROUPS));
-                        for (Group g : children) {
-                            sender.sendMessage(Messages.format(PROMOTE_SUBGROUP_VALUE, g.getName()));
-                        }
+                        sender.sendMessage(Messages.format(ERROR_PROMOTE_SUBGROUPS_CHOICE, choice));
                     }
-                } else {
-                    sender.sendMessage(Messages.format(ERROR_PLAYER_NOT_IN_GROUP_WORLD, args[0], (world == null ? "global" : world.getName())));
+                    for (PermissionGroup g : children) {
+                        sender.sendMessage(Messages.format(ERROR_PROMOTE_SUBGROUP_VALUE, g.getName()));
+                    }
                 }
             }
         });
@@ -123,32 +114,9 @@ public class PlayerPromoteCommand implements TabExecutor {
         int index = args.length - 1;
         String value = args[index].toLowerCase();
         if (index == 0) {
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                if (p.getName().toLowerCase().startsWith(value)) {
-                    ret.add(p.getName());
-                }
-            }
+            CommandUtils.loadPlayers(value, ret);
         } else if (index == 1) {
-            int playerId = plugin.getSQLManager().getPlayerId(args[0]);
-            if (playerId < 0) {
-                return ret;
-            }
-            for (int groupId : plugin.getSQLManager().getPlayerGroups(playerId)) {
-                Group group = plugin.getGroupManager().getGroup(groupId);
-                for (Group other : group.getChildren()) {
-                    String name = other.getName();
-                    if (name.toLowerCase().startsWith(value) && !ret.contains(name)) {
-                        ret.add(name);
-                    }
-                }
-            }
-        } else if (index == 2) {
-            for (World world : Bukkit.getWorlds()) {
-                if (world.getName().toLowerCase().startsWith(value)) {
-                    ret.add(world.getName());
-                }
-            }
-            ret.add("global");
+            CommandUtils.loadPlayerGroups(plugin.getUserManager(), value, args[0], ret);
         }
         return ret;
     }

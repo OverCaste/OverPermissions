@@ -8,11 +8,17 @@ import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.Plugin;
 
+import com.overmc.overpermissions.TimeUtils;
 import com.overmc.overpermissions.api.GroupManager;
+import com.overmc.overpermissions.api.MetadataBatch;
+import com.overmc.overpermissions.api.NodeBatch;
 import com.overmc.overpermissions.api.PermissionGroup;
+import com.overmc.overpermissions.api.PermissionUser;
+import com.overmc.overpermissions.api.UserManager;
 
 final class CommandUtils {
     private CommandUtils() {
@@ -47,7 +53,67 @@ final class CommandUtils {
                     }
                 }
             }
-            
+            list.addAll(permissions);
+        }
+    }
+    
+    static void loadGroupPermissionNodes(GroupManager groupManager, String currentValue, String groupName, List<String> list) {
+        HashSet<String> uniqueNodes = new HashSet<String>();
+        if (groupManager.doesGroupExist(groupName)) {
+            PermissionGroup g = groupManager.getGroup(groupName);
+            for (NodeBatch.Entry node : g.getAllPermissionNodes()) {
+                if (node.getNode().toLowerCase().startsWith(currentValue)) {
+                    uniqueNodes.add(node.getNode());
+                }
+            }
+        }
+        list.addAll(uniqueNodes);
+    }
+    
+    static void loadPlayerPermissionNodes(UserManager userManager, String currentValue, String playerName, List<String> list) {
+        HashSet<String> uniqueNodes = new HashSet<String>();
+        if (userManager.doesUserExist(playerName)) {
+            PermissionUser u = userManager.getPermissionUser(playerName);
+            for (NodeBatch.Entry node : u.getAllPermissionNodes()) {
+                if (node.getNode().toLowerCase().startsWith(currentValue)) {
+                    uniqueNodes.add(node.getNode());
+                }
+            }
+        }
+        list.addAll(uniqueNodes);
+    }
+    
+    static void loadGroupMetadata(GroupManager groupManager, String currentValue, String groupName, List<String> list) {
+        HashSet<String> uniqueNodes = new HashSet<String>();
+        if (groupManager.doesGroupExist(groupName)) {
+            PermissionGroup g = groupManager.getGroup(groupName);
+            for (MetadataBatch.Entry meta : g.getAllMetadata()) {
+                uniqueNodes.add(meta.getKey());
+            }
+        }
+        list.addAll(uniqueNodes);
+    }
+    
+    static void loadPlayerMetdata(UserManager userManager, String currentValue, String playerName, List<String> list) {
+        HashSet<String> uniqueNodes = new HashSet<String>();
+        if (userManager.doesUserExist(playerName)) {
+            PermissionUser u = userManager.getPermissionUser(playerName);
+            for (MetadataBatch.Entry meta : u.getAllMetadata()) {
+                uniqueNodes.add(meta.getKey());
+            }
+        }
+        list.addAll(uniqueNodes);
+    }
+    
+    static void loadPrefixMetadataConstant(String currentValue, List<String> list) {
+        if("prefix".startsWith(currentValue) && !list.contains("prefix")) {
+            list.add("prefix");
+        }
+    }
+    
+    static void loadSuffixMetadataConstant(String currentValue, List<String> list) {
+        if("suffix".startsWith(currentValue) && !list.contains("suffix")) {
+            list.add("suffix");
         }
     }
     
@@ -59,13 +125,13 @@ final class CommandUtils {
         }
     }
     
-    static void loadGlobal(String currentValue, List<String> list) {
-        if("global".startsWith(currentValue)) {
+    static void loadGlobalWorldConstant(String currentValue, List<String> list) {
+        if("global".startsWith(currentValue) && !list.contains("global")) {
             list.add("global");
         }
     }
     
-    static void loadGroup(GroupManager groupManager, String currentValue, List<String> list) {
+    static void loadGroups(GroupManager groupManager, String currentValue, List<String> list) {
         for (PermissionGroup g : groupManager.getGroups()) {
             if (g.getName().toLowerCase().startsWith(currentValue)) {
                 list.add(g.getName());
@@ -80,5 +146,56 @@ final class CommandUtils {
                 list.add(g.getName());
             }
         }
+    }
+    
+    static void loadGroupParents(GroupManager groupManager, String currentValue, String groupName, List<String> list) {
+        if(groupManager.doesGroupExist(groupName)) {
+            HashSet<String> parents = new HashSet<>();
+            PermissionGroup group = groupManager.getGroup(groupName);
+            for(PermissionGroup parent : group.getParents()) {
+                if(parent.getName().toLowerCase().startsWith(currentValue)) {
+                   parents.add(parent.getName());
+                }
+            }
+            list.addAll(parents);
+        }
+    }
+    
+    static void loadPlayerGroups(UserManager userManager, String currentValue, String userName, List<String> list) {
+        if(userManager.doesUserExist(userName)) {
+            HashSet<String> parents = new HashSet<>();
+            PermissionUser user = userManager.getPermissionUser(userName);
+            for(PermissionGroup parent : user.getParents()) {
+                if(parent.getName().toLowerCase().startsWith(currentValue)) {
+                    list.add(parent.getName());
+                }
+            }
+            list.addAll(parents);
+        }
+    }
+    
+    static void loadPlayers(String currentValue, List<String> list) {
+        for(Player p : Bukkit.getOnlinePlayers()) {
+            if (p.getName().toLowerCase().startsWith(currentValue)) {
+                list.add(p.getName());
+            }
+        }
+    }
+    
+    static void loadTimeUnits(String currentValue, List<String> list) {
+        char lastChar = currentValue.charAt(currentValue.length()-1);
+        if(Character.isDigit(lastChar)) {
+            list.addAll(TimeUtils.getTimeUnits());
+        }
+    }
+    
+    static void loadClearValueConstant(String currentValue, List<String> list) {
+        if("clear".startsWith(currentValue) && !list.contains("clear")) {
+            list.add("clear");
+        }
+    }
+    
+    static String getWorldName(String worldName) {
+        return Bukkit.getWorld(worldName).getName();
     }
 }

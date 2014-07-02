@@ -2,13 +2,23 @@ package com.overmc.overpermissions.commands;
 
 import static com.overmc.overpermissions.Messages.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-import org.bukkit.command.*;
+import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
 
-import com.overmc.overpermissions.*;
+import com.overmc.overpermissions.Messages;
+import com.overmc.overpermissions.OverPermissions;
+import com.overmc.overpermissions.TimeUtils;
+import com.overmc.overpermissions.api.PermissionGroup;
+import com.overmc.overpermissions.exceptions.TimeFormatException;
 
-// ./groupadd [group] [permission] [time]
+// ./groupaddtemp [group] [permission] [time] (world)
 public class GroupAddTempCommand implements TabExecutor {
     private final OverPermissions plugin;
 
@@ -24,32 +34,54 @@ public class GroupAddTempCommand implements TabExecutor {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(final CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission(command.getPermission())) {
             sender.sendMessage(ERROR_NO_PERMISSION);
             return true;
         }
-        if (args.length != 3) {
+        if (args.length < 3 || args.length > 4) {
             sender.sendMessage(Messages.getUsage(command));
             return true;
         }
-        Group group = plugin.getGroupManager().getGroup(args[0]);
+        String groupName = args[0];
+        final String permissionNode = args[1];
+        final String worldName = (args.length >= 4 ? args[3] : null);
+        final boolean global = worldName == null;
+        final PermissionGroup group = plugin.getGroupManager().getGroup(groupName);
         if (group == null) {
-            sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, args[0]));
+            sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, groupName));
             return true;
         }
-        int time;
+        if (!global && Bukkit.getWorld(worldName) == null) { // Not global, and world doesn't exist.
+            sender.sendMessage(Messages.format(ERROR_INVALID_WORLD, worldName));
+            return true;
+        }
+        final long timeInMillis;
         try {
-            time = Integer.parseInt(args[2]);
-        } catch (NumberFormatException e) {
-            sender.sendMessage(Messages.format(ERROR_INVALID_INTEGER, args[2]));
+            timeInMillis = TimeUtils.parseMilliseconds(args[2]);
+        } catch (TimeFormatException e) {
+            sender.sendMessage(Messages.format(ERROR_INVALID_TIME, args[2]));
             return true;
         }
-        if (plugin.getTempManager().registerTemporaryGroupPermission(group.getId(), time, args[1])) {
-            sender.sendMessage(Messages.format(SUCCESS_GROUP_ADD, args[1], group.getName()));
-        } else {
-            sender.sendMessage(Messages.format(ERROR_GROUP_PERMISSION_ALREADY_SET, args[1]));
-        }
+        plugin.getExecutor().submit(new Runnable() {
+            @Override
+            public void run( ) {
+                if (global) {
+                    if (group.addGlobalTempPermissionNode(permissionNode, timeInMillis, TimeUnit.MILLISECONDS)) {
+                        sender.sendMessage(Messages.format(SUCCESS_GROUP_ADD_TEMP_GLOBAL, permissionNode, group.getName(), TimeUnit.MILLISECONDS.toSeconds(timeInMillis)));
+                    } else {
+                        sender.sendMessage(Messages.format(ERROR_GROUP_PERMISSION_ALREADY_SET_GLOBAL, permissionNode));
+                    }
+                } else {
+                    if (group.addTempPermissionNode(permissionNode, worldName, timeInMillis, TimeUnit.MILLISECONDS)) {
+                        sender.sendMessage(Messages.format(SUCCESS_GROUP_ADD_TEMP_WORLD, permissionNode, group.getName(), TimeUnit.MILLISECONDS.toSeconds(timeInMillis), CommandUtils
+                                .getWorldName(worldName)));
+                    } else {
+                        sender.sendMessage(Messages.format(ERROR_GROUP_PERMISSION_ALREADY_SET_WORLD, permissionNode, CommandUtils.getWorldName(worldName)));
+                    }
+                }
+            }
+        });
         return true;
     }
 
@@ -62,11 +94,12 @@ public class GroupAddTempCommand implements TabExecutor {
         int index = args.length - 1;
         String value = args[index].toLowerCase();
         if (index == 0) {
-            for (Group g : plugin.getGroupManager().getGroups()) {
-                if (g.getName().toLowerCase().startsWith(value)) {
-                    ret.add(g.getName());
-                }
-            }
+            CommandUtils.loadGroups(plugin.getGroupManager(), value, ret);
+        } else if (index == 1) {
+            CommandUtils.loadPermissionNodes(value, ret);
+        } else if (index == 3) {
+            CommandUtils.loadWorlds(value, ret);
+            CommandUtils.loadGlobalWorldConstant(value, ret);
         }
         return ret;
     }

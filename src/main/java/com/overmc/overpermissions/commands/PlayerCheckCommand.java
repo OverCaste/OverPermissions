@@ -1,21 +1,13 @@
 package com.overmc.overpermissions.commands;
 
-import static com.overmc.overpermissions.Messages.*;
-
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bukkit.Bukkit;
-import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
-import org.bukkit.entity.Player;
 
-import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
-import com.overmc.overpermissions.PlayerPermissionData;
 
 // ./playercheck [player] [permission] (world)
 public class PlayerCheckCommand implements TabExecutor {
@@ -26,14 +18,17 @@ public class PlayerCheckCommand implements TabExecutor {
     }
 
     public PlayerCheckCommand register( ) {
-        PluginCommand command = plugin.getCommand("playercheck");
-        command.setExecutor(this);
-        command.setTabCompleter(this);
+        // PluginCommand command = plugin.getCommand("playercheck");
+        // command.setExecutor(this);
+        // command.setTabCompleter(this);
         return this;
     }
 
     @Override
     public boolean onCommand(final CommandSender sender, Command command, String label, final String[] args) {
+        return true;
+        //@formatter:off
+        /*
         if (!sender.hasPermission(command.getPermission())) {
             sender.sendMessage(ERROR_NO_PERMISSION);
             return true;
@@ -78,11 +73,16 @@ public class PlayerCheckCommand implements TabExecutor {
             }
         });
         return true;
+        //@formatter:on*/
+
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
         ArrayList<String> ret = new ArrayList<String>();
+        return ret;
+        //@formatter:off
+        /*
         if (!sender.hasPermission(command.getPermission())) {
             return ret;
         }
@@ -122,5 +122,7 @@ public class PlayerCheckCommand implements TabExecutor {
             }
         }
         return ret;
+        */
+        //@formatter:on
     }
 }

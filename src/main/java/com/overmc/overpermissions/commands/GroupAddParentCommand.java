@@ -2,13 +2,19 @@ package com.overmc.overpermissions.commands;
 
 import static com.overmc.overpermissions.Messages.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.bukkit.command.*;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
 
-import com.overmc.overpermissions.*;
+import com.overmc.overpermissions.Messages;
+import com.overmc.overpermissions.OverPermissions;
+import com.overmc.overpermissions.api.PermissionGroup;
 
-// ./groupadd [group] [parent]
+// ./groupaddparent [group] [parent]
 public class GroupAddParentCommand implements TabExecutor {
     private final OverPermissions plugin;
 
@@ -24,7 +30,7 @@ public class GroupAddParentCommand implements TabExecutor {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(final CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission(command.getPermission())) {
             sender.sendMessage(ERROR_NO_PERMISSION);
             return true;
@@ -33,29 +39,35 @@ public class GroupAddParentCommand implements TabExecutor {
             sender.sendMessage(Messages.getUsage(command));
             return true;
         }
-        Group group = plugin.getGroupManager().getGroup(args[0]);
+        String groupName = args[0];
+        String parentName = args[1];
+
+        final PermissionGroup group = plugin.getGroupManager().getGroup(groupName);
         if (group == null) {
-            sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, args[0]));
+            sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, groupName));
             return true;
         }
-        Group parent = plugin.getGroupManager().getGroup(args[1]);
+        final PermissionGroup parent = plugin.getGroupManager().getGroup(parentName);
         if (parent == null) {
-            sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, args[1]));
+            sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, parentName));
             return true;
         }
-        for (Group g : parent.getAllParents()) {
-            if (g.equals(group)) {
-                sender.sendMessage(Messages.format(ERROR_PARENT_RECURSION, parent.getName(), group.getName()));
-                return true;
+        plugin.getExecutor().submit(new Runnable() {
+            @Override
+            public void run( ) {
+                for (PermissionGroup g : parent.getAllParents()) {
+                    if (g.equals(group)) {
+                        sender.sendMessage(Messages.format(ERROR_PARENT_RECURSION, parent.getName(), group.getName()));
+                        return;
+                    }
+                }
+                if (group.addParent(parent)) {
+                    sender.sendMessage(Messages.format(SUCCESS_GROUP_ADD_PARENT, parent.getName(), group.getName()));
+                } else {
+                    sender.sendMessage(Messages.format(ERROR_PARENT_ALREADY_SET, parent.getName()));
+                }
             }
-        }
-        if (plugin.getSQLManager().addGroupParent(group.getId(), parent.getId())) {
-            sender.sendMessage(Messages.format(SUCCESS_GROUP_ADD_PARENT, args[1], group.getName()));
-            group.recalculateParents();
-            parent.recalculateChildren();
-        } else {
-            sender.sendMessage(Messages.format(ERROR_PARENT_ALREADY_SET, args[1]));
-        }
+        });
         return true;
     }
 
@@ -68,18 +80,9 @@ public class GroupAddParentCommand implements TabExecutor {
         int index = args.length - 1;
         String value = args[index].toLowerCase();
         if (index == 0) {
-            for (Group g : plugin.getGroupManager().getGroups()) {
-                if (g.getName().toLowerCase().startsWith(value)) {
-                    ret.add(g.getName());
-                }
-            }
+            CommandUtils.loadGroups(plugin.getGroupManager(), value, ret);
         } else if (index == 1) {
-            for (Group g : plugin.getGroupManager().getGroups()) {
-                if (g.getName().toLowerCase().startsWith(value)) {
-                    ret.add(g.getName());
-                }
-                ret.remove(args[0]);
-            }
+            CommandUtils.loadExclusiveGroup(plugin.getGroupManager(), value, args[0], ret);
         }
         return ret;
     }

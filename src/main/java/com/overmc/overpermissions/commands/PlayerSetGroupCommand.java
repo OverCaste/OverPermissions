@@ -5,19 +5,18 @@ import static com.overmc.overpermissions.Messages.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
-import org.bukkit.entity.Player;
 
-import com.overmc.overpermissions.Group;
 import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
+import com.overmc.overpermissions.api.PermissionGroup;
+import com.overmc.overpermissions.api.PermissionUser;
 import com.overmc.overpermissions.events.PlayerGroupChangeEvent;
 
-// ./groupset [player] [group]
+// ./playersetgroup [player] [group]
 public class PlayerSetGroupCommand implements TabExecutor {
     private final OverPermissions plugin;
 
@@ -38,34 +37,30 @@ public class PlayerSetGroupCommand implements TabExecutor {
             sender.sendMessage(ERROR_NO_PERMISSION);
             return true;
         }
-        if ((args.length < 2) || (args.length > 2)) {
+        if ((args.length != 2)) {
             sender.sendMessage(Messages.getUsage(command));
             return true;
         }
+        final String victim = args[0];
+        final String groupName = args[1];
         plugin.getExecutor().submit(new Runnable() {
             @Override
             public void run( ) {
-                String victim = args[0];
-                int group = plugin.getSQLManager().getGroupId(args[1]);
-                if (group < 0) {
-                    sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, args[1]));
+                if (!plugin.getGroupManager().doesGroupExist(groupName)) {
+                    sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, groupName));
                     return;
                 }
-                int victimId = plugin.getUuidManager().getOrCreateSqlUser(victim);
-                if (victimId < 0) {
+                PermissionGroup group = plugin.getGroupManager().getGroup(groupName);
+                if (!plugin.getUserManager().canUserExist(victim)) {
                     sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, victim));
                     return;
                 }
-                PlayerGroupChangeEvent event = new PlayerGroupChangeEvent(victim, plugin.getGroupManager().getGroup(group).getName());
+                PermissionUser user = plugin.getUserManager().getPermissionUser(victim);
+                PlayerGroupChangeEvent event = new PlayerGroupChangeEvent(victim, group.getName());
                 plugin.getServer().getPluginManager().callEvent(event);
                 if (event.isEnabled()) {
-                    plugin.getSQLManager().setPlayerGroup(victimId, group);
-                    @SuppressWarnings("deprecation")
-                    Player p = Bukkit.getPlayerExact(victim);
-                    if (p != null) {
-                        plugin.getPlayerPermissions(p).recalculateGroups();
-                    }
-                    sender.sendMessage(Messages.format(SUCCESS_PLAYER_SET_GROUP, victim, args[1]));
+                    user.setParent(group);
+                    sender.sendMessage(Messages.format(SUCCESS_PLAYER_SET_GROUP, victim, group));
                 }
             }
         });
@@ -82,17 +77,9 @@ public class PlayerSetGroupCommand implements TabExecutor {
         int index = args.length - 1;
         String value = args[index].toLowerCase();
         if (index == 0) {
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                if (player.getName().toLowerCase().startsWith(value)) {
-                    ret.add(player.getName());
-                }
-            }
+            CommandUtils.loadPlayers(value, ret);
         } else if (index == 1) {
-            for (Group g : this.plugin.getGroupManager().getGroups()) {
-                if (g.getName().toLowerCase().startsWith(value)) {
-                    ret.add(g.getName());
-                }
-            }
+            CommandUtils.loadGroups(plugin.getGroupManager(), value, ret);
         }
         return ret;
     }

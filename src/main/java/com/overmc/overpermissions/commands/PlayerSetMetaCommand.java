@@ -7,16 +7,15 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.bukkit.Bukkit;
-import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
-import org.bukkit.entity.Player;
 
 import com.google.common.base.Joiner;
 import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
+import com.overmc.overpermissions.api.PermissionUser;
 
 // ./playersetmeta [player] [key] (world) [value]
 public class PlayerSetMetaCommand implements TabExecutor {
@@ -34,7 +33,7 @@ public class PlayerSetMetaCommand implements TabExecutor {
     }
 
     @Override
-    public boolean onCommand(final CommandSender sender, Command command, String label, final String[] args) {
+    public boolean onCommand(final CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission(command.getPermission())) {
             sender.sendMessage(ERROR_NO_PERMISSION);
             return true;
@@ -43,59 +42,51 @@ public class PlayerSetMetaCommand implements TabExecutor {
             sender.sendMessage(Messages.getUsage(command));
             return true;
         }
+        final String playerName = args[0];
+        final String key = args[1];
+        final String worldName;
+        final String value;
+        if(Bukkit.getWorld(args[2]) != null || "global".equals(args[2])) {
+            value = Joiner.on(' ').join(Arrays.copyOfRange(args, 3, args.length-1));
+            worldName = args[2];
+        } else {
+            worldName = null;
+            value = Joiner.on(' ').join(Arrays.copyOfRange(args, 2, args.length-1));
+        }
+        final boolean global = (worldName == null || "global".equals(worldName));
         plugin.getExecutor().submit(new Runnable() {
             @Override
             public void run( ) {
-                @SuppressWarnings("deprecation")
-                Player p = plugin.getServer().getPlayerExact(args[0]);
-                int playerId;
-                if (p == null) {
-                    playerId = plugin.getUuidManager().getOrCreateSqlUser(args[0]);
-                    if (playerId < 0) {
-                        sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, args[0]));
-                        return;
-                    }
-                } else {
-                    playerId = plugin.getPlayerPermissions(p).getId();
+                if(!global && Bukkit.getWorld(worldName) == null) { //Not global, and world doesn't exist.
+                    sender.sendMessage(Messages.format(ERROR_INVALID_WORLD, worldName));
+                    return;
                 }
-                World world = null;
-                boolean worldValid = false;
-                if (args.length > 3) {
-                    if ("global".equalsIgnoreCase(args[3])) {
-                        world = null;
-                        worldValid = true;
-                    } else {
-                        world = Bukkit.getWorld(args[3]);
-                        if (world == null) {
-                            if (sender instanceof Player) {
-                                world = ((Player) sender).getWorld();
-                            }
+                if (!plugin.getUserManager().canUserExist(playerName)) {
+                    sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, playerName));
+                    return;
+                }
+                PermissionUser user = plugin.getUserManager().getPermissionUser(playerName);
+                if ("clear".equalsIgnoreCase(value)) {
+                    if (global) {
+                        if(user.removeGlobalMeta(key)) {
+                            sender.sendMessage(Messages.format(SUCCESS_PLAYER_META_CLEAR_GLOBAL, key, user.getName()));
                         } else {
-                            worldValid = true;
-                        }
-                    }
-                } else {
-                    if (sender instanceof Player) {
-                        world = ((Player) sender).getWorld();
-                    }
-                }
-
-                String meta = (Joiner.on(' ').join(Arrays.copyOfRange(args, (worldValid ? 3 : 2), args.length)));
-                int worldId = (world == null ? -1 : plugin.getSQLManager().getWorldId(world));
-                if ("clear".equalsIgnoreCase(meta)) {
-                    if (plugin.getSQLManager().delPlayerMeta(playerId, worldId, args[1])) {
-                        sender.sendMessage(Messages.format(SUCCESS_GROUP_META_CLEAR, args[1]));
-                        if (p != null) {
-                            plugin.getPlayerPermissions(p).recalculateMeta();
+                            sender.sendMessage(Messages.format(ERROR_PLAYER_UNKNOWN_META_KEY_GLOBAL, key, user.getName()));
                         }
                     } else {
-                        sender.sendMessage(Messages.format(ERROR_UNKNOWN_META_KEY, args[1]));
+                        if(user.removeMeta(key, worldName)) {
+                            sender.sendMessage(Messages.format(SUCCESS_PLAYER_META_CLEAR_WORLD, key, user.getName(), CommandUtils.getWorldName(worldName)));
+                        } else {
+                            sender.sendMessage(Messages.format(ERROR_PLAYER_UNKNOWN_META_KEY_WORLD, key, user.getName(), CommandUtils.getWorldName(worldName)));
+                        }
                     }
                 } else {
-                    plugin.getSQLManager().setPlayerMeta(playerId, worldId, args[1], meta);
-                    sender.sendMessage(Messages.format(SUCCESS_GROUP_META_SET, args[1], meta));
-                    if (p != null) {
-                        plugin.getPlayerPermissions(p).recalculateMeta();
+                    if(global) {
+                        user.setGlobalMeta(key, value);
+                        sender.sendMessage(Messages.format(SUCCESS_PLAYER_META_SET_GLOBAL, key, value, user.getName()));
+                    } else {
+                        user.setMeta(key, value, worldName);
+                        sender.sendMessage(Messages.format(SUCCESS_PLAYER_META_SET_WORLD, key, value, user.getName(), CommandUtils.getWorldName(worldName)));
                     }
                 }
             }
@@ -113,32 +104,16 @@ public class PlayerSetMetaCommand implements TabExecutor {
         int index = args.length - 1;
         String value = args[index].toLowerCase();
         if (index == 0) {
-            for (Player p : plugin.getServer().getOnlinePlayers()) {
-                if (p.getName().toLowerCase().startsWith(value)) {
-                    ret.add(p.getName());
-                }
-            }
+            CommandUtils.loadPlayers(value, ret);
         } else if (index == 1) {
-            int playerId = plugin.getSQLManager().getPlayerId(args[0]);
-            for (String s : plugin.getSQLManager().getPlayerMeta(playerId, -1).values()) {
-                ret.add(s);
-            }
-            if (!ret.contains("prefix")) {
-                ret.add("prefix");
-            }
-            if (!ret.contains("suffix")) {
-                ret.add("suffix");
-            }
+            CommandUtils.loadPlayerMetdata(plugin.getUserManager(), value, args[0], ret);
+            CommandUtils.loadPrefixMetadataConstant(value, ret);
+            CommandUtils.loadSuffixMetadataConstant(value, ret);
         } else if (index == 2) {
-            for (World w : plugin.getServer().getWorlds()) {
-                if (w.getName().toLowerCase().startsWith(value)) {
-                    ret.add(w.getName());
-                }
-                ret.add("global");
-                ret.add("clear");
-            }
+            CommandUtils.loadWorlds(value, ret);
+            CommandUtils.loadGlobalWorldConstant(value, ret);
         } else if (index == 3) {
-            ret.add("clear");
+            CommandUtils.loadClearValueConstant(value, ret);
         }
         return ret;
     }

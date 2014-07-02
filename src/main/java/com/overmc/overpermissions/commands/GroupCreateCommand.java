@@ -2,14 +2,18 @@ package com.overmc.overpermissions.commands;
 
 import static com.overmc.overpermissions.Messages.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.bukkit.*;
-import org.bukkit.command.*;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
 
-import com.overmc.overpermissions.*;
+import com.overmc.overpermissions.Messages;
+import com.overmc.overpermissions.OverPermissions;
 
-// ./groupcreate [group] [priority] (world)
+// ./groupcreate [group] [priority]
 public class GroupCreateCommand implements TabExecutor {
     private final OverPermissions plugin;
 
@@ -25,44 +29,35 @@ public class GroupCreateCommand implements TabExecutor {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(final CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission(command.getPermission())) {
             sender.sendMessage(ERROR_NO_PERMISSION);
             return true;
         }
-        if ((args.length < 2) || (args.length > 3)) {
+        if (args.length != 2) {
             sender.sendMessage(Messages.getUsage(command));
             return true;
         }
-        World world;
-        if (args.length < 3) {
-            world = null;
-        } else {
-            if ("global".equalsIgnoreCase(args[2])) {
-                world = null;
-            } else {
-                world = Bukkit.getWorld(args[2]);
-                if (world == null) {
-                    sender.sendMessage(Messages.format(ERROR_INVALID_WORLD, args[2]));
-                    return true;
+        final String groupName = args[0];
+        final String priorityString = args[1];
+        if (plugin.getGroupManager().getGroup(groupName) != null) {
+            sender.sendMessage(Messages.format(ERROR_GROUP_ALREADY_EXISTS, plugin.getGroupManager().getGroup(groupName).getName()));
+            return true;
+        }
+        plugin.getExecutor().submit(new Runnable() {
+            @Override
+            public void run( ) {
+                int priority;
+                try {
+                    priority = Integer.parseInt(priorityString);
+                } catch (NumberFormatException e) {
+                    sender.sendMessage(Messages.format(ERROR_INVALID_INTEGER, priorityString));
+                    return;
                 }
+                plugin.getGroupManager().createGroup(groupName, priority);
+                sender.sendMessage(Messages.format(SUCCESS_GROUP_CREATE, groupName, priority));
             }
-        }
-        int worldId = plugin.getSQLManager().getWorldId(world);
-        if (plugin.getGroupManager().getGroup(args[0]) != null) {
-            sender.sendMessage(Messages.format(ERROR_GROUP_ALREADY_EXISTS, plugin.getGroupManager().getGroup(args[0]).getName()));
-            return true;
-        }
-        int priority = 0;
-        try {
-            priority = Integer.parseInt(args[1]);
-        } catch (NumberFormatException e) {
-            sender.sendMessage(Messages.format(ERROR_INVALID_INTEGER, args[1]));
-            return true;
-        }
-        plugin.getSQLManager().setGroup(args[0], priority, worldId);
-        sender.sendMessage(Messages.format(SUCCESS_GROUP_CREATE, args[0], priority, (world == null ? "global" : world.getName())));
-        plugin.getGroupManager().recalculateGroups();
+        });
         return true;
     }
 
@@ -71,16 +66,6 @@ public class GroupCreateCommand implements TabExecutor {
         ArrayList<String> ret = new ArrayList<String>();
         if (!sender.hasPermission(command.getPermission())) {
             return ret;
-        }
-        int index = args.length - 1;
-        String value = args[index].toLowerCase();
-        if (index == 2) {
-            for (org.bukkit.World w : plugin.getServer().getWorlds()) {
-                if (w.getName().toLowerCase().startsWith(value)) {
-                    ret.add(w.getName());
-                }
-            }
-            ret.add("global");
         }
         return ret;
     }

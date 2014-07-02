@@ -2,18 +2,15 @@ package com.overmc.overpermissions.commands;
 
 import static com.overmc.overpermissions.Messages.*;
 
-import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
-import org.bukkit.entity.Player;
 
 import com.google.common.base.Joiner;
-import com.overmc.overpermissions.Group;
 import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
-import com.overmc.overpermissions.PlayerPermissionData;
+import com.overmc.overpermissions.api.PermissionUser;
 
 // ./overpermissions ['debug'|'info']
 public class OverPermissionsCommand implements CommandExecutor {
@@ -43,30 +40,19 @@ public class OverPermissionsCommand implements CommandExecutor {
         if ("debug".equalsIgnoreCase(args[0])) {
             if (args.length == 1) {
                 sender.sendMessage("debug commands: ");
-                sender.sendMessage("/overperms debug group [group]");
                 sender.sendMessage("/overperms debug player [player]");
                 return true;
             }
             else if ((args.length == 3)) {
-                if ("group".equalsIgnoreCase(args[1])) {
-                    Group group = plugin.getGroupManager().getGroup(args[2]);
-                    if (group != null) {
-                        sender.sendMessage(group.getDebugInfo());
-                        return true;
-                    } else {
-                        sender.sendMessage(Messages.format(Messages.ERROR_GROUP_NOT_FOUND, args[2]));
-                    }
-                    return true;
-                } else if ("player".equalsIgnoreCase(args[1])) {
-                    @SuppressWarnings("deprecation")
-                    Player player = Bukkit.getPlayerExact(args[2]);
-                    if (player == null) {
+                if ("player".equalsIgnoreCase(args[1])) {
+                    String playername = args[2];
+                    if (plugin.getUserManager().doesUserExist(playername)) {
                         sender.sendMessage("Player not found.");
                         return true;
                     }
-                    PlayerPermissionData playerData = plugin.getPlayerPermissions(player);
-                    sender.sendMessage("Player effective groups: " + Joiner.on(' ').join(playerData.getEffectiveGroups()));
-                    sender.sendMessage("Player actual groups: " + Joiner.on(' ').join(playerData.getGroups()));
+                    PermissionUser user = plugin.getUserManager().getPermissionUser(playername);
+                    sender.sendMessage("Player effective groups: " + Joiner.on(' ').join(user.getAllParents()));
+                    sender.sendMessage("Player actual groups: " + Joiner.on(' ').join(user.getParents()));
                     return true;
                 }
             }

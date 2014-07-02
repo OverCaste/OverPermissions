@@ -4,17 +4,19 @@ import static com.overmc.overpermissions.Messages.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Bukkit;
-import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
-import org.bukkit.entity.Player;
 
 import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
+import com.overmc.overpermissions.TimeUtils;
+import com.overmc.overpermissions.api.PermissionUser;
+import com.overmc.overpermissions.exceptions.TimeFormatException;
 
 // ./playeraddtemp [player] [permission] [time] (world)
 public class PlayerAddTempCommand implements TabExecutor {
@@ -32,7 +34,7 @@ public class PlayerAddTempCommand implements TabExecutor {
     }
 
     @Override
-    public boolean onCommand(final CommandSender sender, Command command, String label, final String[] args) {
+    public boolean onCommand(final CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission(command.getPermission())) {
             sender.sendMessage(ERROR_NO_PERMISSION);
             return true;
@@ -41,48 +43,42 @@ public class PlayerAddTempCommand implements TabExecutor {
             sender.sendMessage(Messages.getUsage(command));
             return true;
         }
+        final String playerName = args[0];
+        final String permission = args[1];
+        final String timeString = args[2];
+        final String worldName = (args.length >= 4) ? args[3] : null;
+        final boolean global = (worldName == null || "global".equals(worldName));
         plugin.getExecutor().submit(new Runnable() {
             @Override
             public void run( ) {
-                World world;
-                if (args.length < 4) {
-                    if (sender instanceof Player) {
-                        world = ((Player) sender).getWorld();
-                    } else {
-                        world = null;
-                    }
-                } else {
-                    if ("global".equalsIgnoreCase(args[3])) {
-                        world = null;
-                    } else {
-                        world = Bukkit.getWorld(args[3]);
-                        if (world == null) {
-                            sender.sendMessage(Messages.format(ERROR_INVALID_WORLD, args[3]));
-                            return;
-                        }
-                    }
-                }
-                int worldId = (world == null ? -1 : plugin.getSQLManager().getWorldId(world));
-                int playerId = plugin.getUuidManager().getOrCreateSqlUser(args[0]);
-                if (playerId < 0) {
-                    sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, args[0]));
+                if (plugin.getUserManager().canUserExist(playerName)) {
+                    sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, playerName));
                     return;
                 }
-                int time;
+                if (!global && Bukkit.getWorld(worldName) == null) { // Not global, and world doesn't exist.
+                    sender.sendMessage(Messages.format(ERROR_INVALID_WORLD, worldName));
+                    return;
+                }
+                PermissionUser user = plugin.getUserManager().getPermissionUser(playerName);
+                long time;
                 try {
-                    time = Integer.parseInt(args[2]);
-                } catch (NumberFormatException e) {
-                    sender.sendMessage(Messages.format(ERROR_INVALID_INTEGER, args[2]));
+                    time = TimeUtils.parseMilliseconds(timeString);
+                } catch (TimeFormatException ex) {
+                    sender.sendMessage(Messages.format(ERROR_INVALID_TIME, timeString));
                     return;
                 }
-                if (plugin.getTempManager().registerTemporaryPlayerPermission(playerId, worldId, time, args[1])) {
-                    if (world == null) {
-                        sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADDTEMP, args[1], args[0], time));
+                if (global) {
+                    if (user.addGlobalTempPermissionNode(permission, time, TimeUnit.MILLISECONDS)) {
+                        sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADDTEMP_GLOBAL, permission, user, (time / 1000L)));
                     } else {
-                        sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADDTEMP_WORLD, args[1], args[0], world.getName(), time));
+                        sender.sendMessage(Messages.format(ERROR_PLAYER_PERMISSION_ALREADY_SET_GLOBAL, permission));
                     }
                 } else {
-                    sender.sendMessage(Messages.format(ERROR_GROUP_PERMISSION_ALREADY_SET, args[1]));
+                    if (user.addTempPermissionNode(permission, worldName, time, TimeUnit.MILLISECONDS)) {
+                        sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADDTEMP_WORLD, permission, user, CommandUtils.getWorldName(worldName), (time / 1000L)));
+                    } else {
+                        sender.sendMessage(Messages.format(ERROR_PLAYER_PERMISSION_ALREADY_SET_WORLD, permission, CommandUtils.getWorldName(worldName)));
+                    }
                 }
             }
         });
@@ -98,18 +94,14 @@ public class PlayerAddTempCommand implements TabExecutor {
         int index = args.length - 1;
         String value = args[index].toLowerCase();
         if (index == 0) {
-            for (Player p : plugin.getServer().getOnlinePlayers()) {
-                if (p.getName().toLowerCase().startsWith(value)) {
-                    ret.add(p.getName());
-                }
-            }
+            CommandUtils.loadPlayers(value, ret);
+        } else if (index == 1) {
+            CommandUtils.loadPermissionNodes(value, ret);
+        } else if (index == 2) {
+            CommandUtils.loadTimeUnits(value, ret);
         } else if (index == 3) {
-            for (World w : plugin.getServer().getWorlds()) {
-                if (w.getName().toLowerCase().startsWith(value)) {
-                    ret.add(w.getName());
-                }
-                ret.add("global");
-            }
+            CommandUtils.loadWorlds(value, ret);
+            CommandUtils.loadGlobalWorldConstant(value, ret);
         }
         return ret;
     }
