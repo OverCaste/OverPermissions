@@ -1,73 +1,63 @@
 package com.overmc.overpermissions.api;
 
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
 
 /**
  * A batch of permissions to be set all at once.
  * 
  * To instantiate, use the {@link Builder}.
  */
-public final class NodeBatch implements Iterable<NodeBatch.Entry> {
-    private final ImmutableList<Entry> entries;
+public final class NodeBatch {
+    private final ImmutableList<String> globalNodes;
+    private final ImmutableMultimap<String, String> worldNodes;
 
-    private NodeBatch(ImmutableList<Entry> entries) {
-        this.entries = entries;
+    private NodeBatch(ImmutableList<String> globalNodes, ImmutableMultimap<String, String> worldNodes) {
+        this.globalNodes = globalNodes;
+        this.worldNodes = worldNodes;
     }
 
-    public ImmutableList<Entry> getEntries( ) {
-        return entries;
+    public ImmutableList<String> getGlobalNodes( ) {
+        return globalNodes;
     }
 
-    @Override
-    public Iterator<Entry> iterator( ) {
-        return entries.iterator();
+    public ImmutableMultimap<String, String> getWorldNodes( ) {
+        return worldNodes;
+    }
+
+    public Collection<String> getAllNodes( ) {
+        HashSet<String> ret = new HashSet<String>(globalNodes.size() + worldNodes.size());
+        ret.addAll(globalNodes);
+        ret.addAll(worldNodes.values());
+        return ret;
     }
 
     public static final class Builder {
-        private final HashMap<String, Entry> entries = new HashMap<>();
+        private Set<String> globalNodes = new HashSet<String>();
+        private Multimap<String, String> worldNodes = HashMultimap.create();
 
         public Builder addNode(String node, String worldName) { // TODO documentation
             Preconditions.checkNotNull(node, "The node can't be null!");
             Preconditions.checkNotNull(node, "The world can't be null!");
-            // Preconditions.checkArgument(worldName >= 0, "A valid world id has to be greater or equal to 0.");
-            entries.put(node, new Entry(node, worldName));
+            worldNodes.put(node, worldName);
             return this;
         }
 
         public Builder addGlobalNode(String node) {
             Preconditions.checkNotNull(node, "The node can't be null!");
-            entries.put(node, new Entry(node, null));
+            globalNodes.add(node);
             return this;
         }
 
         public NodeBatch build( ) {
-            return new NodeBatch(ImmutableList.copyOf(entries.values()));
-        }
-    }
-
-    public static final class Entry {
-        private final String node;
-        private final String worldName;
-
-        private Entry(String node, String worldName) {
-            this.node = node;
-            this.worldName = worldName;
-        }
-
-        public String getNode( ) {
-            return node;
-        }
-
-        public String getWorldName( ) {
-            return worldName;
-        }
-
-        public boolean isGlobal( ) {
-            return worldName == null;
+            return new NodeBatch(ImmutableList.copyOf(globalNodes), ImmutableMultimap.copyOf(worldNodes));
         }
     }
 }

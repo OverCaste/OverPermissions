@@ -6,7 +6,7 @@ public interface TemporaryPermissionEntity {
     /**
      * Checks whether this group has a specific global temporary permission set.
      * 
-     * @see PermissionEntity#getPermission(String)
+     * @see PermissionEntity#getGlobalPermission(String)
      * @see #addGlobalTempPermissionNode(String, long, TimeUnit)
      * 
      * @param permission the permission to be checked for.
@@ -49,14 +49,39 @@ public interface TemporaryPermissionEntity {
     public boolean addTempPermissionNode(String permissionNode, String worldName, long time, TimeUnit unit);
 
     /**
+     * Removes a global temporary permission node from this group.
+     * 
+     * @param permissionNode the node to be removed. Has to be an alphanumeric string, with periods ".", it can't have the unique node qualifiers "-" or "+".
+     * @return whether the specified node existed, and was successfully removed from this group.
+     */
+    public boolean removeGlobalTempPermissionNode(String permissionNode);
+
+    /**
+     * Removes a temporary permission node from the specified world in this group.
+     * 
+     * @param permissionNode the node to be removed. Has to be an alphanumeric string, with periods ".", it can't have the unique node qualifiers "-" or "+".
+     * @param worldName the name of the world in which the permission node should be removed.
+     * @return whether the specified node existed, and was successfully removed from this group.
+     */
+    public boolean removeTempPermissionNode(String permissionNode, String worldName);
+
+    /**
      * Add an entire batch of temporary permission nodes at once. This is recommended for performance reasons.
      * 
-     * @param nodes the collection of nodes to be changed.
-     * @return true if all nodes were successfully set, false otherwise.
+     * @param nodes the collection of nodes to be added.
+     * @return true if any nodes were successfully set, false otherwise.
      * 
      * @see #addPermissionNode(String)
      */
     public boolean addBatchTempPermissionNodes(TemporaryNodeBatch nodes);
+
+    /**
+     * Removes an entire batch of temporary permissions at once. This is recommended for performance reasons.
+     * 
+     * @param nodes the collection of nodes to be removed.
+     * @return true if any nodes were successfully removed, false otherwise.
+     */
+    public boolean removeBatchTempPermissionNodes(TemporaryNodeBatch nodes);
 
     /**
      * @return the entire batch of temporary nodes that represent this entity.

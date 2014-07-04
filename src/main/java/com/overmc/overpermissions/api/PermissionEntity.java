@@ -7,12 +7,12 @@ import com.google.common.collect.ImmutableList;
  */
 public interface PermissionEntity {
     /**
-     * Checks whether this entity has a specific global permission set. It's actual value could be true or false. To check the permission key's actual value use {@link #getPermission(String)}
+     * Checks whether this entity has a specific global permission set. It's actual value could be true or false. To check the permission key's actual value use {@link #getGlobalPermission(String)}
      * 
      * @param permission the permission to be checked for.
      * @return whether this entity has that specific permission set.
      * 
-     * @see #getPermission(String)
+     * @see #getGlobalPermission(String)
      * @see #addPermissionNode(String)
      * @see #hasPermission(String, String)
      */
@@ -28,13 +28,20 @@ public interface PermissionEntity {
     public boolean hasPermission(String permission, String worldName);
 
     /**
-     * @param permission
+     * @param permission the permission to retrieve the value of.
      * @return the value of the specific permission, or false if it isn't set.
      * 
      * @see #hasGlobalPermission(String)
      * @see #addPermissionNode(String)
      */
-    public boolean getPermission(String permission);
+    public boolean getGlobalPermission(String permission);
+
+    /**
+     * @param permission the permission to retrieve the value of.
+     * @param worldName the name of the world for the permission to be retrieved in.
+     * @return the value of the permission in the specified world, or false if it isn't set.
+     */
+    public boolean getPermission(String permission, String worldName);
 
     /**
      * @param permissionNode the node to be added. Has to be an alphanumeric string, with periods ".", but can have the prefixes "-" and "+" for fine tuning.
@@ -57,7 +64,7 @@ public interface PermissionEntity {
      * Add an entire batch of permission nodes at once. This is recommended for performance reasons.
      * 
      * @param nodes the batch of nodes to be changed.
-     * @return true if all nodes were successfully set, false otherwise.
+     * @return true if any nodes were successfully set, false otherwise.
      * 
      * @see #addPermissionNode(String)
      */
@@ -78,7 +85,7 @@ public interface PermissionEntity {
 
     /**
      * @param nodes the batch of nodes to be removed.
-     * @return true if all nodes were successfully removed, false otherwise.
+     * @return true if any nodes were successfully removed, false otherwise.
      */
     public boolean removeBatchPermissionNodes(NodeBatch nodes);
 

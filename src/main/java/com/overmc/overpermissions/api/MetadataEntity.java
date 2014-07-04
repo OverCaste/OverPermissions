@@ -17,7 +17,7 @@ public interface MetadataEntity {
      * Check to see if this entity's global metadata store holds an entry for that key.
      * 
      * @param key the key of the metadata to be checked for.
-     * @return whether or not this entity has that specific metdata value set.
+     * @return whether or not this entity has that specific metadata value set.
      */
     public boolean hasGlobalMeta(String key);
 
