@@ -46,7 +46,7 @@ public final class NodeBatch {
         public Builder addNode(String node, String worldName) { // TODO documentation
             Preconditions.checkNotNull(node, "The node can't be null!");
             Preconditions.checkNotNull(node, "The world can't be null!");
-            worldNodes.put(node, worldName);
+            worldNodes.put(node, worldName.toLowerCase());
             return this;
         }
 

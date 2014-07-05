@@ -82,11 +82,10 @@ public interface MetadataEntity {
      * Sets a batch of metadata key-value pairs.
      * 
      * @param batch the batch to be set
-     * @return true if all key-value pairs were changed, or false otherwise.
      * 
      * @see MetadataBatch
      */
-    public boolean setBatchMeta(MetadataBatch batch);
+    public void setBatchMeta(MetadataBatch batch);
 
     /**
      * @return the entire batch of metadata that represents this entity.

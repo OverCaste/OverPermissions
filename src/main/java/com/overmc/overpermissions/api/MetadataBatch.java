@@ -16,28 +16,28 @@ import com.google.common.collect.Multimap;
  * To instantiate, use the {@link Builder}.
  */
 public final class MetadataBatch {
-    private final ImmutableList<Entry> globalNodes;
-    private final ImmutableMultimap<String, Entry> worldNodes;
+    private final ImmutableList<MetadataEntry> globalNodes;
+    private final ImmutableMultimap<String, MetadataEntry> worldNodes;
 
-    private MetadataBatch(ImmutableList<Entry> globalNodes, ImmutableMultimap<String, Entry> worldNodes) {
+    private MetadataBatch(ImmutableList<MetadataEntry> globalNodes, ImmutableMultimap<String, MetadataEntry> worldNodes) {
         this.globalNodes = globalNodes;
         this.worldNodes = worldNodes;
     }
 
-    public ImmutableList<Entry> getGlobalNodes( ) {
+    public ImmutableList<MetadataEntry> getGlobalNodes( ) {
         return globalNodes;
     }
 
-    public ImmutableMultimap<String, Entry> getWorldNodes( ) {
+    public ImmutableMultimap<String, MetadataEntry> getWorldNodes( ) {
         return worldNodes;
     }
 
     public Collection<String> getAllKeys( ) {
         HashSet<String> ret = new HashSet<String>(globalNodes.size() + worldNodes.size());
-        for (Entry e : globalNodes) {
+        for (MetadataEntry e : globalNodes) {
             ret.add(e.getKey());
         }
-        for (Entry e : worldNodes.values()) {
+        for (MetadataEntry e : worldNodes.values()) {
             ret.add(e.getKey());
         }
         return ret;
@@ -45,12 +45,12 @@ public final class MetadataBatch {
 
     public Collection<String> getAllValues( ) {
         HashSet<String> ret = new HashSet<String>(globalNodes.size() + worldNodes.size());
-        for (Entry e : globalNodes) {
+        for (MetadataEntry e : globalNodes) {
             if (e.getValue() != null) {
                 ret.add(e.getValue());
             }
         }
-        for (Entry e : worldNodes.values()) {
+        for (MetadataEntry e : worldNodes.values()) {
             if (e.getValue() != null) {
                 ret.add(e.getValue());
             }
@@ -59,13 +59,13 @@ public final class MetadataBatch {
     }
 
     public static final class Builder {
-        private Set<Entry> globalNodes = new HashSet<>();
-        private Multimap<String, Entry> worldNodes = HashMultimap.create();
+        private Set<MetadataEntry> globalNodes = new HashSet<>();
+        private Multimap<String, MetadataEntry> worldNodes = HashMultimap.create();
 
         public Builder addGlobalEntry(String key, String value) {
             Preconditions.checkNotNull(key, "The metadata key can't be null!");
             Preconditions.checkNotNull(value, "The metadata value can't be null!");
-            globalNodes.add(new Entry(key, value));
+            globalNodes.add(new MetadataEntry(key, value));
             return this;
         }
 
@@ -73,20 +73,20 @@ public final class MetadataBatch {
             Preconditions.checkNotNull(key, "The metadata key can't be null!");
             Preconditions.checkNotNull(value, "The metadata value can't be null!");
             Preconditions.checkNotNull(world, "The world value can't be null!");
-            worldNodes.put(world, new Entry(key, value));
+            worldNodes.put(world, new MetadataEntry(key, value));
             return this;
         }
 
         public Builder addGlobalDeletionEntry(String key) {
             Preconditions.checkNotNull(key, "The metadata key can't be null!");
-            globalNodes.add(new Entry(key, null));
+            globalNodes.add(new MetadataEntry(key, null));
             return this;
         }
 
         public Builder addDeletionEntry(String key, String world) {
             Preconditions.checkNotNull(key, "The metadata key can't be null!");
             Preconditions.checkNotNull(world, "The world value can't be null!");
-            worldNodes.put(world, new Entry(key, null));
+            worldNodes.put(world, new MetadataEntry(key, null));
             return this;
         }
 
@@ -95,21 +95,4 @@ public final class MetadataBatch {
         }
     }
 
-    public static final class Entry {
-        private final String key;
-        private final String value;
-
-        private Entry(String key, String value) {
-            this.key = key;
-            this.value = value;
-        }
-
-        public String getKey( ) {
-            return key;
-        }
-
-        public String getValue( ) {
-            return value;
-        }
-    }
 }
