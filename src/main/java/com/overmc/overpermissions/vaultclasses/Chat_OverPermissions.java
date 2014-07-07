@@ -11,13 +11,17 @@ import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.plugin.Plugin;
 
 import com.overmc.overpermissions.OverPermissions;
+import com.overmc.overpermissions.api.GroupManager;
 import com.overmc.overpermissions.api.PermissionGroup;
 import com.overmc.overpermissions.api.PermissionUser;
+import com.overmc.overpermissions.api.UserManager;
 
 public class Chat_OverPermissions extends Chat {
 
     protected final Plugin plugin;
     private OverPermissions overPerms;
+    private UserManager userManager;
+    private GroupManager groupManager;
 
     public Chat_OverPermissions(Plugin plugin, Permission perms)
     {
@@ -30,6 +34,8 @@ public class Chat_OverPermissions extends Chat {
             Plugin p = plugin.getServer().getPluginManager().getPlugin("OverPermissions");
             if (p != null) {
                 overPerms = (OverPermissions) p;
+                userManager = overPerms.getUserManager();
+                groupManager = overPerms.getGroupManager();
                 plugin.getLogger().info(String.format("[%s][Chat] %s hooked.", new Object[] {plugin.getDescription().getName(), "OverPermissions"}));
             }
         }
@@ -216,7 +222,10 @@ public class Chat_OverPermissions extends Chat {
     @Override
     public String getPlayerInfoString(String world, String playerName, String node, String defaultValue)
     {
-        PermissionUser user = overPerms.getUserManager().getPermissionUser(playerName);
+        if(!userManager.doesUserExist(playerName)) {
+            return defaultValue;
+        }
+        PermissionUser user = userManager.getPermissionUser(playerName);
         if (world == null) { //Retrieve meta from the global store.
             if (!user.hasGlobalMeta(node)) {
                 return defaultValue;
@@ -231,9 +240,12 @@ public class Chat_OverPermissions extends Chat {
     }
 
     @Override
-    public void setPlayerInfoString(String world, String player, String node, String value)
+    public void setPlayerInfoString(String world, String playerName, String node, String value)
     {
-        PermissionUser user = overPerms.getUserManager().getPermissionUser(player);
+        if(!userManager.canUserExist(playerName)) {
+            return;
+        }
+        PermissionUser user = userManager.getPermissionUser(playerName);
         if(world == null) {
             if(node == null) {
                 user.removeMeta(node, world);
@@ -252,13 +264,10 @@ public class Chat_OverPermissions extends Chat {
     @Override
     public String getGroupInfoString(String world, String groupName, String node, String defaultValue)
     {
-        if(!overPerms.getGroupManager().doesGroupExist(groupName)) {
+        if(!groupManager.doesGroupExist(groupName)) {
             return defaultValue;
         }
         PermissionGroup group = overPerms.getGroupManager().getGroup(groupName);
-        if (group == null) {
-            return defaultValue;
-        }
         if(world == null) { //Retrieve from the global store.
             if(!group.hasGlobalMeta(node)) {
                 return defaultValue;
