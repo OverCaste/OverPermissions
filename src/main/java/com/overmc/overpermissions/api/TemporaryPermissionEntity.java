@@ -2,7 +2,7 @@ package com.overmc.overpermissions.api;
 
 import java.util.concurrent.TimeUnit;
 
-public interface TemporaryPermissionEntity {
+public interface TemporaryPermissionEntity extends UniqueEntity {
     /**
      * Checks whether this group has a specific global temporary permission set.
      * 
@@ -83,8 +83,8 @@ public interface TemporaryPermissionEntity {
      */
     public boolean removeBatchTempPermissionNodes(TemporaryNodeBatch nodes);
 
-    /**
-     * @return the entire batch of temporary nodes that represent this entity.
-     */
-    public TemporaryNodeBatch getAllTempPermissionNodes( );
+   // /**
+   //  * @return the entire batch of temporary nodes that represent this entity.
+   //  */
+   // public TemporaryNodeBatch getAllTempPermissionNodes( );
 }

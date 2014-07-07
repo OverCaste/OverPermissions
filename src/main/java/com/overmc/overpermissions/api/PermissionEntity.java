@@ -5,7 +5,7 @@ import com.google.common.collect.ImmutableList;
 /**
  * An entity capable of having permission nodes set on it.
  */
-public interface PermissionEntity {
+public interface PermissionEntity extends UniqueEntity {
     /**
      * Checks whether this entity has a specific global permission set. It's actual value could be true or false. To check the permission key's actual value use {@link #getGlobalPermission(String)}
      * 

@@ -1,19 +1,29 @@
 package com.overmc.overpermissions.vaultclasses;
 
+import java.util.ArrayList;
+
 import net.milkbowl.vault.permission.Permission;
 
 import org.bukkit.Bukkit;
-import org.bukkit.event.*;
-import org.bukkit.event.server.*;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.server.PluginDisableEvent;
+import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.plugin.Plugin;
 
-import com.overmc.overpermissions.*;
+import com.overmc.overpermissions.OverPermissions;
+import com.overmc.overpermissions.api.GroupManager;
+import com.overmc.overpermissions.api.PermissionGroup;
+import com.overmc.overpermissions.api.PermissionUser;
+import com.overmc.overpermissions.api.UserManager;
 
 public class Permission_OverPermissions extends Permission {
 
     private final String name = "OverPermissions";
     private OverPermissions overPerms;
-    private OverPermissionsAPI api;
+    private UserManager userManager;
+    private GroupManager groupManager;
 
     public Permission_OverPermissions(Plugin plugin)
     {
@@ -24,12 +34,10 @@ public class Permission_OverPermissions extends Permission {
             Plugin perms = plugin.getServer().getPluginManager().getPlugin("OverPermissions");
             if ((perms != null) && (perms.isEnabled())) {
                 overPerms = ((OverPermissions) perms);
+                userManager = overPerms.getUserManager();
+                groupManager = overPerms.getGroupManager();
                 log.info(String.format("[%s][Permission] %s hooked.", new Object[] {plugin.getDescription().getName(), "OverPermissions"}));
             }
-        }
-
-        if ((api == null) && (overPerms != null)) {
-            api = overPerms.getAPI();
         }
     }
 
@@ -48,61 +56,113 @@ public class Permission_OverPermissions extends Permission {
     @Override
     public boolean playerHas(String worldName, String playerName, String permission)
     {
-        return api.playerHas(worldName, playerName, permission);
+        if(!userManager.doesUserExist(playerName)) {
+            return false;
+        }
+        return userManager.getPermissionUser(playerName).getPermission(permission, worldName);
     }
 
     @Override
     public boolean playerAdd(String worldName, String playerName, String permission)
     {
-        return api.playerAdd(worldName, playerName, permission);
+        if(!userManager.canUserExist(playerName)) {
+            return false;
+        }
+        return userManager.getPermissionUser(playerName).addPermissionNode(permission, worldName);
     }
 
     @Override
     public boolean playerRemove(String worldName, String playerName, String permission)
     {
-        return api.playerRemove(worldName, playerName, permission);
+        if(!userManager.canUserExist(playerName)) {
+            return false;
+        }
+        return userManager.getPermissionUser(playerName).removePermissionNode(permission, worldName);
     }
 
     @Override
     public boolean groupHas(String worldName, String groupName, String permission)
     {
-        return api.groupHas(groupName, permission);
+        if (!groupManager.doesGroupExist(groupName)) {
+            return false;
+        }
+        return groupManager.getGroup(groupName).getPermission(permission, worldName);
     }
 
     @Override
     public boolean groupAdd(String worldName, String groupName, String permission)
     {
-        return api.groupAdd(groupName, permission);
+        if (!groupManager.doesGroupExist(groupName)) {
+            return false;
+        }
+        if (worldName == null) {
+            return groupManager.getGroup(groupName).addGlobalPermissionNode(permission);
+        } else {
+            return groupManager.getGroup(groupName).addPermissionNode(permission, worldName);
+        }
     }
 
     @Override
     public boolean groupRemove(String worldName, String groupName, String permission)
     {
-        return api.groupRemove(groupName, permission);
+        if (!groupManager.doesGroupExist(groupName)) {
+            return false;
+        }
+        if(worldName == null) {
+            return groupManager.getGroup(groupName).removeGlobalPermissionNode(permission);
+        } else {
+            return groupManager.getGroup(groupName).removePermissionNode(permission, worldName);
+        }
     }
 
     @Override
     public boolean playerInGroup(String worldName, String playerName, String groupName)
     {
-        return api.groupHasPlayer(playerName, groupName);
+        if (!groupManager.doesGroupExist(groupName)) {
+            return false;
+        }
+        if(!userManager.doesUserExist(playerName)) {
+            return false;
+        }
+        return userManager.getPermissionUser(playerName).getAllParents().contains(groupManager.getGroup(groupName));
     }
 
     @Override
     public boolean playerAddGroup(String worldName, String playerName, String groupName)
     {
-        return api.playerAddGroup(playerName, groupName);
+        if (!groupManager.doesGroupExist(groupName)) {
+            return false;
+        }
+        if(!userManager.canUserExist(playerName)) {
+            return false;
+        }
+        return userManager.getPermissionUser(playerName).addParent(groupManager.getGroup(groupName));
     }
 
     @Override
     public boolean playerRemoveGroup(String worldName, String playerName, String groupName)
     {
-        return api.playerRemoveGroup(playerName, groupName);
+        if (!groupManager.doesGroupExist(groupName)) {
+            return false;
+        }
+        if(!userManager.canUserExist(playerName)) {
+            return false;
+        }
+        return userManager.getPermissionUser(playerName).removeParent(groupManager.getGroup(groupName));
     }
 
     @Override
     public String[] getPlayerGroups(String worldName, String playerName)
     {
-        return api.getPlayerGroups(worldName, playerName);
+        ArrayList<String> ret = new ArrayList<String>();
+        if(!userManager.doesUserExist(playerName)) {
+            return new String[0];
+        }
+        PermissionUser user = userManager.getPermissionUser(playerName);
+        for(PermissionGroup parent : user.getAllParents()) {
+            ret.add(parent.getName());
+        }
+        return ret.toArray(new String[ret.size()]);
     }
 
     @Override
@@ -118,19 +178,29 @@ public class Permission_OverPermissions extends Permission {
     @Override
     public boolean playerAddTransient(String world, String player, String permission)
     {
-        return api.playerAddTransient(world, player, permission);
+        if(!userManager.canUserExist(player)) {
+            return false;
+        }
+        return userManager.getPermissionUser(player).addTransientPermissionNode(permission);
     }
 
     @Override
     public boolean playerRemoveTransient(String world, String player, String permission)
     {
-        return api.playerRemoveTransient(world, player, permission);
+        if(!userManager.canUserExist(player)) {
+            return false;
+        }
+        return userManager.getPermissionUser(player).removeTransientPermissionNode(permission);
     }
 
     @Override
     public String[] getGroups( )
     {
-        return api.getGroupsArray();
+        ArrayList<String> groupNames = new ArrayList<>();
+        for (PermissionGroup s : groupManager.getGroups()) {
+            groupNames.add(s.getName());
+        }
+        return groupNames.toArray(new String[groupNames.size()]);
     }
 
     @Override

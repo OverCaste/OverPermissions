@@ -3,8 +3,6 @@ package com.overmc.overpermissions.vaultclasses;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.permission.Permission;
 
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -12,15 +10,14 @@ import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.plugin.Plugin;
 
-import com.overmc.overpermissions.Group;
 import com.overmc.overpermissions.OverPermissions;
-import com.overmc.overpermissions.OverPermissionsAPI;
+import com.overmc.overpermissions.api.PermissionGroup;
+import com.overmc.overpermissions.api.PermissionUser;
 
 public class Chat_OverPermissions extends Chat {
 
     protected final Plugin plugin;
     private OverPermissions overPerms;
-    private OverPermissionsAPI api;
 
     public Chat_OverPermissions(Plugin plugin, Permission perms)
     {
@@ -35,9 +32,6 @@ public class Chat_OverPermissions extends Chat {
                 overPerms = (OverPermissions) p;
                 plugin.getLogger().info(String.format("[%s][Chat] %s hooked.", new Object[] {plugin.getDescription().getName(), "OverPermissions"}));
             }
-        }
-        if ((api == null) && (overPerms != null)) {
-            api = overPerms.getAPI();
         }
     }
 
@@ -222,55 +216,85 @@ public class Chat_OverPermissions extends Chat {
     @Override
     public String getPlayerInfoString(String world, String playerName, String node, String defaultValue)
     {
-        @SuppressWarnings("deprecation")
-        Player p = Bukkit.getPlayerExact(playerName);
-        String ret = null;
-        if (p != null) {
-            ret = overPerms.getPlayerPermissions(p).getStringMeta(node, defaultValue);
+        PermissionUser user = overPerms.getUserManager().getPermissionUser(playerName);
+        if (world == null) { //Retrieve meta from the global store.
+            if (!user.hasGlobalMeta(node)) {
+                return defaultValue;
+            }
+            return user.getGlobalMeta(node);
         } else {
-            int playerId = overPerms.getSQLManager().getPlayerId(playerName);
-            int worldId = overPerms.getSQLManager().getWorldId(world);
-            ret = overPerms.getSQLManager().getPlayerMetaValue(playerId, worldId, node);
+            if (!user.hasMeta(node, world)) {
+                return defaultValue;
+            }
+            return user.getMeta(node, world);
         }
-        if (ret == null) {
-            return defaultValue;
-        }
-        return ret;
     }
 
     @Override
     public void setPlayerInfoString(String world, String player, String node, String value)
     {
-        api.setPlayerMeta(world, player, node, value);
+        PermissionUser user = overPerms.getUserManager().getPermissionUser(player);
+        if(world == null) {
+            if(node == null) {
+                user.removeMeta(node, world);
+            } else {
+                user.setMeta(node, value,world);
+            }
+        } else {
+            if(node == null) {
+                user.removeGlobalMeta(node);
+            } else {
+                user.setGlobalMeta(node, value);
+            }
+        }
     }
 
     @Override
     public String getGroupInfoString(String world, String groupName, String node, String defaultValue)
     {
-        Group group = overPerms.getGroupManager().getGroup(groupName);
+        if(!overPerms.getGroupManager().doesGroupExist(groupName)) {
+            return defaultValue;
+        }
+        PermissionGroup group = overPerms.getGroupManager().getGroup(groupName);
         if (group == null) {
             return defaultValue;
         }
-        String value = group.getMeta(node);
-        if (value == null) {
-            return defaultValue;
+        if(world == null) { //Retrieve from the global store.
+            if(!group.hasGlobalMeta(node)) {
+                return defaultValue;
+            }
+            return group.getGlobalMeta(node);
+        } else {
+            if(!group.hasMeta(node, world)) {
+                return defaultValue;
+            }
+            return group.getMeta(node, world);
         }
-        return value;
     }
 
     @Override
     public void setGroupInfoString(String world, String groupName, String node, String value)
     {
-        Group group = overPerms.getGroupManager().getGroup(groupName);
-        if (group == null) {
+        if(!overPerms.getGroupManager().doesGroupExist(groupName)) {
             return;
         }
-        group.setMeta(node, value);
-        group.recalculatePermissions();
+        PermissionGroup group = overPerms.getGroupManager().getGroup(groupName);
+        if(world == null) {
+            if(node == null) {
+                group.removeMeta(node, world);
+            } else {
+                group.setMeta(node, value,world);
+            }
+        } else {
+            if(node == null) {
+                group.removeGlobalMeta(node);
+            } else {
+                group.setGlobalMeta(node, value);
+            }
+        }
     }
 
-    public class PermissionServerListener
-            implements Listener
+    public class PermissionServerListener implements Listener
     {
         Chat_OverPermissions chat = null;
 

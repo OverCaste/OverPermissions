@@ -2,7 +2,7 @@ package com.overmc.overpermissions.api;
 
 import java.util.Set;
 
-public interface PermissionUser extends PermissionEntity, MetadataEntity, TemporaryPermissionEntity {
+public interface PermissionUser extends PermissionEntity, MetadataEntity, TemporaryPermissionEntity, TransientPermissionEntity {
     /**
      * Get a list of all parental groups inherited by this user, including recursive parents.
      * 

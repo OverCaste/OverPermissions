@@ -1,6 +1,6 @@
 package com.overmc.overpermissions.api;
 
-public interface MetadataEntity {
+public interface MetadataEntity extends UniqueEntity {
     /**
      * Checks both the global metadata store and the world-specific store for a single entry.
      * 
