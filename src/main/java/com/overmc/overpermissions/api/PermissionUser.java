@@ -8,14 +8,14 @@ public interface PermissionUser extends PermissionEntity, MetadataEntity, Tempor
      * 
      * @return an immutable, data-backed set of every group inherited by this user.
      */
-    public Set<? extends PermissionGroup> getAllParents( );
+    public Set<PermissionGroup> getAllParents( );
 
     /**
      * Get a list of the direct group parents of this user.
      * 
      * @return an immutable, data-backed set of the direct groups of this user.
      */
-    public Set<? extends PermissionGroup> getParents( );
+    public Set<PermissionGroup> getParents( );
 
     /**
      * Adds a parent to this user.

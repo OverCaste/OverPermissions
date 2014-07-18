@@ -33,15 +33,23 @@ public final class NodeBatch {
     }
 
     public Collection<String> getAllNodes( ) {
-        HashSet<String> ret = new HashSet<String>(globalNodes.size() + worldNodes.size());
+        HashSet<String> ret = new HashSet<>(globalNodes.size() + worldNodes.size());
         ret.addAll(globalNodes);
         ret.addAll(worldNodes.values());
         return ret;
     }
+    
+    public static Builder builder( ) {
+        return new Builder();
+    }
 
     public static final class Builder {
-        private Set<String> globalNodes = new HashSet<String>();
+        private Set<String> globalNodes = new HashSet<>();
         private Multimap<String, String> worldNodes = HashMultimap.create();
+        
+        private Builder( ) {
+            //Hide constructor
+        }
 
         public Builder addNode(String node, String worldName) { // TODO documentation
             Preconditions.checkNotNull(node, "The node can't be null!");

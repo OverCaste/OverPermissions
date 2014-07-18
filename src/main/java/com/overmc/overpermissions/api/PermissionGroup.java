@@ -6,14 +6,14 @@ public interface PermissionGroup extends PermissionEntity, MetadataEntity, Tempo
     /**
      * @return An immutable collection of this group's direct parents.
      */
-    public Set<? extends PermissionGroup> getParents( );
+    public Set<PermissionGroup> getParents( );
 
     /**
      * @return An immutable collection of this group's parents, retrieved recursively from it's direct parents.
      * 
      * @see #getParents()
      */
-    public Set<? extends PermissionGroup> getAllParents( );
+    public Set<PermissionGroup> getAllParents( );
 
     /**
      * Adds a parent to this group.
@@ -34,7 +34,7 @@ public interface PermissionGroup extends PermissionEntity, MetadataEntity, Tempo
     /**
      * @return An immutable collection of this group's direct children.
      */
-    public Set<? extends PermissionGroup> getChildren( );
+    public Set<PermissionGroup> getChildren( );
 
     /**
      * @return the unique name of this group.

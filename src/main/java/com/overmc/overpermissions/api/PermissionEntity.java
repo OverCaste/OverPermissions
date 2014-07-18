@@ -7,9 +7,9 @@ import com.google.common.collect.ImmutableList;
  */
 public interface PermissionEntity extends UniqueEntity {
     /**
-     * Checks whether this entity has a specific global permission set. It's actual value could be true or false. To check the permission key's actual value use {@link #getGlobalPermission(String)}
+     * Checks whether this entity has a specific global permission set. Its actual value could be true or false. To check the permission key's actual value use {@link #getGlobalPermission(String)}
      * 
-     * @param permission the permission to be checked for.
+     * @param permission the permission to be checked for existence.
      * @return whether this entity has that specific permission set.
      * 
      * @see #getGlobalPermission(String)
@@ -19,13 +19,32 @@ public interface PermissionEntity extends UniqueEntity {
     public boolean hasGlobalPermission(String permission);
 
     /**
-     * Checks whether this entity has a specific permission set in a specific world. It's actual value could be true or false. To check the permission key's actual value use {@link #getPermission(String, int)}
+     * Checks whether this entity has a specific permission set in a specific world. Its actual value could be true or false. To check the permission key's actual value use {@link #getPermission(String, int)}
      * 
-     * @param permission the permission to be checked for.
+     * @param permissionNode the permission node to be checked for existence.
      * @param worldName the name of world for the permission to be checked in.
      * @return whether this entity has that specific permission set.
      */
-    public boolean hasPermission(String permission, String worldName);
+    public boolean hasPermission(String permissionNode, String worldName);
+    
+    /**
+     * Checks whether this entity has a specific permission node in its global store.<br>
+     * To check the value of an actual permission, use {@link #hasGlobalPermission(String)} and {@link #getGlobalPermission(String)}
+     * 
+     * @param permissionNode the node to check for existence.
+     * @return whether this entity has that specific permission node in its store.
+     */
+    public boolean hasGlobalPermissionNode(String permissionNode);
+    
+    /**
+     * Checks whether this entity has a specific permission node set for a specific world in its global store.<br>
+     * To check the value of an actual permission, use {@link #hasPermission(String, String)} and {@link #getPermission(String, String)}
+     * 
+     * @param permissionNode the node to be checked for existence.
+     * @param worldName the name of the world in which the node resides.
+     * @return whether this entity has that specific permission node in the specified world in its store.
+     */
+    public boolean hasPermissionNode(String permissionNode, String worldName);
 
     /**
      * @param permission the permission to retrieve the value of.
@@ -37,9 +56,14 @@ public interface PermissionEntity extends UniqueEntity {
     public boolean getGlobalPermission(String permission);
 
     /**
+     * Retrieve a permission from both the global, and local store of 'permanent' permissions, and any subtypes.
+     * 
      * @param permission the permission to retrieve the value of.
      * @param worldName the name of the world for the permission to be retrieved in.
      * @return the value of the permission in the specified world, or false if it isn't set.
+     * 
+     * @see TemporaryPermissionEntity
+     * @see TransientPermissionEntity
      */
     public boolean getPermission(String permission, String worldName);
 
@@ -47,7 +71,7 @@ public interface PermissionEntity extends UniqueEntity {
      * @param permissionNode the node to be added. Has to be an alphanumeric string, with periods ".", but can have the prefixes "-" and "+" for fine tuning.
      * @return whether or not the specified node was successfully added to this group.
      * 
-     * @see #addBatchPermissionNodes(ImmutableList)
+     * @see #addBatchPermissions(ImmutableList)
      */
     public boolean addGlobalPermissionNode(String permissionNode);
 
@@ -68,7 +92,7 @@ public interface PermissionEntity extends UniqueEntity {
      * 
      * @see #addPermissionNode(String)
      */
-    public boolean addBatchPermissionNodes(NodeBatch nodes);
+    public boolean addBatchPermissions(NodeBatch nodes);
 
     /**
      * @param permissionNode the node to be removed. Has to be an alphanumeric string, with periods ".", but can have the prefixes "-" and "+" for fine tuning.
@@ -87,10 +111,16 @@ public interface PermissionEntity extends UniqueEntity {
      * @param nodes the batch of nodes to be removed.
      * @return true if any nodes were successfully removed, false otherwise.
      */
-    public boolean removeBatchPermissionNodes(NodeBatch nodes);
+    public boolean removeBatchPermissions(NodeBatch nodes);
 
     /**
+     * Retrieve a new node batch of all the nodes represented directly by this entity.<br>
+     * Parents' or subtypes' nodes or can't be retrieved with this method.<br>
+     * 
      * @return the batch of nodes represented by this entity.
+     * 
+     * @see TemporaryPermissionEntity#getTempPermissionNodes()
+     * @see TransientPermissionEntity#getTransientPermissionNodes()
      */
-    public NodeBatch getAllPermissionNodes( );
+    public NodeBatch getPermissionNodes( );
 }

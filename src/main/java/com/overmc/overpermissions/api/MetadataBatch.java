@@ -33,7 +33,7 @@ public final class MetadataBatch {
     }
 
     public Collection<String> getAllKeys( ) {
-        HashSet<String> ret = new HashSet<String>(globalNodes.size() + worldNodes.size());
+        HashSet<String> ret = new HashSet<>(globalNodes.size() + worldNodes.size());
         for (MetadataEntry e : globalNodes) {
             ret.add(e.getKey());
         }
@@ -44,7 +44,7 @@ public final class MetadataBatch {
     }
 
     public Collection<String> getAllValues( ) {
-        HashSet<String> ret = new HashSet<String>(globalNodes.size() + worldNodes.size());
+        HashSet<String> ret = new HashSet<>(globalNodes.size() + worldNodes.size());
         for (MetadataEntry e : globalNodes) {
             if (e.getValue() != null) {
                 ret.add(e.getValue());
@@ -57,11 +57,19 @@ public final class MetadataBatch {
         }
         return ret;
     }
+    
+    public static Builder builder( ) {
+        return new Builder();
+    }
 
     public static final class Builder {
         private Set<MetadataEntry> globalNodes = new HashSet<>();
         private Multimap<String, MetadataEntry> worldNodes = HashMultimap.create();
 
+        private Builder( ) {
+            //No instantiation.
+        }
+        
         public Builder addGlobalEntry(String key, String value) {
             Preconditions.checkNotNull(key, "The metadata key can't be null!");
             Preconditions.checkNotNull(value, "The metadata value can't be null!");

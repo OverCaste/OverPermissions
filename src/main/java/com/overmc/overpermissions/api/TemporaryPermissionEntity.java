@@ -9,19 +9,19 @@ public interface TemporaryPermissionEntity extends UniqueEntity {
      * @see PermissionEntity#getGlobalPermission(String)
      * @see #addGlobalTempPermissionNode(String, long, TimeUnit)
      * 
-     * @param permission the permission to be checked for.
+     * @param permissionNode the permission node to be checked for.
      * @return true if this group has that specific permission set.
      */
-    public boolean hasGlobalTempPermission(String permission);
+    public boolean hasGlobalTempPermissionNode(String permissionNode);
 
     /**
      * Checks whether this group has a specific temporary permission set in a specific world.
      * 
-     * @param permission the permission to be checked for.
+     * @param permissionNode the permission node to be checked for.
      * @param worldName the world in which the permission should be checked for.
      * @return whether the specified world had the specified permission.
      */
-    public boolean hasTempPermission(String permission, String worldName);
+    public boolean hasTempPermissionNode(String permissionNode, String worldName);
 
     /**
      * Adds a specified temporary permission globally for a specified time.<br>
@@ -83,8 +83,8 @@ public interface TemporaryPermissionEntity extends UniqueEntity {
      */
     public boolean removeBatchTempPermissionNodes(TemporaryNodeBatch nodes);
 
-   // /**
-   //  * @return the entire batch of temporary nodes that represent this entity.
-   //  */
-   // public TemporaryNodeBatch getAllTempPermissionNodes( );
+    /**
+    * @return the entire batch of temporary nodes that represent this entity.
+    */
+    public TemporaryNodeBatch getTempPermissionNodes( );
 }
