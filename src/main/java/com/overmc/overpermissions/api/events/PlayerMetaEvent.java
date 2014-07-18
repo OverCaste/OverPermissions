@@ -1,4 +1,4 @@
-package com.overmc.overpermissions.events;
+package com.overmc.overpermissions.api.events;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -7,22 +7,22 @@ import org.bukkit.event.Event;
 
 import com.google.common.base.Preconditions;
 
-public abstract class PlayerPermissionEvent extends Event {
-    private final String node;
+public abstract class PlayerMetaEvent extends Event {
+    private final String key;
     private final String world;
     private final String playerName;
     private boolean cancelled;
 
-    public PlayerPermissionEvent(String playerName, String worldName, String node) {
-        this.node = node;
+    public PlayerMetaEvent(String playerName, String worldName, String key) {
+        Preconditions.checkNotNull(key);
+        Preconditions.checkNotNull(playerName);
+        this.key = key;
         this.world = worldName;
         this.playerName = playerName;
-        Preconditions.checkNotNull(node);
-        Preconditions.checkNotNull(playerName);
     }
 
-    public String getNode( ) {
-        return node;
+    public String getKey( ) {
+        return key;
     }
 
     /**
