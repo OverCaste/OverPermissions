@@ -1,13 +1,25 @@
 package com.overmc.overpermissions.commands;
 
+import static com.overmc.overpermissions.Messages.*;
+
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
 
+import com.overmc.nodedisplayapi.BoxLargeAndSmallCharset;
+import com.overmc.nodedisplayapi.ElementBox;
+import com.overmc.nodedisplayapi.ElementBoxNode;
+import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
+import com.overmc.overpermissions.api.PermissionGroup;
+import com.overmc.overpermissions.api.PermissionUser;
 
 // ./playercheck [player] [permission] (world)
 public class PlayerCheckCommand implements TabExecutor {
@@ -18,111 +30,126 @@ public class PlayerCheckCommand implements TabExecutor {
     }
 
     public PlayerCheckCommand register( ) {
-        // PluginCommand command = plugin.getCommand("playercheck");
-        // command.setExecutor(this);
-        // command.setTabCompleter(this);
+        PluginCommand command = plugin.getCommand("playercheck");
+        command.setExecutor(this);
+        command.setTabCompleter(this);
         return this;
     }
 
     @Override
     public boolean onCommand(final CommandSender sender, Command command, String label, final String[] args) {
-        return true;
-        //@formatter:off
-        /*
         if (!sender.hasPermission(command.getPermission())) {
             sender.sendMessage(ERROR_NO_PERMISSION);
             return true;
         }
-        if ((args.length < 2) || (args.length > 3)) {
+        if (args.length < 2 || args.length > 3) {
             sender.sendMessage(Messages.getUsage(command));
             return true;
         }
-        plugin.getExecutor().execute(new Runnable() { // This is entirely safe because getSQLManager() should never change, and Player.sendMessage should be threadsafe.
-            @Override
-            public void run( ) {
-                @SuppressWarnings("deprecation")
-                Player p = Bukkit.getPlayerExact(args[0]);
-                final PlayerPermissionData playerData = (p == null ? null : plugin.getPlayerPermissions(p));
-                int playerId = (playerData == null) ? plugin.getUuidManager().getOrCreateSqlUser(args[0]) : playerData.getId();
-                int worldId;
-                if (args.length < 3) {
-                    worldId = -1;
-                } else {
-                    if ("global".equalsIgnoreCase(args[2])) {
-                        worldId = -1;
+        String playerName = args[0];
+        String permission = args[1];
+        String world = (args.length >= 3 ? args[2].toLowerCase() : null);
+        boolean global = (world == null || "global".equals(world));
+        if (!plugin.getUserManager().doesUserExist(playerName)) {
+            sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, playerName));
+            return true;
+        }
+        boolean groupPermissionExists = false;
+        boolean userPermissionExists = false;
+        List<ElementBoxNode> groupInformationNodes = new ArrayList<>();
+        PermissionUser user = plugin.getUserManager().getPermissionUser(playerName);
+        List<String> listBuffer = new ArrayList<>(); // As to not reuse an array list many times when unnecessary.
+        for (PermissionGroup group : user.getAllParents()) {
+            listBuffer.clear();
+            Set<String> effectivePermissions = new HashSet<String>();
+            effectivePermissions.addAll(group.getPermissionNodes().getGlobalNodes());
+            if (!global) {
+                effectivePermissions.addAll(group.getPermissionNodes().getWorldNodes().get(world));
+            }
+            for (String node : effectivePermissions) {
+                String baseNode = node.startsWith("+") || node.startsWith("-") ? node.substring(1) : node;
+                if (baseNode.equalsIgnoreCase(permission)) {
+                    if (node.startsWith("+")) {
+                        listBuffer.add("+ added (+)");
+                    } else if (node.startsWith("-")) {
+                        listBuffer.add("- removed (-)");
                     } else {
-                        worldId = plugin.getSQLManager().getWorldId(args[2], false);
-                        if (worldId < 0) {
-                            sender.sendMessage(Messages.format(ERROR_INVALID_WORLD, args[2]));
-                            return;
-                        }
+                        listBuffer.add("+ added");
                     }
-                }
-                String permission = args[1];
-                if (permission.startsWith("+") || permission.startsWith("-")) {
-                    permission = permission.substring(1);
-                }
-                List<String> message = (playerData == null ? plugin.getSQLManager().getPlayerNodeInfo(playerId, worldId, permission) : playerData.getNodeInfo(permission));
-                boolean value = (playerData == null ? plugin.getSQLManager().checkPlayerPermissionExists(playerId, worldId, permission) : playerData.getPermission(permission));
-                if (message.size() == 0) {
-                    sender.sendMessage(Messages.format(Messages.ERROR_PLAYER_PERMISSION_NOT_SET, args[1]));
-                } else {
-                    sender.sendMessage(Messages.format(Messages.VALUE_OF_PERMISSION, permission, value));
-                    sender.sendMessage(message.toArray(new String[message.size()]));
+
                 }
             }
-        });
+            if (!listBuffer.isEmpty()) {
+                groupInformationNodes.add(new ElementBoxNode(group.getName() + ":", null, listBuffer));
+                groupPermissionExists = true;
+            }
+        }
+        listBuffer.clear();
+        Set<String> effectivePermissions = new HashSet<String>();
+        effectivePermissions.addAll(user.getPermissionNodes().getGlobalNodes());
+        if (!global) {
+            effectivePermissions.addAll(user.getPermissionNodes().getWorldNodes().get(world));
+        }
+        for (String node : effectivePermissions) {
+            String baseNode = node.startsWith("+") || node.startsWith("-") ? node.substring(1) : node;
+            if (baseNode.equalsIgnoreCase(permission)) {
+                if (node.startsWith("+")) {
+                    listBuffer.add("+ added");
+                } else if (node.startsWith("-")) {
+                    listBuffer.add("- force-removed");
+                } else {
+                    listBuffer.add("+ added");
+                }
+                userPermissionExists = true;
+
+            }
+        }
+        ElementBoxNode groupInformation = new ElementBoxNode("Group information:", groupInformationNodes, null);
+        ElementBoxNode userInformation = new ElementBoxNode("User information:", null, listBuffer);
+
+        List<ElementBoxNode> nodes;
+        if (groupPermissionExists && userPermissionExists) {
+            nodes = Arrays.asList(groupInformation, userInformation);
+        } else if (groupPermissionExists) {
+            nodes = Arrays.asList(groupInformation);
+        } else if (userPermissionExists) {
+            nodes = Arrays.asList(userInformation);
+        } else {
+            if (global) {
+                sender.sendMessage(Messages.format(ERROR_PLAYER_PERMISSION_NOT_SET_GLOBAL, permission));
+            } else {
+                sender.sendMessage(Messages.format(ERROR_PLAYER_PERMISSION_NOT_SET_WORLD, permission, world));
+            }
+            return true;
+        }
+
+        ElementBox box = new ElementBox(16, new BoxLargeAndSmallCharset(), nodes, Arrays.asList("Permission '" + permission + "'"));
+        for (String s : box.write()) {
+            if (s.startsWith("\u2551      \u2514")) {
+                s = s.replace("\u2551      \u2514", "\u2551     \u2514"); // The hackiest solution ever, but it's not my fault minecraft's font isn't a unified size.
+            }
+            sender.sendMessage(Messages.format(Messages.PLAYER_NODE_VALUE, s));
+        }
         return true;
-        //@formatter:on*/
 
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        ArrayList<String> ret = new ArrayList<String>();
-        return ret;
-        //@formatter:off
-        /*
+        ArrayList<String> ret = new ArrayList<>();
         if (!sender.hasPermission(command.getPermission())) {
             return ret;
         }
         int index = args.length - 1;
         String value = args[index].toLowerCase();
         if (index == 0) {
-            for (Player p : plugin.getServer().getOnlinePlayers()) {
-                if (p.getName().toLowerCase().startsWith(value)) {
-                    ret.add(p.getName());
-                }
-            }
+            CommandUtils.loadPlayers(value, ret);
         } else if (index == 1) {
-            @SuppressWarnings("deprecation")
-            Player p = plugin.getServer().getPlayerExact(args[0]);
-            if (p != null) {
-                for (String node : plugin.getPlayerPermissions(p).getNodes()) {
-                    if (node.startsWith("-") || node.startsWith("+")) {
-                        continue;
-                    }
-                    ret.add(node);
-                }
-            } else {
-                int worldId = plugin.getSQLManager().getWorldId(args[0]);
-                for (String node : plugin.getSQLManager().getTotalPlayerNodes(worldId, -1)) {
-                    if (node.startsWith("-") || node.startsWith("+")) {
-                        continue;
-                    }
-                    ret.add(node);
-                }
-            }
+            CommandUtils.loadAllPlayerPermissionNodes(plugin.getUserManager(), value, args[0], ret);
         } else if (index == 2) {
-            for (World w : plugin.getServer().getWorlds()) {
-                if (w.getName().toLowerCase().startsWith(value)) {
-                    ret.add(w.getName());
-                }
-                ret.add("global");
-            }
+            CommandUtils.loadWorlds(value, ret);
+            CommandUtils.loadGlobalWorldConstant(value, ret);
         }
         return ret;
-        */
-        //@formatter:on
     }
 }

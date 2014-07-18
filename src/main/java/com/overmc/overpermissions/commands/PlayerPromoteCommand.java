@@ -44,14 +44,14 @@ public class PlayerPromoteCommand implements TabExecutor {
         }
         final String playerName = args[0];
         final String choice = (args.length >= 2) ? args[1] : null;
+        if (plugin.getUserManager().canUserExist(playerName)) {
+            sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, playerName));
+            return true;
+        }
+        final PermissionUser user = plugin.getUserManager().getPermissionUser(playerName);
         plugin.getExecutor().submit(new Runnable() {
             @Override
             public void run( ) {
-                if (plugin.getUserManager().canUserExist(playerName)) {
-                    sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, playerName));
-                    return;
-                }
-                PermissionUser user = plugin.getUserManager().getPermissionUser(playerName);
                 PermissionGroup playerOnlyGroup = null;
                 for (PermissionGroup g : user.getParents()) {
                     if (playerOnlyGroup != null) {
@@ -64,7 +64,7 @@ public class PlayerPromoteCommand implements TabExecutor {
                 if (playerOnlyGroup == null) {
                     throw new AssertionError("A player wasn't in any groups! (" + user.getName() + ")");
                 }
-                Collection<? extends PermissionGroup> children = playerOnlyGroup.getChildren();
+                Collection<PermissionGroup> children = playerOnlyGroup.getChildren();
                 if (children.size() == 0) {
                     sender.sendMessage(Messages.format(ERROR_GROUP_NO_CHILDREN, playerOnlyGroup.getName()));
                 } else if (children.size() == 1) {
@@ -107,7 +107,7 @@ public class PlayerPromoteCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<>();
         if (!sender.hasPermission(command.getPermission())) {
             return ret;
         }

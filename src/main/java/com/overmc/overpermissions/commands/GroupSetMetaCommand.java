@@ -11,11 +11,17 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
 
 import com.google.common.base.Joiner;
 import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
 import com.overmc.overpermissions.api.PermissionGroup;
+import com.overmc.overpermissions.api.events.GroupMetaAddByPlayerEvent;
+import com.overmc.overpermissions.api.events.GroupMetaAddEvent;
+import com.overmc.overpermissions.api.events.GroupMetaClearByPlayerEvent;
+import com.overmc.overpermissions.api.events.GroupMetaClearEvent;
+import com.overmc.overpermissions.api.events.GroupMetaEvent;
 
 // ./groupsetmeta [group] [key] (world) [value...]
 public class GroupSetMetaCommand implements TabExecutor {
@@ -64,18 +70,36 @@ public class GroupSetMetaCommand implements TabExecutor {
         final String groupName = args[0];
         final String key = args[1];
         final String value = Joiner.on(' ').join(Arrays.copyOfRange(args, worldArgumentSet ? 3 : 2, args.length)); // If the world argument is set, skip it.
+        if (plugin.getGroupManager().doesGroupExist(groupName)) {
+            sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, groupName));
+            return true;
+        }
+        if (!global && Bukkit.getWorld(worldName) == null) { // Not global, and world doesn't exist.
+            sender.sendMessage(Messages.format(ERROR_INVALID_WORLD, worldName));
+            return true;
+        }
+        final PermissionGroup group = plugin.getGroupManager().getGroup(groupName);
+        GroupMetaEvent event;
+        if (sender instanceof Player) {
+            if ("clear".equalsIgnoreCase(value)) {
+                event = new GroupMetaClearByPlayerEvent(group.getName(), worldName, key, (Player) sender);
+            } else {
+                event = new GroupMetaAddByPlayerEvent(group.getName(), worldName, key, value, (Player) sender);
+            }
+        } else {
+            if ("clear".equalsIgnoreCase(value)) {
+                event = new GroupMetaClearEvent(group.getName(), worldName, key);
+            } else {
+                event = new GroupMetaAddEvent(group.getName(), worldName, key, value);
+            }
+        }
+        plugin.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
+            return true;
+        }
         plugin.getExecutor().submit(new Runnable() {
             @Override
             public void run( ) {
-                if (plugin.getGroupManager().doesGroupExist(groupName)) {
-                    sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, groupName));
-                    return;
-                }
-                if (!global && Bukkit.getWorld(worldName) == null) { // Not global, and world doesn't exist.
-                    sender.sendMessage(Messages.format(ERROR_INVALID_WORLD, worldName));
-                    return;
-                }
-                PermissionGroup group = plugin.getGroupManager().getGroup(groupName);
                 if ("clear".equalsIgnoreCase(value)) {
                     if (global) {
                         if (group.removeGlobalMeta(key)) {
@@ -106,7 +130,7 @@ public class GroupSetMetaCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<>();
         if (!sender.hasPermission(command.getPermission())) {
             return ret;
         }

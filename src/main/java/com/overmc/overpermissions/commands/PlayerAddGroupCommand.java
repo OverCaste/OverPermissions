@@ -9,11 +9,14 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
 
 import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
 import com.overmc.overpermissions.api.PermissionGroup;
 import com.overmc.overpermissions.api.PermissionUser;
+import com.overmc.overpermissions.api.events.PlayerGroupAddByPlayerEvent;
+import com.overmc.overpermissions.api.events.PlayerGroupAddEvent;
 
 // ./playeraddgroup [player] [group]
 public class PlayerAddGroupCommand implements TabExecutor {
@@ -42,18 +45,28 @@ public class PlayerAddGroupCommand implements TabExecutor {
         }
         final String victimName = args[0];
         final String groupName = args[1];
+        if (!plugin.getGroupManager().doesGroupExist(groupName)) {
+            sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, groupName));
+            return true;
+        }
+        final PermissionGroup group = plugin.getGroupManager().getGroup(groupName);
+        if (!plugin.getUserManager().canUserExist(victimName)) {
+            sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, victimName));
+            return true;
+        }
+        PlayerGroupAddEvent event;
+        if (sender instanceof Player) {
+            event = new PlayerGroupAddByPlayerEvent(victimName, group.getName(), (Player) sender);
+        } else {
+            event = new PlayerGroupAddEvent(victimName, group.getName());
+        }
+        plugin.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
+            return true;
+        }
         plugin.getExecutor().submit(new Runnable() {
             @Override
             public void run( ) {
-                if (!plugin.getGroupManager().doesGroupExist(groupName)) {
-                    sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, groupName));
-                    return;
-                }
-                PermissionGroup group = plugin.getGroupManager().getGroup(groupName);
-                if (!plugin.getUserManager().canUserExist(victimName)) {
-                    sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, victimName));
-                    return;
-                }
                 PermissionUser victim = plugin.getUserManager().getPermissionUser(victimName);
                 if (victim.addParent(group)) {
                     sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADD_GROUP, group.getName(), victimName));
@@ -67,7 +80,7 @@ public class PlayerAddGroupCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<>();
         if (!sender.hasPermission(command.getPermission())) {
             sender.sendMessage(ERROR_NO_PERMISSION);
             return ret;
@@ -75,7 +88,8 @@ public class PlayerAddGroupCommand implements TabExecutor {
         int index = args.length - 1;
         String value = args[index].toLowerCase();
         if (index == 0) {
-            CommandUtils.loadPlayers(value, ret);;
+            CommandUtils.loadPlayers(value, ret);
+            ;
         } else if (index == 1) {
             CommandUtils.loadGroups(plugin.getGroupManager(), value, ret);
         }

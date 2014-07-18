@@ -15,9 +15,8 @@ import org.bukkit.entity.Player;
 import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
 import com.overmc.overpermissions.api.PermissionUser;
-import com.overmc.overpermissions.events.PermissionChangeCause;
-import com.overmc.overpermissions.events.PlayerPermissionAddByPlayerEvent;
-import com.overmc.overpermissions.events.PlayerPermissionAddEvent;
+import com.overmc.overpermissions.api.events.PlayerPermissionAddByPlayerEvent;
+import com.overmc.overpermissions.api.events.PlayerPermissionAddEvent;
 
 // ./playeradd [player] [permission] (world)
 public final class PlayerAddCommand implements TabExecutor {
@@ -48,14 +47,14 @@ public final class PlayerAddCommand implements TabExecutor {
         final String permission = args[1];
         final String worldName = (args.length >= 3) ? args[2] : null;
         final boolean global = (worldName == null || "global".equals(worldName));
-        PlayerPermissionAddEvent e;
+        PlayerPermissionAddEvent event;
         if (sender instanceof Player) {
-            e = new PlayerPermissionAddByPlayerEvent(playerName, worldName, permission, (Player) sender);
+            event = new PlayerPermissionAddByPlayerEvent(playerName, worldName, permission, (Player) sender);
         } else {
-            e = new PlayerPermissionAddEvent(playerName, worldName, permission, PermissionChangeCause.CONSOLE);
+            event = new PlayerPermissionAddEvent(playerName, worldName, permission);
         }
-        plugin.getServer().getPluginManager().callEvent(e);
-        if (e.isCancelled()) {
+        plugin.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
             return true;
         }
         plugin.getExecutor().submit(new Runnable() {
@@ -90,7 +89,7 @@ public final class PlayerAddCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<>();
         if (!sender.hasPermission(command.getPermission())) {
             return ret;
         }

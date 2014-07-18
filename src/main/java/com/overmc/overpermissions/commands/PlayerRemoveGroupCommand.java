@@ -15,51 +15,50 @@ import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
 import com.overmc.overpermissions.api.PermissionGroup;
 import com.overmc.overpermissions.api.PermissionUser;
-import com.overmc.overpermissions.api.events.PlayerGroupSetByPlayerEvent;
-import com.overmc.overpermissions.api.events.PlayerGroupSetEvent;
+import com.overmc.overpermissions.api.events.PlayerGroupRemoveByPlayerEvent;
+import com.overmc.overpermissions.api.events.PlayerGroupRemoveEvent;
 
-// ./playersetgroup [player] [group]
-public class PlayerSetGroupCommand implements TabExecutor {
+// ./playerremovegroup [player] [group]
+public class PlayerRemoveGroupCommand implements TabExecutor {
     private final OverPermissions plugin;
 
-    public PlayerSetGroupCommand(OverPermissions plugin) {
+    public PlayerRemoveGroupCommand(OverPermissions plugin) {
         this.plugin = plugin;
     }
 
-    public PlayerSetGroupCommand register( ) {
-        PluginCommand command = this.plugin.getCommand("playersetgroup");
+    public PlayerRemoveGroupCommand register( ) {
+        PluginCommand command = plugin.getCommand("playerremovegroup");
         command.setExecutor(this);
         command.setTabCompleter(this);
         return this;
     }
 
     @Override
-    public boolean onCommand(final CommandSender sender, Command command, String label, final String[] args) {
+    public boolean onCommand(final CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission(command.getPermission())) {
             sender.sendMessage(ERROR_NO_PERMISSION);
             return true;
         }
-        if ((args.length != 2)) {
+        if ((args.length < 2) || (args.length > 2)) {
             sender.sendMessage(Messages.getUsage(command));
             return true;
         }
-        final String victim = args[0];
+        final String victimName = args[0];
         final String groupName = args[1];
         if (!plugin.getGroupManager().doesGroupExist(groupName)) {
             sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, groupName));
             return true;
         }
         final PermissionGroup group = plugin.getGroupManager().getGroup(groupName);
-        if (!plugin.getUserManager().canUserExist(victim)) {
-            sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, victim));
+        if (!plugin.getUserManager().canUserExist(victimName)) {
+            sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, victimName));
             return true;
         }
-        final PermissionUser user = plugin.getUserManager().getPermissionUser(victim);
-        PlayerGroupSetEvent event;
+        PlayerGroupRemoveEvent event;
         if (sender instanceof Player) {
-            event = new PlayerGroupSetByPlayerEvent(user.getName(), group.getName(), (Player) sender);
+            event = new PlayerGroupRemoveByPlayerEvent(victimName, group.getName(), (Player) sender);
         } else {
-            event = new PlayerGroupSetEvent(user.getName(), group.getName());
+            event = new PlayerGroupRemoveEvent(victimName, group.getName());
         }
         plugin.getServer().getPluginManager().callEvent(event);
         if (event.isCancelled()) {
@@ -68,8 +67,12 @@ public class PlayerSetGroupCommand implements TabExecutor {
         plugin.getExecutor().submit(new Runnable() {
             @Override
             public void run( ) {
-                user.setParent(group);
-                sender.sendMessage(Messages.format(SUCCESS_PLAYER_SET_GROUP, user.getName(), group.getName()));
+                PermissionUser victim = plugin.getUserManager().getPermissionUser(victimName);
+                if (victim.removeParent(group)) {
+                    sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADD_GROUP, group.getName(), victimName));
+                } else {
+                    sender.sendMessage(Messages.format(ERROR_PLAYER_ALREADY_IN_GROUP, victimName, group.getName()));
+                }
             }
         });
         return true;
@@ -87,7 +90,7 @@ public class PlayerSetGroupCommand implements TabExecutor {
         if (index == 0) {
             CommandUtils.loadPlayers(value, ret);
         } else if (index == 1) {
-            CommandUtils.loadGroups(plugin.getGroupManager(), value, ret);
+            CommandUtils.loadPlayerGroups(plugin.getUserManager(), value, args[0], ret);
         }
         return ret;
     }

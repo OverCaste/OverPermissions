@@ -10,10 +10,13 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
 
 import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
 import com.overmc.overpermissions.api.PermissionGroup;
+import com.overmc.overpermissions.api.events.GroupPermissionAddByPlayerEvent;
+import com.overmc.overpermissions.api.events.GroupPermissionAddEvent;
 
 // ./groupadd [group] [permission] (worldName)
 public final class GroupAddCommand implements TabExecutor {
@@ -48,15 +51,24 @@ public final class GroupAddCommand implements TabExecutor {
             sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, groupName));
             return true;
         }
-        if(!global && Bukkit.getWorld(worldName) == null) { //Not global, and world doesn't exist.
+        final PermissionGroup group = plugin.getGroupManager().getGroup(groupName);
+        if (!global && Bukkit.getWorld(worldName) == null) { // Not global, and world doesn't exist.
             sender.sendMessage(Messages.format(ERROR_INVALID_WORLD, worldName));
+            return true;
+        }
+        GroupPermissionAddEvent event;
+        if (sender instanceof Player) {
+            event = new GroupPermissionAddByPlayerEvent(group.getName(), worldName, permissionNode, (Player) sender);
+        } else {
+            event = new GroupPermissionAddEvent(group.getName(), worldName, permissionNode);
+        }
+        plugin.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
             return true;
         }
         plugin.getExecutor().submit(new Runnable() {
             @Override
             public void run( ) {
-                PermissionGroup group = plugin.getGroupManager().getGroup(groupName);
-
                 if (global ? group.addGlobalPermissionNode(permissionNode) : group.addPermissionNode(permissionNode, CommandUtils.getWorldName(worldName))) {
                     if (global) {
                         sender.sendMessage(Messages.format(SUCCESS_GROUP_ADD_GLOBAL, permissionNode, group.getName()));
@@ -65,7 +77,7 @@ public final class GroupAddCommand implements TabExecutor {
                     }
                 } else {
                     sender.sendMessage(Messages.format(ERROR_GROUP_PERMISSION_ALREADY_SET_GLOBAL, permissionNode));
-                }                
+                }
             }
         });
 
@@ -74,7 +86,7 @@ public final class GroupAddCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<>();
         if (!sender.hasPermission(command.getPermission())) {
             return ret;
         }

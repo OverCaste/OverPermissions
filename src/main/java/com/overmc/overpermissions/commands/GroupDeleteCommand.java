@@ -9,9 +9,12 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
 
 import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
+import com.overmc.overpermissions.api.events.GroupDeletionByPlayerEvent;
+import com.overmc.overpermissions.api.events.GroupDeletionEvent;
 
 // ./groupdelete [group]
 public class GroupDeleteCommand implements TabExecutor {
@@ -47,6 +50,16 @@ public class GroupDeleteCommand implements TabExecutor {
             sender.sendMessage(Messages.format(ERROR_DELETE_DEFAULT_GROUP, groupName));
             return true;
         }
+        GroupDeletionEvent event;
+        if (sender instanceof Player) {
+            event = new GroupDeletionByPlayerEvent(groupName, (Player) sender);
+        } else {
+            event = new GroupDeletionEvent(groupName);
+        }
+        plugin.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
+            return true;
+        }
         plugin.getExecutor().submit(new Runnable() {
             @Override
             public void run( ) {
@@ -62,7 +75,7 @@ public class GroupDeleteCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<>();
         if (!sender.hasPermission(command.getPermission())) {
             return ret;
         }

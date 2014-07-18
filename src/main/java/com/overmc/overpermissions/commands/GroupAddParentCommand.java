@@ -9,10 +9,13 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
 
 import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
 import com.overmc.overpermissions.api.PermissionGroup;
+import com.overmc.overpermissions.api.events.GroupParentAddByPlayerEvent;
+import com.overmc.overpermissions.api.events.GroupParentAddEvent;
 
 // ./groupaddparent [group] [parent]
 public class GroupAddParentCommand implements TabExecutor {
@@ -52,6 +55,16 @@ public class GroupAddParentCommand implements TabExecutor {
             sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, parentName));
             return true;
         }
+        GroupParentAddEvent event;
+        if (sender instanceof Player) {
+            event = new GroupParentAddByPlayerEvent(group.getName(), parent.getName(), (Player) sender);
+        } else {
+            event = new GroupParentAddEvent(group.getName(), parent.getName());
+        }
+        plugin.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
+            return true;
+        }
         plugin.getExecutor().submit(new Runnable() {
             @Override
             public void run( ) {
@@ -73,7 +86,7 @@ public class GroupAddParentCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<>();
         if (!sender.hasPermission(command.getPermission())) {
             return ret;
         }

@@ -10,10 +10,13 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
 
 import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
 import com.overmc.overpermissions.api.PermissionGroup;
+import com.overmc.overpermissions.api.events.GroupPermissionRemoveByPlayerEvent;
+import com.overmc.overpermissions.api.events.GroupPermissionRemoveEvent;
 
 // ./groupremove [group] [permission] (world)
 public class GroupRemoveCommand implements TabExecutor {
@@ -48,14 +51,24 @@ public class GroupRemoveCommand implements TabExecutor {
             sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, groupName));
             return true;
         }
+        final PermissionGroup group = plugin.getGroupManager().getGroup(groupName);
         if (!global && Bukkit.getWorld(worldName) == null) { // Not global, and world doesn't exist.
             sender.sendMessage(Messages.format(ERROR_INVALID_WORLD, worldName));
+            return true;
+        }
+        GroupPermissionRemoveEvent event;
+        if (sender instanceof Player) {
+            event = new GroupPermissionRemoveByPlayerEvent(group.getName(), permission, worldName, (Player) sender);
+        } else {
+            event = new GroupPermissionRemoveEvent(group.getName(), permission, worldName);
+        }
+        plugin.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
             return true;
         }
         plugin.getExecutor().submit(new Runnable() {
             @Override
             public void run( ) {
-                PermissionGroup group = plugin.getGroupManager().getGroup(groupName);
                 if (global) {
                     if (group.removeGlobalPermissionNode(permission)) {
                         sender.sendMessage(Messages.format(SUCCESS_GROUP_REMOVE_GLOBAL, permission, group.getName()));
@@ -76,7 +89,7 @@ public class GroupRemoveCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<>();
         if (!sender.hasPermission(command.getPermission())) {
             return ret;
         }

@@ -9,10 +9,13 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
 
 import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
 import com.overmc.overpermissions.api.PermissionGroup;
+import com.overmc.overpermissions.api.events.GroupRemoveParentByPlayerEvent;
+import com.overmc.overpermissions.api.events.GroupRemoveParentEvent;
 
 // ./groupremoveparent [group] [parent]
 public class GroupRemoveParentCommand implements TabExecutor {
@@ -41,19 +44,29 @@ public class GroupRemoveParentCommand implements TabExecutor {
         }
         final String groupName = args[0];
         final String parentName = args[1];
+        if (!plugin.getGroupManager().doesGroupExist(groupName)) {
+            sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, groupName));
+            return true;
+        }
+        final PermissionGroup group = plugin.getGroupManager().getGroup(groupName);
+        if (!plugin.getGroupManager().doesGroupExist(parentName)) {
+            sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, parentName));
+            return true;
+        }
+        final PermissionGroup parent = plugin.getGroupManager().getGroup(parentName);
+        GroupRemoveParentEvent event;
+        if (sender instanceof Player) {
+            event = new GroupRemoveParentByPlayerEvent(group.getName(), parent.getName(), (Player) sender);
+        } else {
+            event = new GroupRemoveParentEvent(group.getName(), parent.getName());
+        }
+        plugin.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
+            return true;
+        }
         plugin.getExecutor().submit(new Runnable() {
             @Override
             public void run( ) {
-                if (!plugin.getGroupManager().doesGroupExist(groupName)) {
-                    sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, groupName));
-                    return;
-                }
-                PermissionGroup group = plugin.getGroupManager().getGroup(groupName);
-                if (!plugin.getGroupManager().doesGroupExist(parentName)) {
-                    sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, parentName));
-                    return;
-                }
-                PermissionGroup parent = plugin.getGroupManager().getGroup(parentName);
                 if (group.removeParent(parent)) {
                     sender.sendMessage(Messages.format(SUCCESS_GROUP_REMOVE_PARENT, parent.getName(), group.getName()));
                 } else {
@@ -66,7 +79,7 @@ public class GroupRemoveParentCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<>();
         if (!sender.hasPermission(command.getPermission())) {
             return ret;
         }

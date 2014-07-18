@@ -4,7 +4,6 @@ import static com.overmc.overpermissions.Messages.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -15,22 +14,20 @@ import org.bukkit.entity.Player;
 
 import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
-import com.overmc.overpermissions.TimeUtils;
 import com.overmc.overpermissions.api.PermissionUser;
-import com.overmc.overpermissions.api.events.PlayerPermissionAddByPlayerEvent;
-import com.overmc.overpermissions.api.events.PlayerPermissionAddEvent;
-import com.overmc.overpermissions.exceptions.TimeFormatException;
+import com.overmc.overpermissions.api.events.PlayerPermissionRemoveByPlayerEvent;
+import com.overmc.overpermissions.api.events.PlayerPermissionRemoveEvent;
 
-// ./playeraddtemp [player] [permission] [time] (world)
-public class PlayerAddTempCommand implements TabExecutor {
+// ./playeraddtemp [player] [permission] (world)
+public class PlayerRemoveTempCommand implements TabExecutor {
     private final OverPermissions plugin;
 
-    public PlayerAddTempCommand(OverPermissions plugin) {
+    public PlayerRemoveTempCommand(OverPermissions plugin) {
         this.plugin = plugin;
     }
 
-    public PlayerAddTempCommand register( ) {
-        PluginCommand command = plugin.getCommand("playeraddtemp");
+    public PlayerRemoveTempCommand register( ) {
+        PluginCommand command = plugin.getCommand("playerremovetemp");
         command.setExecutor(this);
         command.setTabCompleter(this);
         return this;
@@ -42,14 +39,13 @@ public class PlayerAddTempCommand implements TabExecutor {
             sender.sendMessage(ERROR_NO_PERMISSION);
             return true;
         }
-        if ((args.length < 3) || (args.length > 4)) {
+        if ((args.length < 2) || (args.length > 3)) {
             sender.sendMessage(Messages.getUsage(command));
             return true;
         }
         final String playerName = args[0];
         final String permission = args[1];
-        final String timeString = args[2];
-        final String worldName = (args.length >= 4) ? args[3] : null;
+        final String worldName = (args.length >= 3) ? args[2] : null;
         final boolean global = (worldName == null || "global".equals(worldName));
         if (plugin.getUserManager().canUserExist(playerName)) {
             sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, playerName));
@@ -60,18 +56,11 @@ public class PlayerAddTempCommand implements TabExecutor {
             return true;
         }
         final PermissionUser user = plugin.getUserManager().getPermissionUser(playerName);
-        final long time;
-        try {
-            time = TimeUtils.parseMilliseconds(timeString) + System.currentTimeMillis();
-        } catch (TimeFormatException ex) {
-            sender.sendMessage(Messages.format(ERROR_INVALID_TIME, timeString));
-            return true;
-        }
-        PlayerPermissionAddEvent event;
+        PlayerPermissionRemoveEvent event;
         if (sender instanceof Player) {
-            event = new PlayerPermissionAddByPlayerEvent(playerName, worldName, permission, true, (Player) sender);
+            event = new PlayerPermissionRemoveByPlayerEvent(playerName, worldName, permission, true, (Player) sender);
         } else {
-            event = new PlayerPermissionAddEvent(playerName, worldName, permission, true);
+            event = new PlayerPermissionRemoveEvent(playerName, worldName, permission, true);
         }
         plugin.getServer().getPluginManager().callEvent(event);
         if (event.isCancelled()) {
@@ -81,16 +70,16 @@ public class PlayerAddTempCommand implements TabExecutor {
             @Override
             public void run( ) {
                 if (global) {
-                    if (user.addGlobalTempPermissionNode(permission, time, TimeUnit.MILLISECONDS)) {
-                        sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADDTEMP_GLOBAL, permission, user, (time / 1000L)));
+                    if (user.removeGlobalTempPermissionNode(permission)) {
+                        sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADDTEMP_GLOBAL, permission, user.getName()));
                     } else {
-                        sender.sendMessage(Messages.format(ERROR_PLAYER_PERMISSION_ALREADY_SET_GLOBAL, permission));
+                        sender.sendMessage(Messages.format(ERROR_PLAYER_PERMISSION_NOT_SET_GLOBAL, permission));
                     }
                 } else {
-                    if (user.addTempPermissionNode(permission, worldName, time, TimeUnit.MILLISECONDS)) {
-                        sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADDTEMP_WORLD, permission, user, CommandUtils.getWorldName(worldName), (time / 1000L)));
+                    if (user.removeTempPermissionNode(permission, worldName)) {
+                        sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADDTEMP_WORLD, permission, user.getName(), CommandUtils.getWorldName(worldName)));
                     } else {
-                        sender.sendMessage(Messages.format(ERROR_PLAYER_PERMISSION_ALREADY_SET_WORLD, permission, CommandUtils.getWorldName(worldName)));
+                        sender.sendMessage(Messages.format(ERROR_PLAYER_PERMISSION_NOT_SET_WORLD, permission, CommandUtils.getWorldName(worldName)));
                     }
                 }
             }

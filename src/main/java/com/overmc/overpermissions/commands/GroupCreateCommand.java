@@ -9,9 +9,12 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
 
 import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
+import com.overmc.overpermissions.api.events.GroupCreationByPlayerEvent;
+import com.overmc.overpermissions.api.events.GroupCreationEvent;
 
 // ./groupcreate [group] [priority]
 public class GroupCreateCommand implements TabExecutor {
@@ -40,8 +43,18 @@ public class GroupCreateCommand implements TabExecutor {
         }
         final String groupName = args[0];
         final String priorityString = args[1];
-        if (plugin.getGroupManager().getGroup(groupName) != null) {
+        if (plugin.getGroupManager().doesGroupExist(groupName)) {
             sender.sendMessage(Messages.format(ERROR_GROUP_ALREADY_EXISTS, plugin.getGroupManager().getGroup(groupName).getName()));
+            return true;
+        }
+        GroupCreationEvent event;
+        if (sender instanceof Player) {
+            event = new GroupCreationByPlayerEvent(groupName, (Player) sender);
+        } else {
+            event = new GroupCreationEvent(groupName);
+        }
+        plugin.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
             return true;
         }
         plugin.getExecutor().submit(new Runnable() {
@@ -63,7 +76,7 @@ public class GroupCreateCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<>();
         if (!sender.hasPermission(command.getPermission())) {
             return ret;
         }

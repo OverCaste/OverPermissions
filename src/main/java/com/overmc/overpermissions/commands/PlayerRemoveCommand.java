@@ -15,9 +15,8 @@ import org.bukkit.entity.Player;
 import com.overmc.overpermissions.Messages;
 import com.overmc.overpermissions.OverPermissions;
 import com.overmc.overpermissions.api.PermissionUser;
-import com.overmc.overpermissions.events.PermissionChangeCause;
-import com.overmc.overpermissions.events.PlayerPermissionRemoveByPlayerEvent;
-import com.overmc.overpermissions.events.PlayerPermissionRemoveEvent;
+import com.overmc.overpermissions.api.events.PlayerPermissionRemoveByPlayerEvent;
+import com.overmc.overpermissions.api.events.PlayerPermissionRemoveEvent;
 
 // ./playerremove [player] [permission] (world)
 public class PlayerRemoveCommand implements TabExecutor {
@@ -48,19 +47,19 @@ public class PlayerRemoveCommand implements TabExecutor {
         final String permission = args[1];
         final String worldName = (args.length >= 3) ? args[2] : null;
         final boolean global = (worldName == null || "global".equals(worldName));
+        PlayerPermissionRemoveEvent e;
+        if (sender instanceof Player) {
+            e = new PlayerPermissionRemoveByPlayerEvent(playerName, worldName, permission, (Player) sender);
+        } else {
+            e = new PlayerPermissionRemoveEvent(playerName, worldName, permission);
+        }
+        plugin.getServer().getPluginManager().callEvent(e);
+        if (e.isCancelled()) {
+            return true;
+        }
         plugin.getExecutor().submit(new Runnable() {
             @Override
             public void run( ) {
-                PlayerPermissionRemoveEvent e;
-                if (sender instanceof Player) {
-                    e = new PlayerPermissionRemoveByPlayerEvent(playerName, worldName, permission, (Player) sender);
-                } else {
-                    e = new PlayerPermissionRemoveEvent(playerName, worldName, permission, PermissionChangeCause.CONSOLE);
-                }
-                plugin.getServer().getPluginManager().callEvent(e);
-                if (e.isCancelled()) {
-                    return;
-                }
                 if (!plugin.getUserManager().doesUserExist(playerName)) {
                     sender.sendMessage(Messages.format(ERROR_PLAYER_LOOKUP_FAILED, playerName));
                     return;
@@ -70,14 +69,14 @@ public class PlayerRemoveCommand implements TabExecutor {
                     return;
                 }
                 PermissionUser user = plugin.getUserManager().getPermissionUser(playerName);
-                if(global) {
-                    if(user.removeGlobalPermissionNode(permission)) {
+                if (global) {
+                    if (user.removeGlobalPermissionNode(permission)) {
                         sender.sendMessage(Messages.format(SUCCESS_PLAYER_REMOVE_GLOBAL, permission, user.getName()));
                     } else {
                         sender.sendMessage(Messages.format(ERROR_PLAYER_PERMISSION_NOT_SET_GLOBAL, permission));
                     }
                 } else {
-                    if(user.removePermissionNode(permission, worldName)) {
+                    if (user.removePermissionNode(permission, worldName)) {
                         sender.sendMessage(Messages.format(SUCCESS_PLAYER_REMOVE_WORLD, permission, user.getName(), CommandUtils.getWorldName(worldName)));
                     } else {
                         sender.sendMessage(Messages.format(ERROR_PLAYER_PERMISSION_NOT_SET_WORLD, permission, CommandUtils.getWorldName(worldName)));
@@ -90,7 +89,7 @@ public class PlayerRemoveCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<>();
         int index = args.length - 1;
         String value = args[index].toLowerCase();
         if (index == 0) {
