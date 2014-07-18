@@ -56,7 +56,7 @@ public class Permission_OverPermissions extends Permission {
     @Override
     public boolean playerHas(String worldName, String playerName, String permission)
     {
-        if(!userManager.doesUserExist(playerName)) {
+        if (!userManager.doesUserExist(playerName)) {
             return false;
         }
         return userManager.getPermissionUser(playerName).getPermission(permission, worldName);
@@ -65,7 +65,7 @@ public class Permission_OverPermissions extends Permission {
     @Override
     public boolean playerAdd(String worldName, String playerName, String permission)
     {
-        if(!userManager.canUserExist(playerName)) {
+        if (!userManager.canUserExist(playerName)) {
             return false;
         }
         return userManager.getPermissionUser(playerName).addPermissionNode(permission, worldName);
@@ -74,7 +74,7 @@ public class Permission_OverPermissions extends Permission {
     @Override
     public boolean playerRemove(String worldName, String playerName, String permission)
     {
-        if(!userManager.canUserExist(playerName)) {
+        if (!userManager.canUserExist(playerName)) {
             return false;
         }
         return userManager.getPermissionUser(playerName).removePermissionNode(permission, worldName);
@@ -108,7 +108,7 @@ public class Permission_OverPermissions extends Permission {
         if (!groupManager.doesGroupExist(groupName)) {
             return false;
         }
-        if(worldName == null) {
+        if (worldName == null) {
             return groupManager.getGroup(groupName).removeGlobalPermissionNode(permission);
         } else {
             return groupManager.getGroup(groupName).removePermissionNode(permission, worldName);
@@ -121,7 +121,7 @@ public class Permission_OverPermissions extends Permission {
         if (!groupManager.doesGroupExist(groupName)) {
             return false;
         }
-        if(!userManager.doesUserExist(playerName)) {
+        if (!userManager.doesUserExist(playerName)) {
             return false;
         }
         return userManager.getPermissionUser(playerName).getAllParents().contains(groupManager.getGroup(groupName));
@@ -133,7 +133,7 @@ public class Permission_OverPermissions extends Permission {
         if (!groupManager.doesGroupExist(groupName)) {
             return false;
         }
-        if(!userManager.canUserExist(playerName)) {
+        if (!userManager.canUserExist(playerName)) {
             return false;
         }
         return userManager.getPermissionUser(playerName).addParent(groupManager.getGroup(groupName));
@@ -145,7 +145,7 @@ public class Permission_OverPermissions extends Permission {
         if (!groupManager.doesGroupExist(groupName)) {
             return false;
         }
-        if(!userManager.canUserExist(playerName)) {
+        if (!userManager.canUserExist(playerName)) {
             return false;
         }
         return userManager.getPermissionUser(playerName).removeParent(groupManager.getGroup(groupName));
@@ -154,12 +154,12 @@ public class Permission_OverPermissions extends Permission {
     @Override
     public String[] getPlayerGroups(String worldName, String playerName)
     {
-        ArrayList<String> ret = new ArrayList<String>();
-        if(!userManager.doesUserExist(playerName)) {
+        ArrayList<String> ret = new ArrayList<>();
+        if (!userManager.doesUserExist(playerName)) {
             return new String[0];
         }
         PermissionUser user = userManager.getPermissionUser(playerName);
-        for(PermissionGroup parent : user.getAllParents()) {
+        for (PermissionGroup parent : user.getAllParents()) {
             ret.add(parent.getName());
         }
         return ret.toArray(new String[ret.size()]);
@@ -176,21 +176,23 @@ public class Permission_OverPermissions extends Permission {
     }
 
     @Override
-    public boolean playerAddTransient(String world, String player, String permission)
+    public boolean playerAddTransient(String world, String playerName, String permission)
     {
-        if(!userManager.canUserExist(player)) {
+        if (!userManager.doesUserExist(playerName)) { //Can't add transient permissions to an offline player.
             return false;
         }
-        return userManager.getPermissionUser(player).addTransientPermissionNode(permission);
+        PermissionUser user = userManager.getPermissionUser(playerName);
+        return (world == null) ? user.addGlobalTransientPermissionNode(permission) : user.addTransientPermissionNode(permission, world);
     }
 
     @Override
-    public boolean playerRemoveTransient(String world, String player, String permission)
+    public boolean playerRemoveTransient(String world, String playerName, String permission)
     {
-        if(!userManager.canUserExist(player)) {
+        if (!userManager.doesUserExist(playerName)) {
             return false;
         }
-        return userManager.getPermissionUser(player).removeTransientPermissionNode(permission);
+        PermissionUser user = userManager.getPermissionUser(playerName);
+        return (world == null) ? user.removeGlobalTransientPermissionNode(permission) : user.removeTransientPermissionNode(permission, world);
     }
 
     @Override

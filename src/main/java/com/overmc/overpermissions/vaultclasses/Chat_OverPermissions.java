@@ -222,11 +222,11 @@ public class Chat_OverPermissions extends Chat {
     @Override
     public String getPlayerInfoString(String world, String playerName, String node, String defaultValue)
     {
-        if(!userManager.doesUserExist(playerName)) {
+        if (!userManager.doesUserExist(playerName)) {
             return defaultValue;
         }
         PermissionUser user = userManager.getPermissionUser(playerName);
-        if (world == null) { //Retrieve meta from the global store.
+        if (world == null) { // Retrieve meta from the global store.
             if (!user.hasGlobalMeta(node)) {
                 return defaultValue;
             }
@@ -242,18 +242,18 @@ public class Chat_OverPermissions extends Chat {
     @Override
     public void setPlayerInfoString(String world, String playerName, String node, String value)
     {
-        if(!userManager.canUserExist(playerName)) {
+        if (!userManager.canUserExist(playerName)) {
             return;
         }
         PermissionUser user = userManager.getPermissionUser(playerName);
-        if(world == null) {
-            if(node == null) {
+        if (world == null) {
+            if (node == null) {
                 user.removeMeta(node, world);
             } else {
-                user.setMeta(node, value,world);
+                user.setMeta(node, value, world);
             }
         } else {
-            if(node == null) {
+            if (node == null) {
                 user.removeGlobalMeta(node);
             } else {
                 user.setGlobalMeta(node, value);
@@ -264,17 +264,17 @@ public class Chat_OverPermissions extends Chat {
     @Override
     public String getGroupInfoString(String world, String groupName, String node, String defaultValue)
     {
-        if(!groupManager.doesGroupExist(groupName)) {
+        if (!groupManager.doesGroupExist(groupName)) {
             return defaultValue;
         }
         PermissionGroup group = overPerms.getGroupManager().getGroup(groupName);
-        if(world == null) { //Retrieve from the global store.
-            if(!group.hasGlobalMeta(node)) {
+        if (world == null) { // Retrieve from the global store.
+            if (!group.hasGlobalMeta(node)) {
                 return defaultValue;
             }
             return group.getGlobalMeta(node);
         } else {
-            if(!group.hasMeta(node, world)) {
+            if (!group.hasMeta(node, world)) {
                 return defaultValue;
             }
             return group.getMeta(node, world);
@@ -284,18 +284,18 @@ public class Chat_OverPermissions extends Chat {
     @Override
     public void setGroupInfoString(String world, String groupName, String node, String value)
     {
-        if(!overPerms.getGroupManager().doesGroupExist(groupName)) {
+        if (!overPerms.getGroupManager().doesGroupExist(groupName)) {
             return;
         }
         PermissionGroup group = overPerms.getGroupManager().getGroup(groupName);
-        if(world == null) {
-            if(node == null) {
+        if (world == null) {
+            if (value == null) {
                 group.removeMeta(node, world);
             } else {
-                group.setMeta(node, value,world);
+                group.setMeta(node, value, world);
             }
         } else {
-            if(node == null) {
+            if (value == null) {
                 group.removeGlobalMeta(node);
             } else {
                 group.setGlobalMeta(node, value);
