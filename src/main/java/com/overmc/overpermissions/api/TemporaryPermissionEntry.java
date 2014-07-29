@@ -8,11 +8,11 @@ public class TemporaryPermissionEntry {
     private final String node;
     private final long timeoutInMillis;
 
-    public TemporaryPermissionEntry(String node, long timeInMillis) {
+    public TemporaryPermissionEntry(String node, long timeoutInMillis) {
         Preconditions.checkNotNull(node, "The node can't be null!");
-        Preconditions.checkArgument(timeInMillis > 0, "Timeout must be greater than 0.");
+        Preconditions.checkArgument(timeoutInMillis > 0, "Timeout must be greater than 0.");
         this.node = node;
-        this.timeoutInMillis = timeInMillis;
+        this.timeoutInMillis = timeoutInMillis;
     }
 
     public String getNode( ) {

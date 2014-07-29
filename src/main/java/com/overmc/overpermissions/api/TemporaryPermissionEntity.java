@@ -84,7 +84,7 @@ public interface TemporaryPermissionEntity extends UniqueEntity {
     public boolean removeBatchTempPermissionNodes(TemporaryNodeBatch nodes);
 
     /**
-    * @return the entire batch of temporary nodes that represent this entity.
-    */
+     * @return the entire batch of temporary nodes that represent this entity.
+     */
     public TemporaryNodeBatch getTempPermissionNodes( );
 }

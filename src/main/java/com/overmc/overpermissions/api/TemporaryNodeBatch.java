@@ -43,7 +43,7 @@ public final class TemporaryNodeBatch {
         }
         return ret;
     }
-    
+
     public static Builder builder( ) {
         return new Builder();
     }
@@ -53,16 +53,16 @@ public final class TemporaryNodeBatch {
         private Multimap<String, TemporaryPermissionEntry> worldNodes = HashMultimap.create();
 
         private Builder( ) {
-            //No instantiation.
+            // No instantiation.
         }
-        
+
         public Builder addNode(String node, String worldName, long time, TimeUnit unit) {
             Preconditions.checkNotNull(node, "The node can't be null!");
             Preconditions.checkNotNull(node, "The world can't be null!");
             Preconditions.checkNotNull(unit, "The time unit can't be null!");
             Preconditions.checkArgument(time > 0, "You can't add a node for 0 or less time.");
             // Preconditions.checkArgument(worldId >= 0, "A valid world id has to be greater or equal to 0.");
-            worldNodes.put(worldName.toLowerCase(), new TemporaryPermissionEntry(node, System.currentTimeMillis()+unit.toMillis(time)));
+            worldNodes.put(worldName.toLowerCase(), new TemporaryPermissionEntry(node, System.currentTimeMillis() + unit.toMillis(time)));
             return this;
         }
 
@@ -70,7 +70,7 @@ public final class TemporaryNodeBatch {
             Preconditions.checkNotNull(node, "The node can't be null!");
             Preconditions.checkNotNull(unit, "The time unit can't be null!");
             Preconditions.checkArgument(time > 0, "You can't add a node for 0 or less time.");
-            globalNodes.add(new TemporaryPermissionEntry(node, System.currentTimeMillis()+unit.toMillis(time)));
+            globalNodes.add(new TemporaryPermissionEntry(node, System.currentTimeMillis() + unit.toMillis(time)));
             return this;
         }
 

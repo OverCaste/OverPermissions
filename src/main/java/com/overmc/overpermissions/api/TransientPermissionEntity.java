@@ -12,7 +12,7 @@ public interface TransientPermissionEntity {
      * @return whether a transient node of the specified name was added in the specified world.
      */
     public boolean addTransientPermissionNode(String permissionNode, String worldName);
-    
+
     /**
      * Adds a transient permission node to this entity. A transient node doesn't persist in a database of any kind. <br>
      * Transient nodes are generally faster to change.
@@ -31,7 +31,7 @@ public interface TransientPermissionEntity {
      * @return whether a transient node of the specified name was removed.
      */
     public boolean removeTransientPermissionNode(String permissionNode, String worldName);
-    
+
     /**
      * Removes a transient permission node from this entity. A transient node doesn't persist in a database of any kind. <br>
      * Transient nodes are generally faster to change.
@@ -47,7 +47,7 @@ public interface TransientPermissionEntity {
      * @return whether a transient node of the specified name existed in this entity.
      */
     public boolean hasTransientPermissionNode(String permissionNode, String worldName);
-    
+
     /**
      * @param permissionNode the transient node to be checked for existence.
      * @return whether a transient node of the specified name existed in this entity.

@@ -33,7 +33,7 @@ public final class ElementBox { // This class is mostly magic.
         ArrayList<String> ret = new ArrayList<>(header.size());
         for (int i = 0; i < header.size(); i++) {
             StringBuilder builder = new StringBuilder();
-            //builder.append(charset.borderVertical);
+            // builder.append(charset.borderVertical);
             builder.append(header.get(i));
             ret.add(builder.toString());
         }
@@ -58,8 +58,8 @@ public final class ElementBox { // This class is mostly magic.
         int lineIndex = 0;
         for (String line : node.getLines()) {
             if (lineIndex == lineCount - 1 && subnodeCount == 0) { // Last element
-                if(node.getName() == null) {
-                    builders.get(lineNumber++).append(charset.altHorizontal).append(WHITESPACE).append(line); //Weird little edge case, there'd be no 'first' node here.
+                if (node.getName() == null) {
+                    builders.get(lineNumber++).append(charset.altHorizontal).append(WHITESPACE).append(line); // Weird little edge case, there'd be no 'first' node here.
                 } else {
                     builders.get(lineNumber++).append(charset.altBottomLeftCorner).append(WHITESPACE).append(line);
                 }
@@ -96,11 +96,11 @@ public final class ElementBox { // This class is mostly magic.
         for (ElementBoxNode node : nodes) {
             if (node.size() != 0) {
                 StringBuilder builder = new StringBuilder(width);
-                //builder.append(charset.borderAltLeftFork);
+                // builder.append(charset.borderAltLeftFork);
                 builders.add(builder);
                 for (int i = 1; i < node.size(); i++) {
                     builder = new StringBuilder(width);
-                    //builder.append(charset.borderVertical);
+                    // builder.append(charset.borderVertical);
                     builders.add(builder);
                 }
             }

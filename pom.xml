@@ -2,10 +2,13 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.overmc</groupId>
-	<artifactId>overpermissions</artifactId>
-	<version>2.0.0</version>
+	<artifactId>overpermissions-${project.version}</artifactId>
+	<version>2.0.0ALPHA1</version>
 	<name>OverPermissions</name>
 	<description>A SQL backed Bukkit permissions system with numerous optimizations, including concurrency, database indexing, and reentrant locking.</description>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
 	<repositories>
 		<repository>
 			<id>bukkit-repo</id>

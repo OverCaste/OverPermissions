@@ -38,7 +38,7 @@ public final class NodeBatch {
         ret.addAll(worldNodes.values());
         return ret;
     }
-    
+
     public static Builder builder( ) {
         return new Builder();
     }
@@ -46,9 +46,9 @@ public final class NodeBatch {
     public static final class Builder {
         private Set<String> globalNodes = new HashSet<>();
         private Multimap<String, String> worldNodes = HashMultimap.create();
-        
+
         private Builder( ) {
-            //Hide constructor
+            // Hide constructor
         }
 
         public Builder addNode(String node, String worldName) { // TODO documentation

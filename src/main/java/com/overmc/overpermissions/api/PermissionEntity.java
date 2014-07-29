@@ -26,7 +26,7 @@ public interface PermissionEntity extends UniqueEntity {
      * @return whether this entity has that specific permission set.
      */
     public boolean hasPermission(String permissionNode, String worldName);
-    
+
     /**
      * Checks whether this entity has a specific permission node in its global store.<br>
      * To check the value of an actual permission, use {@link #hasGlobalPermission(String)} and {@link #getGlobalPermission(String)}
@@ -35,7 +35,7 @@ public interface PermissionEntity extends UniqueEntity {
      * @return whether this entity has that specific permission node in its store.
      */
     public boolean hasGlobalPermissionNode(String permissionNode);
-    
+
     /**
      * Checks whether this entity has a specific permission node set for a specific world in its global store.<br>
      * To check the value of an actual permission, use {@link #hasPermission(String, String)} and {@link #getPermission(String, String)}

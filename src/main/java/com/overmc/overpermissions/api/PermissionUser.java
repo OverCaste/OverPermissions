@@ -44,9 +44,4 @@ public interface PermissionUser extends PermissionEntity, MetadataEntity, Tempor
      * @return whether this user already exists internally. If it doesn't exist and you call an operation that changes the state, the user is created.
      */
     public boolean exists( );
-
-    /**
-     * @return the unique name of this permission user.
-     */
-    public String getName( );
 }

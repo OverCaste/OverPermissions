@@ -2,6 +2,13 @@
 
 A feature packed, simple to use SQL based SuperPermissions system for Bukkit.
 
+##API
+The OverPermissions classes aren't hidden from implementation, but classes in 'internal' packages are liable to change without warning.
+
+Integration can be achieved with the Bukkit Services Manager: `Bukkit.getServicesManager().getRegistration(UserManager.class).getProvider()`
+
+Requests to change or edit the API can be created in the 'Issues' page.
+
 ##Commands
 OverPermissions comes standard with commands for editing group and user data easily.
 

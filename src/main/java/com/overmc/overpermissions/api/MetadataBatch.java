@@ -57,7 +57,7 @@ public final class MetadataBatch {
         }
         return ret;
     }
-    
+
     public static Builder builder( ) {
         return new Builder();
     }
@@ -67,9 +67,9 @@ public final class MetadataBatch {
         private Multimap<String, MetadataEntry> worldNodes = HashMultimap.create();
 
         private Builder( ) {
-            //No instantiation.
+            // No instantiation.
         }
-        
+
         public Builder addGlobalEntry(String key, String value) {
             Preconditions.checkNotNull(key, "The metadata key can't be null!");
             Preconditions.checkNotNull(value, "The metadata value can't be null!");

@@ -1,5 +1,5 @@
 name: OverPermissions
-main: com.overmc.overpermissions.OverPermissions
+main: com.overmc.overpermissions.internal.OverPermissions
 version: $VERSION
 authors: [OverCaste]
 load: STARTUP
