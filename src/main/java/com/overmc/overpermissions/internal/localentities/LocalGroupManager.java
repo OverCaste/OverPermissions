@@ -11,10 +11,10 @@ import com.google.common.base.Preconditions;
 import com.overmc.overpermissions.api.GroupManager;
 import com.overmc.overpermissions.api.PermissionGroup;
 import com.overmc.overpermissions.exceptions.GroupAlreadyExistsException;
-import com.overmc.overpermissions.internal.datasources.GroupManagerDataSource;
-import com.overmc.overpermissions.internal.datasources.GroupManagerDataSourceFactory;
-import com.overmc.overpermissions.internal.datasources.GroupManagerDataSource.GroupDataEntry;
 import com.overmc.overpermissions.internal.TemporaryPermissionManager;
+import com.overmc.overpermissions.internal.datasources.GroupManagerDataSource;
+import com.overmc.overpermissions.internal.datasources.GroupManagerDataSource.GroupDataEntry;
+import com.overmc.overpermissions.internal.datasources.GroupManagerDataSourceFactory;
 
 public class LocalGroupManager implements GroupManager {
     private final GroupManagerDataSourceFactory sourceFactory;
@@ -116,7 +116,6 @@ public class LocalGroupManager implements GroupManager {
             for (GroupDataEntry entry : groupDataEntries) {
                 String name = entry.getGroupName();
                 String lowerName = name.toLowerCase();
-                System.out.println("Group loading: " + name + ", " + entry.getPriority());
                 LocalGroup group = new LocalGroup(sourceFactory.createGroupDataSource(lowerName), tempManager, name, entry.getPriority());
                 group.reloadMetadata();
                 group.reloadPermissions();

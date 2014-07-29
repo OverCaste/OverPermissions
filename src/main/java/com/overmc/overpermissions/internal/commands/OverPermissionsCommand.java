@@ -2,10 +2,12 @@ package com.overmc.overpermissions.internal.commands;
 
 import static com.overmc.overpermissions.internal.Messages.*;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.entity.Player;
 
 import com.google.common.base.Joiner;
 import com.overmc.overpermissions.api.PermissionUser;
@@ -46,13 +48,19 @@ public class OverPermissionsCommand implements CommandExecutor {
             else if ((args.length == 3)) {
                 if ("player".equalsIgnoreCase(args[1])) {
                     String playername = args[2];
-                    if (plugin.getUserManager().doesUserExist(playername)) {
+                    if (!plugin.getUserManager().doesUserExist(playername)) {
                         sender.sendMessage("Player not found.");
                         return true;
                     }
                     PermissionUser user = plugin.getUserManager().getPermissionUser(playername);
                     sender.sendMessage("Player effective groups: " + Joiner.on(' ').join(user.getAllParents()));
                     sender.sendMessage("Player actual groups: " + Joiner.on(' ').join(user.getParents()));
+                    @SuppressWarnings("deprecation")
+                    Player p = Bukkit.getPlayerExact(playername);
+                    if(p != null) {
+                        sender.sendMessage("Has test permission [test.permission] in superperms: " + p.hasPermission("test.permission"));
+                        sender.sendMessage("Has test permission [test.permission] in API: " + user.getPermission("test.permission", p.getWorld().getName()));
+                    }
                     return true;
                 }
             }

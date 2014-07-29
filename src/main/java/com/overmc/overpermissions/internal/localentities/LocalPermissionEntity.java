@@ -52,17 +52,14 @@ public abstract class LocalPermissionEntity {
         String baseNode = PermissionUtils.getBaseNode(node);
         permissionsLock.writeLock().lock();
         for (ReadWriteLock l : getAllNodeLocks()) { //TODO this is pretty ugly, just make readonly collections
-            System.out.println("Locking lock: " + l);
             l.readLock().lock();
         }
         try {
             permissions.put(baseNode, PermissionUtils.getPermissionValue(node, baseNode, getAllNodes()));
         } finally {
             for (ReadWriteLock l : getAllNodeLocks()) {
-                System.out.println("Unlocking unlock: " + l);
                 l.readLock().unlock();
             }
-            System.out.println("Unlocking permissions lock: " + permissionsLock);
             permissionsLock.writeLock().unlock();
         }
     }
@@ -150,7 +147,6 @@ public abstract class LocalPermissionEntity {
     }
 
     protected boolean addInternalPermissionNode(String permissionNode) {
-        System.out.println("Adding internally: " + nodesLock);
         nodesLock.writeLock().lock();
         boolean success;
         try {
@@ -160,7 +156,6 @@ public abstract class LocalPermissionEntity {
         }
         if (success) {
             dataSource.addPermission(permissionNode);
-            System.out.println("Recalculating...");
             recalculatePermission(permissionNode);
         }
         return success;

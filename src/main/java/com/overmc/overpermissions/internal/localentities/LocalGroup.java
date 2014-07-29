@@ -126,6 +126,7 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
     // Metadata is automatically checked. There isn't a proper 'store.'
     @Override
     protected void recalculatePermission(String node) {
+        Preconditions.checkNotNull(node, "node");
         super.recalculatePermission(node);
         for (LocalUser u : playersInGroup) {
             u.recalculatePermission(node);
@@ -134,6 +135,7 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
 
     @Override
     protected void recalculatePermissions(Iterable<String> nodes) {
+        Preconditions.checkNotNull(nodes, "nodes");
         super.recalculatePermissions(nodes);
         for (LocalUser u : playersInGroup) {
             u.recalculatePermissions(nodes);
@@ -150,11 +152,14 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
 
     @Override
     public boolean hasGlobalPermission(String permission) {
+        Preconditions.checkNotNull(permission, "permission");
         return hasInternalPermission(permission);
     }
 
     @Override
     public boolean hasPermission(String permission, String worldName) {
+        Preconditions.checkNotNull(permission, "permission");
+        Preconditions.checkNotNull(worldName, "world name");
         LocalGroupWorldData w = getWorldData(worldName);
         if (w != null) {
             return w.hasInternalPermission(permission);
@@ -164,11 +169,14 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
 
     @Override
     public boolean hasGlobalPermissionNode(String permissionNode) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
         return hasInternalPermissionNode(permissionNode);
     }
 
     @Override
     public boolean hasPermissionNode(String permissionNode, String worldName) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
+        Preconditions.checkNotNull(worldName, "world name");
         LocalGroupWorldData w = getWorldData(worldName);
         if (w == null) {
             return false;
@@ -192,11 +200,14 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
 
     @Override
     public boolean getGlobalPermission(String permission) {
+        Preconditions.checkNotNull(permission, "permission");
         return getInternalPermission(permission);
     }
 
     @Override
     public boolean getPermission(String permission, String worldName) {
+        Preconditions.checkNotNull(permission, "permission");
+        Preconditions.checkNotNull(worldName, "world name");
         LocalGroupWorldData w = getWorldData(worldName);
         if (w == null) {
             return false;
@@ -206,11 +217,14 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
 
     @Override
     public boolean addGlobalPermissionNode(String permissionNode) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
         return addInternalPermissionNode(permissionNode);
     }
 
     @Override
     public boolean addPermissionNode(String permissionNode, String worldName) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
+        Preconditions.checkNotNull(worldName, "world name");
         return getOrCreateWorld(worldName).addInternalPermissionNode(permissionNode);
     }
 
@@ -248,7 +262,7 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
 
     @Override
     public boolean removeBatchPermissions(NodeBatch batch) {
-        Preconditions.checkNotNull(batch, "batch");
+        Preconditions.checkNotNull(batch, "nodes");
         boolean changed = super.removeInternalPermissionNodes(batch.getGlobalNodes());
         for (String world : batch.getWorldNodes().keySet()) {
             if (worldDataMap.containsKey(world)) {
@@ -276,11 +290,14 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
 
     @Override
     public boolean hasGlobalTempPermissionNode(String permission) {
+        Preconditions.checkNotNull(permission, "permission");
         return hasInternalTempPermissionNode(permission);
     }
 
     @Override
     public boolean hasTempPermissionNode(String permission, String worldName) {
+        Preconditions.checkNotNull(permission, "permission");
+        Preconditions.checkNotNull(worldName, "world name");
         LocalGroupWorldData w = getWorldData(worldName);
         if (w != null) {
             return worldDataMap.get(worldName).hasInternalTempPermissionNode(permission);
@@ -325,14 +342,14 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
 
     @Override
     public boolean removeGlobalTempPermissionNode(String permissionNode) {
-        Preconditions.checkNotNull(permissionNode, "permissionNode");
+        Preconditions.checkNotNull(permissionNode, "permission node");
         return removeInternalTempPermissionNode(permissionNode);
     }
 
     @Override
     public boolean removeTempPermissionNode(String permissionNode, String worldName) {
-        Preconditions.checkNotNull(permissionNode, "permissionNode");
-        Preconditions.checkNotNull(worldName, "worldName");
+        Preconditions.checkNotNull(permissionNode, "permission node");
+        Preconditions.checkNotNull(worldName, "world name");
         if (!worldDataMap.containsKey(worldName)) {
             return false;
         }
@@ -341,7 +358,7 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
 
     @Override
     public boolean removeBatchTempPermissionNodes(TemporaryNodeBatch batch) {
-        Preconditions.checkNotNull(batch, "batch");
+        Preconditions.checkNotNull(batch, "nodes");
         boolean changed = super.removeInternalTempPermissionNodes(batch.getGlobalNodes());
         for (String world : batch.getWorldNodes().keySet()) {
             if (worldDataMap.containsKey(world)) {
@@ -362,7 +379,7 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
     @Override
     public boolean hasMeta(String key, String worldName) {
         Preconditions.checkNotNull(key, "key");
-        Preconditions.checkNotNull(worldName, "worldName");
+        Preconditions.checkNotNull(worldName, "world name");
         LocalGroupWorldData world = getWorldData(worldName);
         if (world == null) {
             return false;
@@ -379,7 +396,7 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
     @Override
     public String getMeta(String key, String worldName) {
         Preconditions.checkNotNull(key, "key");
-        Preconditions.checkNotNull(worldName, "worldName");
+        Preconditions.checkNotNull(worldName, "world name");
         LocalGroupWorldData world = getWorldData(worldName);
         if (world == null) {
             return null;
@@ -398,7 +415,7 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
     public void setMeta(String key, String value, String worldName) {
         Preconditions.checkNotNull(key, "key");
         Preconditions.checkNotNull(value, "value");
-        Preconditions.checkNotNull(worldName, "worldName");
+        Preconditions.checkNotNull(worldName, "world name");
         LocalGroupWorldData world = getWorldData(worldName);
         if (world == null) {
             return;
@@ -415,7 +432,7 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
     @Override
     public boolean removeMeta(String key, String worldName) {
         Preconditions.checkNotNull(key, "key");
-        Preconditions.checkNotNull(worldName, "worldName");
+        Preconditions.checkNotNull(worldName, "world name");
         LocalGroupWorldData world = getWorldData(worldName);
         if (world == null) {
             return false;
@@ -425,7 +442,7 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
 
     @Override
     public void setBatchMeta(MetadataBatch batch) {
-        Preconditions.checkNotNull(batch, "batch");
+        Preconditions.checkNotNull(batch, "nodes");
         setInternalMetaEntries(batch.getGlobalNodes());
         for (String world : batch.getWorldNodes().keySet()) {
             getOrCreateWorld(world).addInternalMetaEntries(batch.getWorldNodes().get(world));
@@ -448,6 +465,7 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
 
     @Override
     public int compareTo(PermissionGroup other) {
+        Preconditions.checkNotNull(other, "other");
         return other.getPriority() - priority;
     }
 

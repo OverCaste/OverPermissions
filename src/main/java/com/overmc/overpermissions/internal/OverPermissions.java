@@ -95,6 +95,7 @@ public final class OverPermissions extends JavaPlugin {
 
     private void initConfig( ) throws Throwable {
         saveDefaultConfig();
+        getConfig().options().copyDefaults(true);
         reloadConfig();
     }
 

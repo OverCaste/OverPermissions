@@ -63,7 +63,7 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     // Utility method(s)
     public LocalUserWorldData getWorldData(String worldName) {
-        Preconditions.checkNotNull(worldName, "worldName");
+        Preconditions.checkNotNull(worldName, "world name");
         worldName = worldName.toLowerCase();
         if (worldDataMap.containsKey(worldName)) {
             return worldDataMap.get(worldName);
@@ -72,7 +72,7 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
     }
 
     public LocalUserWorldData getOrCreateWorld(String worldName) {
-        Preconditions.checkNotNull(worldName, "worldName");
+        Preconditions.checkNotNull(worldName, "world name");
         worldName = worldName.toLowerCase();
         LocalUserWorldData world = worldDataMap.get(worldName);
         if (world == null) {
@@ -86,17 +86,15 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
     }
 
     public void reloadParents(GroupManager groupManager) {
+        Preconditions.checkNotNull(groupManager, "group manager");
         parents.clear();
-        System.out.println("Reloading parents...");
         for (String groupName : userDataSource.getParents()) {
-            System.out.println("Parent: " + groupName);
             PermissionGroup group = groupManager.getGroup(groupName);
             if (group == null) {
                 throw new RuntimeException("Invalid parent defined for player " + (player != null ? player.getName() : getUniqueId()) + ": " + groupName);
             }
             parents.add(group);
         }
-        System.out.println("Done reloading parents.");
         recalculateParentData();
     }
 
@@ -152,9 +150,10 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
     }
 
     @Override
-    public void recalculatePermission(String node) {
-        super.recalculatePermission(node);
-        String baseNode = PermissionUtils.getBaseNode(node);
+    public void recalculatePermission(String permissionNode) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
+        super.recalculatePermission(permissionNode);
+        String baseNode = PermissionUtils.getBaseNode(permissionNode);
         attachmentLock.lock();
         try {
             attachment.setPermission(baseNode, getPermission(baseNode, player.getWorld().getName()));
@@ -165,6 +164,7 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public void recalculatePermissions(Iterable<String> nodes) {
+        Preconditions.checkNotNull(nodes, "nodes");
         super.recalculatePermissions(nodes);
 
         attachmentLock.lock();
@@ -201,11 +201,14 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public boolean hasGlobalPermission(String permission) {
+        Preconditions.checkNotNull(permission, "permission");
         return hasInternalPermission(permission);
     }
 
     @Override
     public boolean hasPermission(String permission, String worldName) {
+        Preconditions.checkNotNull(permission, "permission");
+        Preconditions.checkNotNull(worldName, "world name");
         if (hasGlobalPermission(permission)) {
             return true;
         }
@@ -218,11 +221,14 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public boolean getGlobalPermission(String permission) {
+        Preconditions.checkNotNull(permission, "permission");
         return getInternalPermission(permission);
     }
 
     @Override
     public boolean getPermission(String permission, String worldName) {
+        Preconditions.checkNotNull(permission, "permission");
+        Preconditions.checkNotNull(worldName, "world name");
         boolean value = false;
         if (hasGlobalPermission(permission)) {
             value = getInternalPermission(permission);
@@ -238,11 +244,14 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public boolean hasGlobalPermissionNode(String permissionNode) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
         return hasInternalPermissionNode(permissionNode);
     }
 
     @Override
     public boolean hasPermissionNode(String permissionNode, String worldName) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
+        Preconditions.checkNotNull(worldName, "world name");
         LocalUserWorldData world = getWorldData(worldName);
         if (world == null) {
             return false;
@@ -252,16 +261,20 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public boolean addGlobalPermissionNode(String permissionNode) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
         return addInternalPermissionNode(permissionNode);
     }
 
     @Override
     public boolean addPermissionNode(String permissionNode, String worldName) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
+        Preconditions.checkNotNull(worldName, "world name");
         return getOrCreateWorld(worldName).addInternalPermissionNode(permissionNode);
     }
 
     @Override
     public boolean addBatchPermissions(NodeBatch nodes) {
+        Preconditions.checkNotNull(nodes, "nodes");
         boolean success = addInternalPermissionNodes(nodes.getGlobalNodes());
         for (String worldName : nodes.getWorldNodes().keySet()) {
             if (getOrCreateWorld(worldName).addInternalPermissionNodes(nodes.getWorldNodes().get(worldName))) {
@@ -273,11 +286,14 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public boolean removeGlobalPermissionNode(String permissionNode) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
         return removeInternalPermissionNode(permissionNode);
     }
 
     @Override
     public boolean removePermissionNode(String permissionNode, String worldName) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
+        Preconditions.checkNotNull(worldName, "world name");
         LocalUserWorldData world = getWorldData(worldName);
         if (world == null) {
             return false;
@@ -287,6 +303,7 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public boolean removeBatchPermissions(NodeBatch nodes) {
+        Preconditions.checkNotNull(nodes, "nodes");
         boolean success = removeInternalPermissionNodes(nodes.getGlobalNodes());
         for (String worldName : nodes.getWorldNodes().keySet()) {
             LocalUserWorldData world = getWorldData(worldName);
@@ -315,6 +332,8 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public boolean hasMeta(String key, String worldName) {
+        Preconditions.checkNotNull(key, "key");
+        Preconditions.checkNotNull(worldName, "world name");
         key = key.toLowerCase();
         LocalUserWorldData world = getWorldData(worldName);
         if (world != null) {
@@ -336,11 +355,14 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public boolean hasGlobalMeta(String key) {
+        Preconditions.checkNotNull(key, "key");
         return hasInternalMeta(key);
     }
 
     @Override
     public String getMeta(String key, String worldName) { // Priority is group global < group world < user global < user world
+        Preconditions.checkNotNull(key, "key");
+        Preconditions.checkNotNull(worldName, "world name");
         key = key.toLowerCase();
         LocalUserWorldData world = getWorldData(worldName);
         if (world != null) { // If user world data exists, return that
@@ -364,6 +386,7 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public String getGlobalMeta(String key) {
+        Preconditions.checkNotNull(key, "key");
         if (hasInternalMeta(key)) { // If global user data exists, return that
             return getInternalMeta(key);
         }
@@ -375,16 +398,23 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public void setMeta(String key, String value, String worldName) {
+        Preconditions.checkNotNull(key, "key");
+        Preconditions.checkNotNull(worldName, "world name");
+        Preconditions.checkNotNull(value, "value");
         getOrCreateWorld(worldName).setInternalMeta(key, value);
     }
 
     @Override
     public void setGlobalMeta(String key, String value) {
+        Preconditions.checkNotNull(key, "key");
+        Preconditions.checkNotNull(value, "value");
         setInternalMeta(key, value);
     }
 
     @Override
     public boolean removeMeta(String key, String worldName) {
+        Preconditions.checkNotNull(key, "key");
+        Preconditions.checkNotNull(worldName, "world name");
         LocalUserWorldData world = getWorldData(worldName);
         if (world == null) {
             return false;
@@ -394,12 +424,14 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public boolean removeGlobalMeta(String key) {
+        Preconditions.checkNotNull(key, "key");
         return removeInternalMeta(key);
     }
 
     @Override
-    public void setBatchMeta(MetadataBatch batch) {
-        setInternalMetaEntries(batch.getGlobalNodes());
+    public void setBatchMeta(MetadataBatch nodes) {
+        Preconditions.checkNotNull(nodes, "nodes");
+        setInternalMetaEntries(nodes.getGlobalNodes());
     }
 
     @Override
@@ -418,11 +450,14 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public boolean hasGlobalTempPermissionNode(String permissionNode) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
         return hasInternalTempPermissionNode(permissionNode);
     }
 
     @Override
     public boolean hasTempPermissionNode(String permissionNode, String worldName) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
+        Preconditions.checkNotNull(worldName, "world name");
         LocalUserWorldData world = getWorldData(worldName);
         if (world == null) {
             return false;
@@ -432,21 +467,31 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public boolean addGlobalTempPermissionNode(String permissionNode, long time, TimeUnit unit) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
+        Preconditions.checkArgument(time > 0, "time <= 0");
+        Preconditions.checkNotNull(unit, "unit");
         return addInternalTempPermissionNode(permissionNode, time, unit);
     }
 
     @Override
     public boolean addTempPermissionNode(String permissionNode, String worldName, long time, TimeUnit unit) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
+        Preconditions.checkNotNull(worldName, "world name");
+        Preconditions.checkArgument(time > 0, "time <= 0");
+        Preconditions.checkNotNull(unit, "unit");
         return getOrCreateWorld(worldName).addInternalTempPermissionNode(permissionNode, time, unit);
     }
 
     @Override
     public boolean removeGlobalTempPermissionNode(String permissionNode) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
         return removeInternalTempPermissionNode(permissionNode);
     }
 
     @Override
     public boolean removeTempPermissionNode(String permissionNode, String worldName) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
+        Preconditions.checkNotNull(worldName, "world name");
         LocalUserWorldData world = getWorldData(worldName);
         if (world == null) {
             return false;
@@ -456,6 +501,7 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public boolean addBatchTempPermissionNodes(TemporaryNodeBatch nodes) {
+        Preconditions.checkNotNull(nodes, "nodes");
         boolean success = addInternalTempPermissionNodes(nodes.getGlobalNodes());
         for (String worldName : nodes.getWorldNodes().keySet()) {
             if (getOrCreateWorld(worldName).addInternalTempPermissionNodes(nodes.getWorldNodes().get(worldName))) {
@@ -467,6 +513,7 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public boolean removeBatchTempPermissionNodes(TemporaryNodeBatch nodes) {
+        Preconditions.checkNotNull(nodes, "nodes");
         boolean success = removeInternalTempPermissionNodes(nodes.getGlobalNodes());
         for (String worldName : nodes.getWorldNodes().keySet()) {
             LocalUserWorldData world = getWorldData(worldName);
@@ -495,16 +542,21 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public boolean addTransientPermissionNode(String permissionNode, String worldName) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
+        Preconditions.checkNotNull(worldName, "world name");
         return getOrCreateWorld(worldName).addInternalTransientPermissionNode(permissionNode);
     }
 
     @Override
     public boolean addGlobalTransientPermissionNode(String permissionNode) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
         return addInternalTransientPermissionNode(permissionNode);
     }
 
     @Override
     public boolean removeTransientPermissionNode(String permissionNode, String worldName) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
+        Preconditions.checkNotNull(worldName, "world name");
         LocalUserWorldData world = getWorldData(worldName);
         if (world == null) {
             return false;
@@ -514,16 +566,20 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public boolean removeGlobalTransientPermissionNode(String permissionNode) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
         return removeInternalTransientPermissionNode(permissionNode);
     }
 
     @Override
     public boolean hasGlobalTransientPermissionNode(String permissionNode) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
         return hasInternalTransientPermissionNode(permissionNode);
     }
 
     @Override
     public boolean hasTransientPermissionNode(String permissionNode, String worldName) {
+        Preconditions.checkNotNull(permissionNode, "permission node");
+        Preconditions.checkNotNull(worldName, "world name");
         LocalUserWorldData world = getWorldData(worldName);
         if (world == null) {
             return false;
@@ -562,6 +618,7 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public boolean addParent(PermissionGroup parent) {
+        Preconditions.checkNotNull(parent, "parent");
         boolean success = parents.add(parent);
         if (success) {
             userDataSource.addParent(parent);
@@ -572,6 +629,7 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public boolean removeParent(PermissionGroup parent) {
+        Preconditions.checkNotNull(parent, "parent");
         boolean success = parents.remove(parent);
         if (success) {
             userDataSource.removeParent(parent);
@@ -582,15 +640,11 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public void setParent(PermissionGroup parent) {
+        Preconditions.checkNotNull(parent, "parent");
         parents.clear();
         parents.add(parent);
         userDataSource.setParent(parent);
         recalculateParentData();
-    }
-
-    @Override
-    public boolean exists( ) {
-        return true; // Everything is stored locally
     }
 
     @Override
