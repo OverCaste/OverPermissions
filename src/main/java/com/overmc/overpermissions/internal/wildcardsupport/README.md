@@ -20,6 +20,6 @@ Each node of the tree has two sublists, the 'containers' , and the 'physical nod
 
 Physical nodes are the ones at the end of permissions, such as 'this.is.my.*physicalnode*'
 
-Container nodes are any nodes that aren't at the end of permissions, such as 'this.*containernode*.*physicalnode*'
+Container nodes are any nodes that aren't at the end of permissions, such as 'this.*containernode*.physicalnode'
 
 Note that a specific node could be in both maps, if permissions like 'this.is.physicalnode' and 'this.is.physicalnode.end' were extant.
