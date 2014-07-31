@@ -9,6 +9,8 @@ Integration can be achieved with the Bukkit Services Manager: `Bukkit.getService
 
 Requests to change or edit the API can be created in the 'Issues' page.
 
+All externally facing methods in this implementation of the API is threadsafe, using explicit locking.
+
 ##Commands
 OverPermissions comes standard with commands for editing group and user data easily.
 

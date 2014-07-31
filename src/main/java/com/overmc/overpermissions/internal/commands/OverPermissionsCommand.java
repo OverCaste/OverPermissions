@@ -57,7 +57,7 @@ public class OverPermissionsCommand implements CommandExecutor {
                     sender.sendMessage("Player actual groups: " + Joiner.on(' ').join(user.getParents()));
                     @SuppressWarnings("deprecation")
                     Player p = Bukkit.getPlayerExact(playername);
-                    if(p != null) {
+                    if (p != null) {
                         sender.sendMessage("Has test permission [test.permission] in superperms: " + p.hasPermission("test.permission"));
                         sender.sendMessage("Has test permission [test.permission] in API: " + user.getPermission("test.permission", p.getWorld().getName()));
                     }

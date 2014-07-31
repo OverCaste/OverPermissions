@@ -102,7 +102,7 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
         Collection<PermissionGroup> newParents = new ArrayList<PermissionGroup>(newParentNames.size());
         for (String name : newParentNames) {
             PermissionGroup g = groupManager.getGroup(name);
-            if(g == null) {
+            if (g == null) {
                 throw new RuntimeException("There was an invalid group parent set for a group! (group=" + this.name + ", parent=" + name + "), groups: (" + groupManager.getGroups() + ")");
             }
             newParents.add(g);
@@ -111,7 +111,7 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
         Collection<PermissionGroup> newChildren = new ArrayList<PermissionGroup>(newChildrenNames.size());
         for (String name : newChildrenNames) {
             PermissionGroup g = groupManager.getGroup(name);
-            if(g == null) {
+            if (g == null) {
                 throw new RuntimeException("There was an invalid group child set for a group! (group=" + this.name + ", child=" + name + "), groups: (" + groupManager.getGroups() + ")");
             }
             newChildren.add(g);

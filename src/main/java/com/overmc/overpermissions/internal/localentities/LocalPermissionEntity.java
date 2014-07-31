@@ -51,7 +51,7 @@ public abstract class LocalPermissionEntity {
     protected void recalculatePermission(String node) {
         String baseNode = PermissionUtils.getBaseNode(node);
         permissionsLock.writeLock().lock();
-        for (ReadWriteLock l : getAllNodeLocks()) { //TODO this is pretty ugly, just make readonly collections
+        for (ReadWriteLock l : getAllNodeLocks()) { // TODO this is pretty ugly, just make readonly collections
             l.readLock().lock();
         }
         try {
@@ -106,8 +106,8 @@ public abstract class LocalPermissionEntity {
         try {
             nodes.clear();
             tempNodes.clear();
-            for(String node : dataSource.getPermissions()) {
-                nodes.add(node.toLowerCase( ));
+            for (String node : dataSource.getPermissions()) {
+                nodes.add(node.toLowerCase());
             }
             for (TemporaryPermissionEntry e : dataSource.getTempPermissions()) {
                 tempNodes.add(e.getNode().toLowerCase());

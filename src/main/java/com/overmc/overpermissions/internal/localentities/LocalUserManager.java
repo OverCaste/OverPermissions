@@ -23,20 +23,20 @@ import com.overmc.overpermissions.internal.datasources.UserDataSourceFactory;
 
 public class LocalUserManager implements UserManager {
     public static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9\\_]{1,16}$");
-    
+
     private Cache<UUID, UserDataSource> dataSourceCache = CacheBuilder.newBuilder().softValues()
             .expireAfterAccess(15, TimeUnit.MINUTES)
-            .maximumSize(Bukkit.getMaxPlayers()*2)
+            .maximumSize(Bukkit.getMaxPlayers() * 2)
             .build(new CacheLoader<UUID, UserDataSource>() {
                 @Override
                 public UserDataSource load(UUID uuid) throws Exception {
                     return userDataSourceFactory.createUserDataSource(uuid);
                 }
-            }); //These are cheap, why not have a huge cache of them?
+            }); // These are cheap, why not have a huge cache of them?
 
     private Cache<UUID, LocalUser> userCache = CacheBuilder.newBuilder().softValues()
             .expireAfterAccess(3, TimeUnit.MINUTES)
-            .maximumSize((Bukkit.getMaxPlayers() * 5)/4) //Some server owners don't appreciate the concept of 'maximum players'
+            .maximumSize((Bukkit.getMaxPlayers() * 5) / 4) // Some server owners don't appreciate the concept of 'maximum players'
             .build(new CacheLoader<UUID, LocalUser>() {
                 @Override
                 public LocalUser load(UUID uuid) throws Exception {
@@ -114,7 +114,7 @@ public class LocalUserManager implements UserManager {
         Preconditions.checkNotNull(player, "player");
         LocalUser permissionUser = getPermissionUser(player);
         permissionUser.setPlayer(player);
-        if(permissionUser.getParents().size() == 0) { //Set their group to the default group if possible.
+        if (permissionUser.getParents().size() == 0) { // Set their group to the default group if possible.
             permissionUser.addParent(groupManager.getGroup(plugin.getDefaultGroupName()));
         }
     }

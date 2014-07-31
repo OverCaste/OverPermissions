@@ -12,6 +12,6 @@ public interface UserDataSource extends PermissionEntityDataSource, WorldDataSou
     public void setParent(PermissionGroup parent);
 
     public Collection<String> getParents( );
-    
+
     public boolean doesUserExist( );
 }

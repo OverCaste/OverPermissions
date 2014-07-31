@@ -40,13 +40,13 @@ public class MySQLUserDataSource implements UserDataSource {
         }
         return userUid;
     }
-    
+
     int getUid( ) {
-        if(playerCheckedForExistance) {
+        if (playerCheckedForExistance) {
             return userUid;
         }
         if (userUid == -1) {
-            synchronized(this) {
+            synchronized (this) {
                 if (userUid == -1) {
                     userUid = getDatabaseUserUid();
                 }
@@ -74,7 +74,7 @@ public class MySQLUserDataSource implements UserDataSource {
         }
         return -1;
     }
-    
+
     private int getDatabaseUserUid( ) {
         PreparedStatement pst = null;
         try {
@@ -98,7 +98,7 @@ public class MySQLUserDataSource implements UserDataSource {
     public Collection<String> getPermissions( ) {
         ArrayList<String> ret = new ArrayList<>();
         int uid = getUid();
-        if(uid == -1) { //Don't create new SQL entries for gets on players that don't exist
+        if (uid == -1) { // Don't create new SQL entries for gets on players that don't exist
             return ret;
         }
         PreparedStatement pst = null;
@@ -123,7 +123,7 @@ public class MySQLUserDataSource implements UserDataSource {
     public Collection<TemporaryPermissionEntry> getTempPermissions( ) {
         ArrayList<TemporaryPermissionEntry> ret = new ArrayList<>();
         int uid = getUid();
-        if(uid == -1) {
+        if (uid == -1) {
             return ret;
         }
         PreparedStatement pst = null;
@@ -150,7 +150,7 @@ public class MySQLUserDataSource implements UserDataSource {
     public Map<String, String> getMetadata( ) {
         Map<String, String> ret = new HashMap<>();
         int uid = getUid();
-        if(uid == -1) {
+        if (uid == -1) {
             return ret;
         }
         PreparedStatement pst = null;
@@ -210,7 +210,7 @@ public class MySQLUserDataSource implements UserDataSource {
     @Override
     public void removePermission(String permissionNode) {
         int uid = getUid();
-        if(uid == -1) {
+        if (uid == -1) {
             return;
         }
         PreparedStatement pst = null;
@@ -230,7 +230,7 @@ public class MySQLUserDataSource implements UserDataSource {
     @Override
     public void removePermissions(Iterable<String> permissionNodes) {
         int uid = getUid();
-        if(uid == -1) {
+        if (uid == -1) {
             return;
         }
         PreparedStatement pst = null;
@@ -290,7 +290,7 @@ public class MySQLUserDataSource implements UserDataSource {
     @Override
     public void removeTempPermission(String permissionNode) {
         int uid = getUid();
-        if(userUid == -1) {
+        if (userUid == -1) {
             return;
         }
         PreparedStatement pst = null;
@@ -310,7 +310,7 @@ public class MySQLUserDataSource implements UserDataSource {
     @Override
     public void removeTempPermissions(Iterable<TemporaryPermissionEntry> entries) {
         int uid = getUid();
-        if(userUid == -1) {
+        if (userUid == -1) {
             return;
         }
         PreparedStatement pst = null;
@@ -351,7 +351,7 @@ public class MySQLUserDataSource implements UserDataSource {
     @Override
     public void removeMeta(String key) {
         int uid = getUid();
-        if(userUid == -1) {
+        if (userUid == -1) {
             return;
         }
         PreparedStatement pst = null;
@@ -418,7 +418,7 @@ public class MySQLUserDataSource implements UserDataSource {
     @Override
     public void removeParent(PermissionGroup parent) {
         int uid = getUid();
-        if(userUid == -1) {
+        if (userUid == -1) {
             return;
         }
         PreparedStatement pst = null;
@@ -459,7 +459,7 @@ public class MySQLUserDataSource implements UserDataSource {
     public Collection<String> getParents( ) {
         ArrayList<String> ret = new ArrayList<>();
         int uid = getUid();
-        if(userUid == -1) {
+        if (userUid == -1) {
             return ret;
         }
         PreparedStatement pst = null;
@@ -486,6 +486,6 @@ public class MySQLUserDataSource implements UserDataSource {
 
     @Override
     public boolean doesUserExist( ) {
-        return getUid( ) != -1;
+        return getUid() != -1;
     }
 }

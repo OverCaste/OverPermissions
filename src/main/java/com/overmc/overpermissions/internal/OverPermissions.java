@@ -49,6 +49,9 @@ import com.overmc.overpermissions.internal.datasources.UserDataSourceFactory;
 import com.overmc.overpermissions.internal.localentities.LocalGroupManager;
 import com.overmc.overpermissions.internal.localentities.LocalUserManager;
 import com.overmc.overpermissions.internal.metrics.MetricsLite;
+import com.overmc.overpermissions.internal.wildcardsupport.HalfWildcardInjectorAction;
+import com.overmc.overpermissions.internal.wildcardsupport.WildcardAction;
+import com.overmc.overpermissions.internal.wildcardsupport.WildcardDummyAction;
 
 public final class OverPermissions extends JavaPlugin {
     private TemporaryPermissionManager tempManager;
@@ -64,6 +67,9 @@ public final class OverPermissions extends JavaPlugin {
     // Listeners
     private GeneralListener generalListener;
     private KickOnFailListener kickOnFailListener;
+
+    // Wildcard support
+    private WildcardAction wildcardAction;
 
     private boolean failureStarting = false;
 
@@ -165,6 +171,20 @@ public final class OverPermissions extends JavaPlugin {
         new OverPermissionsCommand(this).register();
     }
 
+    private void initWildcardSupport( ) {
+        String configValue = getConfig().getString("wildcard-support", "HALF");
+        switch (configValue) {
+            case "HALF":
+                wildcardAction = new HalfWildcardInjectorAction(this);
+                break;
+            case "NONE":
+                wildcardAction = new WildcardDummyAction();
+                break;
+            default:
+                throw new StartException("Invalid configuration option: 'wildcard-support.' (" + configValue + ")");
+        }
+    }
+
     private void registerEvents( ) {
         generalListener = new GeneralListener(this);
         getServer().getPluginManager().registerEvents(generalListener, this);
@@ -188,6 +208,7 @@ public final class OverPermissions extends JavaPlugin {
     }
 
     void initPlayer(Player player) {
+        wildcardAction.initializePlayer(player);
         userManager.initializeUser(player);
         PermissionUser user = userManager.getPermissionUser(player);
         tempManager.initializePlayerTemporaryPermissions(user);
@@ -207,6 +228,7 @@ public final class OverPermissions extends JavaPlugin {
             initManagers();
             initDefaultGroup();
             initCommands();
+            initWildcardSupport();
             registerEvents();
             initMetrics();
             registerApi();
@@ -225,6 +247,7 @@ public final class OverPermissions extends JavaPlugin {
     void deinitPlayer(Player player) {
         tempManager.cancelTemporaryPermissions(userManager.getPermissionUser(player));
         userManager.deinitializeUser(player);
+        wildcardAction.deinitializePlayer(player);
     }
 
     private void deinitPlayers( ) {
@@ -235,9 +258,10 @@ public final class OverPermissions extends JavaPlugin {
 
     @Override
     public void onDisable( ) {
+        exec.shutdown();
         if (!failureStarting) {
-            getLogger().info("disabled.");
             deinitPlayers();
+            getLogger().info("disabled.");
         }
     }
 

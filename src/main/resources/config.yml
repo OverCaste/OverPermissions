@@ -1,17 +1,29 @@
 #The default group for people to be put into. Default is the only one extant at initialization.
 default-group: 'default'
+
 #Whether people should be disconnected if the plugin fails to initialize.
 kick-on-failure: true
+
+#If OverPermissions should tie directly into the underlying CraftBukkit classes to add wildcard (*) support.
+#Values:
+# HALF - Fairly fast, this is the recommended setting. It allows you to use nodes like (*, node.*, my.*.node but NOT (no*e.*.othe*node)
+# NONE - The fastest possible, this also will work outside of CraftBukkit. Any node with * in it will be checked literally.
+wildcard-support: HALF
+
 sql:
   #The only current supported type currently is mysql.
   type: mysql
-  #The address of your MySQL installation. localhost should be fine if you don't know what this is.
+  
+  #The address of your database installation. localhost should be fine if you don't know what this is.
   address: "localhost"
+  
   #The database name to be used, this should only very rarely be changed.
   dbname: "OverPermissions"
+  
   #The user from which to modify the database from. 'root' is fine if you don't know what this is.
   dbusername: "root"
-  #The password to be used by mysql.
+  
+  #The password to be used by the database.
   dbpassword: ""
 #Don't touch these options unless told otherwise. They could have adverse effects on your database and configuration.
 internals:

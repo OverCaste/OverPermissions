@@ -103,7 +103,8 @@ public class PlayerCheckCommand implements TabExecutor {
 
             }
         }
-        ElementBoxNode nodeValue = new ElementBoxNode("Permission value: ", null, Arrays.asList(((global ? user.getGlobalPermission(permission) : user.getPermission(permission, world))) ? "true" : "false"));
+        ElementBoxNode nodeValue = new ElementBoxNode("Permission value: ", null, Arrays.asList(((global ? user.getGlobalPermission(permission) : user.getPermission(permission, world))) ? "true"
+                : "false"));
         ElementBoxNode groupInformation = new ElementBoxNode("Group information:", groupInformationNodes, null);
         ElementBoxNode userInformation = new ElementBoxNode("User information:", null, listBuffer);
 
@@ -129,7 +130,7 @@ public class PlayerCheckCommand implements TabExecutor {
             while (s.charAt(i) == ' ') {
                 i++;
             }
-            if (s.startsWith("      \u2514")) { //Replace the 6 space separator with a 5 space separator.
+            if (s.startsWith("      \u2514")) { // Replace the 6 space separator with a 5 space separator.
                 s = s.replace("      \u2514", "     \u2514"); // The hackiest solution ever, but it's not my fault minecraft's font isn't monospace.
             }
             sender.sendMessage(Messages.format(Messages.PLAYER_NODE_VALUE, s));

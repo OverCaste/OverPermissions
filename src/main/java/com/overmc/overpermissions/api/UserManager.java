@@ -44,7 +44,7 @@ public interface UserManager {
      * @return whether there is a valid {@link PermissionUser} object associated with the specified player.
      */
     public boolean doesUserExist(String name);
-    
+
     /**
      * Checks if a PermissionUser can be created for the specified name.
      * 
