@@ -237,7 +237,7 @@ public final class OverPermissions extends JavaPlugin {
             getLogger().info(ChatColor.GREEN + "Successfully enabled!");
         } catch (StartException e) {
             failureStarting = true;
-            getLogger().severe(ChatColor.RED + "Failed to start: " + e.getSimpleMessage());
+            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "OverPermissions failed to start: " + e.getSimpleMessage());
         } catch (Throwable t) {
             t.printStackTrace();
             failureStarting = true;

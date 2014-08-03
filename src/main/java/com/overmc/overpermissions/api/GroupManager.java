@@ -4,12 +4,12 @@ import com.overmc.overpermissions.exceptions.GroupAlreadyExistsException;
 
 public interface GroupManager {
     /**
+     * This method will throw a {@link GroupAlreadyExistsException} if the group with the specified name already exists. Use {@link #doesGroupExist(String)} to check beforehand instead of catching this.
+     *
      * @param name the name of the group to be created.
      * @param priority the priority of the group to be created. Groups with higher priority will override the metadata of those with lower priority.
-     * 
-     * @throws GroupAlreadyExistsException if the group with the specified name already exists. Use {@link #doesGroupExist(String)} to check beforehand instead of catching this.
      */
-    public void createGroup(String name, int priority) throws GroupAlreadyExistsException;
+    public void createGroup(String name, int priority);
 
     /**
      * @param name the name of the group to be deleted.

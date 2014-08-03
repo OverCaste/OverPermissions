@@ -18,7 +18,7 @@ public class HalfWildcardInjectorAction implements WildcardAction {
 
     public HalfWildcardInjectorAction(Plugin plugin) {
         try {
-            craftHumanEntityClass = Class.forName(Bukkit.getServer().getClass().getPackage() + ".entity.CraftHumanEntity");
+            craftHumanEntityClass = Class.forName(Bukkit.getServer().getClass().getPackage().getName() + ".entity.CraftHumanEntity");
             modifiersField = Field.class.getDeclaredField("modifiers");
             modifiersField.setAccessible(true);
 

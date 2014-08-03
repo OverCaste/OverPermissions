@@ -8,10 +8,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
 
 import com.overmc.nodedisplayapi.BoxLargeAndSmallCharset;
 import com.overmc.nodedisplayapi.ElementBox;
@@ -22,7 +24,7 @@ import com.overmc.overpermissions.internal.Messages;
 import com.overmc.overpermissions.internal.OverPermissions;
 
 // ./playercheck [player] [permission] (world)
-public class PlayerCheckCommand implements TabExecutor {
+public class PlayerCheckCommand implements TabExecutor { // TODO cleanup, add wildcard support
     private final OverPermissions plugin;
 
     public PlayerCheckCommand(OverPermissions plugin) {
@@ -56,6 +58,9 @@ public class PlayerCheckCommand implements TabExecutor {
         }
         boolean groupPermissionExists = false;
         boolean userPermissionExists = false;
+        @SuppressWarnings("deprecation")
+        Player player = Bukkit.getPlayerExact(playerName);
+
         List<ElementBoxNode> groupInformationNodes = new ArrayList<>();
         PermissionUser user = plugin.getUserManager().getPermissionUser(playerName);
         List<String> listBuffer = new ArrayList<>(); // As to not reuse an array list many times when unnecessary.
@@ -100,22 +105,23 @@ public class PlayerCheckCommand implements TabExecutor {
                     listBuffer.add("+ added");
                 }
                 userPermissionExists = true;
-
             }
         }
-        ElementBoxNode nodeValue = new ElementBoxNode("Permission value: ", null, Arrays.asList(((global ? user.getGlobalPermission(permission) : user.getPermission(permission, world))) ? "true"
-                : "false"));
-        ElementBoxNode groupInformation = new ElementBoxNode("Group information:", groupInformationNodes, null);
-        ElementBoxNode userInformation = new ElementBoxNode("User information:", null, listBuffer);
 
-        List<ElementBoxNode> nodes;
-        if (groupPermissionExists && userPermissionExists) {
-            nodes = Arrays.asList(nodeValue, groupInformation, userInformation);
-        } else if (groupPermissionExists) {
-            nodes = Arrays.asList(nodeValue, groupInformation);
-        } else if (userPermissionExists) {
-            nodes = Arrays.asList(nodeValue, userInformation);
-        } else {
+        List<ElementBoxNode> nodes = new ArrayList<>();
+        if (global ? user.hasGlobalPermission(permission) : user.hasPermission(permission, world)) {
+            nodes.add(new ElementBoxNode("Permission value: " + (global ? user.getGlobalPermission(permission) : user.getPermission(permission, world)), null, null));
+        }
+        if (player != null) {
+            nodes.add(new ElementBoxNode("Bukkit reports that permission as: " + player.hasPermission(permission), null, null));
+        }
+        if (groupPermissionExists) {
+            nodes.add(new ElementBoxNode("Group information:", groupInformationNodes, null));
+        }
+        if (userPermissionExists) {
+            nodes.add(new ElementBoxNode("User information:", null, listBuffer));
+        }
+        if (nodes.isEmpty()) {
             if (global) {
                 sender.sendMessage(Messages.format(ERROR_PLAYER_PERMISSION_NOT_SET_GLOBAL, permission));
             } else {
@@ -131,7 +137,7 @@ public class PlayerCheckCommand implements TabExecutor {
                 i++;
             }
             if (s.startsWith("      \u2514")) { // Replace the 6 space separator with a 5 space separator.
-                s = s.replace("      \u2514", "     \u2514"); // The hackiest solution ever, but it's not my fault minecraft's font isn't monospace.
+                s = s.replace("      \u2514", "     \u2514"); // The hackiest solution ever, but it's not my fault minecraft's font isn't monospaced.
             }
             sender.sendMessage(Messages.format(Messages.PLAYER_NODE_VALUE, s));
         }

@@ -15,7 +15,7 @@ import com.google.common.collect.Lists;
 
 public class NodeTree<E> implements Map<String, E> {
     private static final Splitter splitter = Splitter.on('.');
-    
+
     private final Map<String, NodeTree<E>> subNodeContainers = new HashMap<>(4); // Nodes that have this node as a subparent. (this.subnode.subsubnode)
     private final Map<String, E> physicalSubNodes = new HashMap<>(4); // Nodes that have this node as their only parent. (this.subnode)
 
@@ -26,8 +26,8 @@ public class NodeTree<E> implements Map<String, E> {
         Preconditions.checkNotNull(node, "node");
         node = node.toLowerCase();
         List<String> split = Lists.newArrayList(splitter.split(node));
-        for(String s : split) {
-            if(s == null || s.length() == 0) {
+        for (String s : split) {
+            if (s == null || s.length() == 0) {
                 throw new IllegalArgumentException("String \"" + node + "\" can't be parsed into a NodeTree.");
             }
         }
@@ -144,10 +144,7 @@ public class NodeTree<E> implements Map<String, E> {
     private E getInternal(List<String> subnodes) {
         E value = null;
         String baseNodeName = subnodes.get(0);
-        if (physicalSubNodes.containsKey("*")) { // node.* would match node.subnode.*
-            return physicalSubNodes.get("*");
-        }
-        if (subnodes.size() == 1) {
+        if (subnodes.size() == 1) { // Try to match full nodes before wildcard nodes.
             if (physicalSubNodes.containsKey(baseNodeName)) {
                 return physicalSubNodes.get(baseNodeName);
             }
@@ -162,6 +159,9 @@ public class NodeTree<E> implements Map<String, E> {
                     return value;
                 }
             }
+        }
+        if (physicalSubNodes.containsKey("*")) { // node.* would match node.subnode.*
+            return physicalSubNodes.get("*");
         }
         return value;
     }

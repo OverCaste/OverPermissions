@@ -15,6 +15,7 @@ import com.google.common.cache.CacheLoader;
 import com.overmc.overpermissions.api.GroupManager;
 import com.overmc.overpermissions.api.UserManager;
 import com.overmc.overpermissions.exceptions.InvalidOnlineUsernameException;
+import com.overmc.overpermissions.exceptions.InvalidUsernameException;
 import com.overmc.overpermissions.internal.OverPermissions;
 import com.overmc.overpermissions.internal.TemporaryPermissionManager;
 import com.overmc.overpermissions.internal.datasources.UUIDDataSource;
@@ -86,6 +87,9 @@ public class LocalUserManager implements UserManager {
     @Override
     public LocalUser getPermissionUser(String name) {
         Preconditions.checkNotNull(name, "name");
+        if (!canUserExist(name)) {
+            throw new InvalidUsernameException(name);
+        }
         return userCache.getUnchecked(getUniqueId(name));
     }
 
