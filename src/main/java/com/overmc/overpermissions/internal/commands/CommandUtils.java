@@ -16,7 +16,7 @@ import com.overmc.overpermissions.api.GroupManager;
 import com.overmc.overpermissions.api.PermissionGroup;
 import com.overmc.overpermissions.api.PermissionUser;
 import com.overmc.overpermissions.api.UserManager;
-import com.overmc.overpermissions.internal.TimeUtils;
+import com.overmc.overpermissions.internal.util.TimeUtils;
 
 final class CommandUtils {
     private CommandUtils( ) {

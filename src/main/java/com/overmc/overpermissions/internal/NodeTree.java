@@ -1,4 +1,4 @@
-package com.overmc.overpermissions.internal.wildcardsupport;
+package com.overmc.overpermissions.internal;
 
 import java.util.ArrayList;
 import java.util.Arrays;

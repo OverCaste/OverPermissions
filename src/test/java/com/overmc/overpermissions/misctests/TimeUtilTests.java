@@ -5,7 +5,7 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import com.overmc.overpermissions.exceptions.TimeFormatException;
-import com.overmc.overpermissions.internal.TimeUtils;
+import com.overmc.overpermissions.internal.util.TimeUtils;
 
 public class TimeUtilTests {
     @Test

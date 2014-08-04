@@ -1,4 +1,4 @@
-package com.overmc.overpermissions.internal.wildcardsupport;
+package com.overmc.overpermissions.internal.injectoractions;
 
 import org.bukkit.entity.Player;
 

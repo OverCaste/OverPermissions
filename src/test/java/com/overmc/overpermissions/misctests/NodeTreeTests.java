@@ -8,7 +8,7 @@ import java.util.Set;
 
 import org.junit.Test;
 
-import com.overmc.overpermissions.internal.wildcardsupport.NodeTree;
+import com.overmc.overpermissions.internal.NodeTree;
 
 public class NodeTreeTests {
     @Test

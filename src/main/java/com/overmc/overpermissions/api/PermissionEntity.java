@@ -1,5 +1,7 @@
 package com.overmc.overpermissions.api;
 
+import java.util.Map;
+
 import com.google.common.collect.ImmutableList;
 
 /**
@@ -21,11 +23,11 @@ public interface PermissionEntity extends UniqueEntity {
     /**
      * Checks whether this entity has a specific permission set in a specific world. Its actual value could be true or false. To check the permission key's actual value use {@link #getPermission(String, int)}
      * 
-     * @param permissionNode the permission node to be checked for existence.
+     * @param permission the permission to be checked for existence.
      * @param worldName the name of world for the permission to be checked in.
      * @return whether this entity has that specific permission set.
      */
-    public boolean hasPermission(String permissionNode, String worldName);
+    public boolean hasPermission(String permission, String worldName);
 
     /**
      * Checks whether this entity has a specific permission node in its global store.<br>
@@ -115,7 +117,7 @@ public interface PermissionEntity extends UniqueEntity {
 
     /**
      * Retrieve a new node batch of all the nodes represented directly by this entity.<br>
-     * Parents' or subtypes' nodes or can't be retrieved with this method.<br>
+     * Parents' or subtypes' nodes or can't be retrieved with this method.
      * 
      * @return the batch of nodes represented by this entity.
      * 
@@ -123,4 +125,24 @@ public interface PermissionEntity extends UniqueEntity {
      * @see TransientPermissionEntity#getTransientPermissionNodes()
      */
     public NodeBatch getPermissionNodes( );
+    
+    /**
+     * Retrieves a new map of all of the permission-value pairs represented by this entity.<br>
+     * This method will not poll global nodes, or parents' or subtypes' nodes.
+     * 
+     * @return the map of key-value pairs that represents this entity.
+     * 
+     * @see #getPermissionNodes()
+     */
+    public Map<String, Boolean> getPermissionValues(String world);
+    
+    /**
+     * Retrieves a new map of all of the permission-value pairs represented by this entity.<br>
+     * This method will not poll world nodes, or parents' or subtypes' nodes.
+     * 
+     * @return the map of key-value pairs that represents this entity.
+     * 
+     * @see #getPermissionNodes()
+     */
+    public Map<String, Boolean> getGlobalPermissionValues();
 }

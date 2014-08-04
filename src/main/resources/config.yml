@@ -4,11 +4,15 @@ default-group: 'default'
 #Whether people should be disconnected if the plugin fails to initialize.
 kick-on-failure: true
 
-#If OverPermissions should tie directly into the underlying CraftBukkit classes to add wildcard (*) support.
-#Values:
-# HALF - Fairly fast, this is the recommended setting. It allows you to use nodes like (*, node.*, my.*.node but NOT (no*e.*.othe*node)
-# NONE - The fastest possible, this also will work outside of CraftBukkit. Any node with * in it will be checked literally.
-wildcard-support: HALF
+#Whether OverPermissions should allow wildcard (*) support.
+# STANDARD - Fairly fast, this is the recommended setting. It allows you to use nodes like (*, node.*, my.*.node but NOT (no*e.*.othe*node)
+# NONE - The fastest possible though not by very much. Any node with * in it will be checked literally.
+wildcard-support: STANDARD
+
+#Should OverPermissions inject it's permission resolver into Bukkit. You will need a CraftBukkit fork if you want to use this.
+# NONE - Don't inject classes into the Bukkit SuperPermissions system. This option takes the most memory.
+# FULL - Inject classes into the Bukkit SuperPermissions system. This will save quite a bit of memory, and remain fast.
+injection-mode: FULL
 
 sql:
   #The only current supported type currently is mysql.

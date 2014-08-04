@@ -19,7 +19,7 @@ import com.overmc.overpermissions.events.PlayerPermissionAddEvent;
 import com.overmc.overpermissions.exceptions.TimeFormatException;
 import com.overmc.overpermissions.internal.Messages;
 import com.overmc.overpermissions.internal.OverPermissions;
-import com.overmc.overpermissions.internal.TimeUtils;
+import com.overmc.overpermissions.internal.util.TimeUtils;
 
 // ./playeraddtemp [player] [permission] [time] (world)
 public class PlayerAddTempCommand implements TabExecutor {

@@ -2,16 +2,18 @@ package com.overmc.overpermissions.api;
 
 import java.util.Set;
 
-public interface PermissionUser extends PermissionEntity, MetadataEntity, TemporaryPermissionEntity, TransientPermissionEntity {
+public interface PermissionUser extends PermissionEntity, MetadataEntity, TemporaryPermissionEntity, TransientPermissionEntity, BukkitPermissionEntity {
     /**
-     * Get a list of all parental groups inherited by this user, including recursive parents.
+     * Get a list of all parental groups inherited by this user, including recursive parents.<br>
+     * This method's set iterator MUST return the natural ordering of {@link PermissionGroup}s.
      * 
      * @return an immutable, data-backed set of every group inherited by this user.
      */
     public Set<PermissionGroup> getAllParents( );
 
     /**
-     * Get a list of the direct group parents of this user.
+     * Get a list of the direct group parents of this user.<br>
+     * This method's set iterator MUST return the natural ordering of {@link PermissionGroup}s.
      * 
      * @return an immutable, data-backed set of the direct groups of this user.
      */

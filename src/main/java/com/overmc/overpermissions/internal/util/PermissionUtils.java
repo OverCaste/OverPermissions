@@ -1,4 +1,4 @@
-package com.overmc.overpermissions.internal;
+package com.overmc.overpermissions.internal.util;
 
 import java.util.HashMap;
 import java.util.Set;

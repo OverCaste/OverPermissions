@@ -23,11 +23,15 @@ public class LocalGroupManager implements GroupManager {
 
     private final Map<String, LocalGroup> groups = new HashMap<>();
     private final ReadWriteLock groupLock = new ReentrantReadWriteLock(); // Need fine grained control for atomic operations.
+    
+    private final boolean wildcardSupport;
 
-    public LocalGroupManager(GroupManagerDataSourceFactory sourceFactory, TemporaryPermissionManager tempManager) {
+    public LocalGroupManager(GroupManagerDataSourceFactory sourceFactory, TemporaryPermissionManager tempManager, boolean wildcardSupport) {
         this.sourceFactory = sourceFactory;
         this.tempManager = tempManager;
         this.dataSource = sourceFactory.createGroupManagerDataSource();
+        
+        this.wildcardSupport = wildcardSupport;
     }
 
     @Override
@@ -40,7 +44,7 @@ public class LocalGroupManager implements GroupManager {
             if (groups.containsKey(lowerName)) {
                 throw new GroupAlreadyExistsException("A group by the name of " + lowerName + " already exists.");
             }
-            LocalGroup group = new LocalGroup(sourceFactory.createGroupDataSource(lowerName), tempManager, name, priority);
+            LocalGroup group = new LocalGroup(sourceFactory.createGroupDataSource(lowerName), tempManager, name, priority, wildcardSupport);
             group.reloadMetadata();
             group.reloadParentsAndChildren(this);
             group.reloadPermissions();
@@ -116,7 +120,7 @@ public class LocalGroupManager implements GroupManager {
             for (GroupDataEntry entry : groupDataEntries) {
                 String name = entry.getGroupName();
                 String lowerName = name.toLowerCase();
-                LocalGroup group = new LocalGroup(sourceFactory.createGroupDataSource(lowerName), tempManager, name, entry.getPriority());
+                LocalGroup group = new LocalGroup(sourceFactory.createGroupDataSource(lowerName), tempManager, name, entry.getPriority(), wildcardSupport);
                 group.reloadMetadata();
                 group.reloadPermissions();
                 group.reloadWorldMetadata();

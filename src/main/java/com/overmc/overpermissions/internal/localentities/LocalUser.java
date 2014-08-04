@@ -1,26 +1,22 @@
 package com.overmc.overpermissions.internal.localentities;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.bukkit.entity.Player;
+import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.plugin.Plugin;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.overmc.overpermissions.api.GroupManager;
 import com.overmc.overpermissions.api.MetadataBatch;
@@ -30,9 +26,9 @@ import com.overmc.overpermissions.api.PermissionGroup;
 import com.overmc.overpermissions.api.PermissionUser;
 import com.overmc.overpermissions.api.TemporaryNodeBatch;
 import com.overmc.overpermissions.api.TemporaryPermissionEntry;
-import com.overmc.overpermissions.internal.PermissionUtils;
 import com.overmc.overpermissions.internal.TemporaryPermissionManager;
 import com.overmc.overpermissions.internal.datasources.UserDataSource;
+import com.overmc.overpermissions.internal.util.PermissionUtils;
 
 public class LocalUser extends LocalTransientPermissionEntity implements PermissionUser {
     private final UUID uniqueId;
@@ -41,9 +37,8 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
     private final UserDataSource userDataSource;
     private final TemporaryPermissionManager tempManager;
 
-    private final Set<PermissionGroup> parents = new CopyOnWriteArraySet<>(); // These are fast for iteration, but fairly slow for modification.
-    private final Set<String> allParentNodes = new CopyOnWriteArraySet<>();
-    private final Map<String, String> parentMetadataMap = new ConcurrentHashMap<>();
+    private final CopyOnWriteArrayList<PermissionGroup> parents = new CopyOnWriteArrayList<>(); // These are fast for iteration, but fairly slow for modification.
+    private final CopyOnWriteArrayList<PermissionGroup> allParents = new CopyOnWriteArrayList<>(); // ^
 
     // World specific data
     private final ConcurrentMap<String, LocalUserWorldData> worldDataMap = new ConcurrentHashMap<>();
@@ -53,8 +48,8 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
     private PermissionAttachment attachment;
     private final Lock attachmentLock = new ReentrantLock();
 
-    public LocalUser(UUID uniqueId, Plugin plugin, TemporaryPermissionManager tempManager, UserDataSource userDataSource) {
-        super(userDataSource);
+    public LocalUser(UUID uniqueId, Plugin plugin, TemporaryPermissionManager tempManager, UserDataSource userDataSource, boolean wildcardSupport) {
+        super(userDataSource, wildcardSupport);
         this.uniqueId = uniqueId;
         this.plugin = plugin;
         this.userDataSource = userDataSource;
@@ -88,65 +83,23 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
     public void reloadParents(GroupManager groupManager) {
         Preconditions.checkNotNull(groupManager, "group manager");
         parents.clear();
+        allParents.clear();
         for (String groupName : userDataSource.getParents()) {
             PermissionGroup group = groupManager.getGroup(groupName);
             if (group == null) {
                 throw new RuntimeException("Invalid parent defined for player " + (player != null ? player.getName() : getUniqueId()) + ": " + groupName);
             }
-            parents.add(group);
+            parents.addIfAbsent(group);
+            allParents.addIfAbsent(group);
+            allParents.addAllAbsent(group.getAllParents());
         }
         recalculateParentData();
     }
 
     public void recalculateParentData( ) {
-        Set<String> newParentNodes = new HashSet<>();
-        Multimap<String, String> worldNewParentNodes = HashMultimap.create();
-        Multimap<String, MetadataEntry> worldGroupMetaEntries = HashMultimap.create();
-        ArrayList<PermissionGroup> sortedParents = new ArrayList<>(parents);
-        HashMap<String, String> newParentMeta = new HashMap<>();
-        Collections.sort(sortedParents);
-        for (PermissionGroup g : sortedParents) {
-            NodeBatch nodeBatch = g.getPermissionNodes();
-            MetadataBatch metaBatch = g.getAllMetadata();
-            for (String node : nodeBatch.getGlobalNodes()) {
-                newParentNodes.add(PermissionUtils.getBaseNode(node).toLowerCase());
-            }
-            for (MetadataEntry e : metaBatch.getGlobalNodes()) {
-                newParentMeta.put(e.getKey(), e.getValue());
-            }
-            for (String worldName : nodeBatch.getWorldNodes().keySet()) {
-                String lowerCaseWorldName = worldName.toLowerCase();
-                for (String node : nodeBatch.getWorldNodes().get(worldName)) {
-                    worldNewParentNodes.put(lowerCaseWorldName, node.toLowerCase());
-                }
-            }
-            for (String worldName : metaBatch.getWorldNodes().keySet()) {
-                String lowerCaseWorldName = worldName.toLowerCase();
-                for (MetadataEntry entry : metaBatch.getWorldNodes().get(worldName)) {
-                    worldGroupMetaEntries.put(lowerCaseWorldName, entry);
-                }
-            }
-        }
-        allParentNodes.clear();
-        allParentNodes.addAll(newParentNodes);
-        parentMetadataMap.clear();
-        parentMetadataMap.putAll(newParentMeta);
-        for (String worldName : worldNewParentNodes.keySet()) {
-            LocalUserWorldData world = getOrCreateWorld(worldName);
-            world.clearGroupNodes();
-            world.addGroupNodes(worldNewParentNodes.get(worldName));
-        }
-        for (String worldName : worldGroupMetaEntries.keySet()) {
-            LocalUserWorldData world = getOrCreateWorld(worldName);
-            world.clearGroupMeta();
-            world.addGroupMeta(worldGroupMetaEntries.get(worldName));
-        }
+        Collections.sort(parents);
+        Collections.sort(allParents);
         recalculatePermissions(); // Recalculate with new parents
-    }
-
-    @Override
-    protected Set<String> getAllNodes( ) {
-        return Sets.union(super.getAllNodes(), allParentNodes);
     }
 
     @Override
@@ -202,44 +155,104 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
     @Override
     public boolean hasGlobalPermission(String permission) {
         Preconditions.checkNotNull(permission, "permission");
-        return hasInternalPermission(permission);
+        if (hasInternalPermission(permission)) {
+            return true;
+        }
+        for (PermissionGroup parent : allParents) {
+            if (parent.hasGlobalPermission(permission)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public boolean hasPermission(String permission, String worldName) {
         Preconditions.checkNotNull(permission, "permission");
         Preconditions.checkNotNull(worldName, "world name");
-        if (hasGlobalPermission(permission)) {
+        if (hasInternalPermission(permission)) { // Global player permission
             return true;
         }
         LocalUserWorldData world = getWorldData(worldName);
-        if (world == null) {
-            return false;
+        if (world != null) {
+            if (world.hasInternalPermission(permission)) { // World player permission
+                return true;
+            }
         }
-        return world.hasInternalPermission(permission);
+        for (PermissionGroup parent : allParents) {
+            if (parent.hasGlobalPermission(permission)) { // Global group permission
+                return true;
+            }
+            if (parent.hasPermission(permission, worldName)) { // World group permission
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public boolean getGlobalPermission(String permission) {
         Preconditions.checkNotNull(permission, "permission");
-        return getInternalPermission(permission);
+        if (hasInternalPermission(permission)) {
+            return getInternalPermission(permission);
+        }
+        for (PermissionGroup parent : allParents) {
+            if (parent.hasGlobalPermission(permission)) {
+                return parent.getGlobalPermission(permission);
+            }
+        }
+        return false;
     }
 
     @Override
     public boolean getPermission(String permission, String worldName) {
         Preconditions.checkNotNull(permission, "permission");
         Preconditions.checkNotNull(worldName, "world name");
-        boolean value = false;
-        if (hasGlobalPermission(permission)) {
-            value = getInternalPermission(permission);
-        }
         LocalUserWorldData world = worldDataMap.get(worldName);
-        if (world != null) { // World permissions override global ones.
+        if (world != null) { // Player world permission
             if (world.hasInternalPermission(permission)) {
-                value = world.getInternalPermission(permission);
+                return world.getInternalPermission(permission);
             }
         }
-        return value;
+        if (hasGlobalPermission(permission)) { // Player global permission
+            return getInternalPermission(permission);
+        }
+        for (PermissionGroup parent : allParents) {
+            if (parent.hasPermission(permission, worldName)) { // Group world permission
+                return parent.getPermission(permission, worldName);
+            }
+        }
+        for (PermissionGroup parent : allParents) { // Group global permission
+            if (parent.hasGlobalPermission(permission)) {
+                return parent.getGlobalPermission(permission);
+            }
+        }
+        return false;
+    }
+    
+
+    @Override
+    public boolean hasGlobalPermission(Permission permission) {
+        Preconditions.checkNotNull(permission);
+        return hasGlobalPermission(permission.getName());
+    }
+
+    @Override
+    public boolean hasPermission(Permission permission, String worldName) {
+        Preconditions.checkNotNull(permission);
+        return hasPermission(permission.getName(), worldName);
+    }
+
+    @Override
+    public boolean getGlobalPermission(Permission permission) {
+        Preconditions.checkNotNull(permission);
+        return getGlobalPermission(permission.getName());
+    }
+
+    @Override
+    public boolean getPermission(Permission permission, String worldName) {
+        Preconditions.checkNotNull(permission);
+        return getPermission(permission.getName(), worldName);
     }
 
     @Override
@@ -329,6 +342,20 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
         }
         return builder.build();
     }
+    
+    @Override
+    public Map<String, Boolean> getGlobalPermissionValues() {
+        return getInternalPermissionValues();
+    }
+    
+    @Override
+    public Map<String, Boolean> getPermissionValues(String worldName) {
+        LocalUserWorldData world = getWorldData(worldName);
+        if(world == null) {
+            return Collections.emptyMap();
+        }
+        return world.getInternalPermissionValues();
+    }
 
     @Override
     public boolean hasMeta(String key, String worldName) {
@@ -340,15 +367,17 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
             if (world.hasInternalMeta(key)) { // World user data exists
                 return true;
             }
-            if (world.hasGroupMeta(key)) { // World group data exists
-                return true;
-            }
         } // Otherwise...
         if (hasInternalMeta(key)) {
             return true; // Global user meta exists
         }
-        if (parentMetadataMap.containsKey(key)) {
-            return true; // Global group meta exists
+        for (PermissionGroup parent : allParents) {
+            if (parent.hasGlobalMeta(key)) { // Global group meta
+                return true;
+            }
+            if (parent.hasMeta(key, worldName)) { // World group meta
+                return true;
+            }
         }
         return false;
     }
@@ -356,7 +385,15 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
     @Override
     public boolean hasGlobalMeta(String key) {
         Preconditions.checkNotNull(key, "key");
-        return hasInternalMeta(key);
+        if (hasInternalMeta(key)) {
+            return true;
+        }
+        for (PermissionGroup parent : allParents) {
+            if (parent.hasGlobalMeta(key)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -373,13 +410,15 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
         if (hasInternalMeta(key)) { // If global user data exists, return that
             return getInternalMeta(key);
         }
-        if (world != null) { // Then the group world meta exists
-            if (world.hasGroupMeta(key)) {
-                return world.getGroupMeta(key);
+        for (PermissionGroup parent : allParents) { // Then the group world meta exists
+            if (parent.hasMeta(key, worldName)) {
+                return parent.getMeta(key, worldName);
             }
         }
-        if (parentMetadataMap.containsKey(key)) { // And finally if group global meta exists
-            return parentMetadataMap.get(key);
+        for (PermissionGroup parent : allParents) { // And finally if group global meta exists
+            if (parent.hasGlobalMeta(key)) {
+                return parent.getGlobalMeta(key);
+            }
         }
         return null;
     }
@@ -390,8 +429,10 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
         if (hasInternalMeta(key)) { // If global user data exists, return that
             return getInternalMeta(key);
         }
-        if (parentMetadataMap.containsKey(key)) { // Otherwise, if global group user data exists, return that
-            return parentMetadataMap.get(key);
+        for (PermissionGroup parent : allParents) { // Otherwise, if global group user data exists, return that
+            if (parent.hasGlobalMeta(key)) {
+                return parent.getGlobalMeta(key);
+            }
         }
         return null;
     }
@@ -603,23 +644,18 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public Set<PermissionGroup> getAllParents( ) {
-        HashSet<PermissionGroup> ret = new HashSet<>();
-        for (PermissionGroup g : parents) {
-            ret.add(g);
-            ret.addAll(g.getParents());
-        }
-        return ret;
+        return Sets.newTreeSet(allParents); //Defensive copy, tree sets are ordered, which is mandated for this method.
     }
 
     @Override
     public Set<PermissionGroup> getParents( ) {
-        return new HashSet<>(parents); // Defensive copy
+        return Sets.newTreeSet(parents); // ^
     }
 
     @Override
     public boolean addParent(PermissionGroup parent) {
         Preconditions.checkNotNull(parent, "parent");
-        boolean success = parents.add(parent);
+        boolean success = parents.addIfAbsent(parent);
         if (success) {
             userDataSource.addParent(parent);
             recalculateParentData();
@@ -642,7 +678,7 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
     public void setParent(PermissionGroup parent) {
         Preconditions.checkNotNull(parent, "parent");
         parents.clear();
-        parents.add(parent);
+        parents.addIfAbsent(parent);
         userDataSource.setParent(parent);
         recalculateParentData();
     }

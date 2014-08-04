@@ -2,13 +2,17 @@ package com.overmc.overpermissions.api;
 
 import java.util.Set;
 
-public interface PermissionGroup extends PermissionEntity, MetadataEntity, TemporaryPermissionEntity, Comparable<PermissionGroup> {
+public interface PermissionGroup extends PermissionEntity, MetadataEntity, TemporaryPermissionEntity, BukkitPermissionEntity, Comparable<PermissionGroup> {
     /**
+     * This method's set iterator MUST return the natural ordering of {@link PermissionGroup}s.
+     * 
      * @return An immutable collection of this group's direct parents.
      */
     public Set<PermissionGroup> getParents( );
 
     /**
+     * This method's set iterator MUST return the natural ordering of {@link PermissionGroup}s.
+     * 
      * @return An immutable collection of this group's parents, retrieved recursively from it's direct parents.
      * 
      * @see #getParents()

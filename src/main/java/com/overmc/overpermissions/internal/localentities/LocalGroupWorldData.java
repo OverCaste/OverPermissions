@@ -11,7 +11,7 @@ public class LocalGroupWorldData extends LocalPermissionEntity {
     private final String worldName;
 
     public LocalGroupWorldData(LocalGroup group, String worldName, TemporaryPermissionManager tempManager, PermissionEntityDataSource dataSource) {
-        super(dataSource);
+        super(dataSource, group.areWildcardsSupported());
         this.group = group;
         this.worldName = worldName;
         this.tempManager = tempManager;

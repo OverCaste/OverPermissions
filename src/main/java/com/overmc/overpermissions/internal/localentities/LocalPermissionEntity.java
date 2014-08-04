@@ -15,11 +15,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.overmc.overpermissions.api.MetadataEntry;
 import com.overmc.overpermissions.api.TemporaryPermissionEntry;
-import com.overmc.overpermissions.internal.PermissionUtils;
+import com.overmc.overpermissions.internal.NodeTree;
 import com.overmc.overpermissions.internal.datasources.PermissionEntityDataSource;
+import com.overmc.overpermissions.internal.util.PermissionUtils;
 
 public abstract class LocalPermissionEntity {
     private final ReadWriteLock nodesLock = new ReentrantReadWriteLock();
@@ -27,16 +29,24 @@ public abstract class LocalPermissionEntity {
     private final ReadWriteLock permissionsLock = new ReentrantReadWriteLock();
     private final ReadWriteLock metaLock = new ReentrantReadWriteLock();
 
-    private final HashSet<String> nodes = new HashSet<>();
-    private final HashMap<String, Boolean> permissions = new HashMap<String, Boolean>();
-    private final HashMap<String, String> meta = new HashMap<String, String>();
+    private final Set<String> nodes = new HashSet<>();
+    private final Map<String, Boolean> permissions;
+    private final Map<String, String> meta = new HashMap<String, String>();
 
     private final Set<String> tempNodes = new HashSet<>();
     private final ConcurrentMap<String, TemporaryPermissionEntry> tempEntries = new ConcurrentHashMap<>();
 
     private final PermissionEntityDataSource dataSource;
 
-    public LocalPermissionEntity(PermissionEntityDataSource dataSource) {
+    private final boolean wildcardSupport;
+    
+    public LocalPermissionEntity(PermissionEntityDataSource dataSource, boolean wildcardSupport) {
+        if(wildcardSupport) {
+            permissions = new NodeTree<Boolean>();
+        } else {
+            permissions = new HashMap<String, Boolean>();
+        }
+        this.wildcardSupport = wildcardSupport;
         this.dataSource = dataSource;
     }
 
@@ -229,6 +239,15 @@ public abstract class LocalPermissionEntity {
             return new ArrayList<>(nodes);
         } finally {
             nodesLock.readLock().unlock();
+        }
+    }
+
+    protected Map<String, Boolean> getInternalPermissionValues( ) {
+        permissionsLock.readLock().lock();
+        try {
+            return Maps.newHashMap(permissions);
+        } finally {
+            permissionsLock.readLock().unlock();
         }
     }
 
@@ -435,6 +454,10 @@ public abstract class LocalPermissionEntity {
             ret.add(new MetadataEntry(e.getKey(), e.getValue()));
         }
         return ret;
+    }
+    
+    public boolean areWildcardsSupported( ) {
+        return wildcardSupport;
     }
 
     protected abstract void registerTempPermission(String node, long timeInMillis);

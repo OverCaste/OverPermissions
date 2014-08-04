@@ -2,13 +2,7 @@ package com.overmc.overpermissions.internal;
 
 import java.io.IOException;
 import java.security.acl.Group;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -18,40 +12,15 @@ import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.overmc.overpermissions.api.GroupManager;
-import com.overmc.overpermissions.api.PermissionUser;
-import com.overmc.overpermissions.api.UserManager;
-import com.overmc.overpermissions.internal.commands.GroupAddCommand;
-import com.overmc.overpermissions.internal.commands.GroupAddParentCommand;
-import com.overmc.overpermissions.internal.commands.GroupAddTempCommand;
-import com.overmc.overpermissions.internal.commands.GroupCreateCommand;
-import com.overmc.overpermissions.internal.commands.GroupDeleteCommand;
-import com.overmc.overpermissions.internal.commands.GroupRemoveCommand;
-import com.overmc.overpermissions.internal.commands.GroupRemoveParentCommand;
-import com.overmc.overpermissions.internal.commands.GroupRemoveTempCommand;
-import com.overmc.overpermissions.internal.commands.GroupSetMetaCommand;
-import com.overmc.overpermissions.internal.commands.OverPermissionsCommand;
-import com.overmc.overpermissions.internal.commands.PlayerAddCommand;
-import com.overmc.overpermissions.internal.commands.PlayerAddGroupCommand;
-import com.overmc.overpermissions.internal.commands.PlayerAddTempCommand;
-import com.overmc.overpermissions.internal.commands.PlayerCheckCommand;
-import com.overmc.overpermissions.internal.commands.PlayerPromoteCommand;
-import com.overmc.overpermissions.internal.commands.PlayerRemoveCommand;
-import com.overmc.overpermissions.internal.commands.PlayerRemoveGroupCommand;
-import com.overmc.overpermissions.internal.commands.PlayerRemoveTempCommand;
-import com.overmc.overpermissions.internal.commands.PlayerSetGroupCommand;
-import com.overmc.overpermissions.internal.commands.PlayerSetMetaCommand;
+import com.overmc.overpermissions.api.*;
+import com.overmc.overpermissions.internal.commands.*;
 import com.overmc.overpermissions.internal.databases.DatabaseMultiSourceFactory;
 import com.overmc.overpermissions.internal.databases.mysql.MySQLManager;
-import com.overmc.overpermissions.internal.datasources.GroupManagerDataSourceFactory;
-import com.overmc.overpermissions.internal.datasources.UUIDDataSource;
-import com.overmc.overpermissions.internal.datasources.UserDataSourceFactory;
+import com.overmc.overpermissions.internal.datasources.*;
+import com.overmc.overpermissions.internal.injectoractions.*;
 import com.overmc.overpermissions.internal.localentities.LocalGroupManager;
 import com.overmc.overpermissions.internal.localentities.LocalUserManager;
 import com.overmc.overpermissions.internal.metrics.MetricsLite;
-import com.overmc.overpermissions.internal.wildcardsupport.HalfWildcardInjectorAction;
-import com.overmc.overpermissions.internal.wildcardsupport.WildcardAction;
-import com.overmc.overpermissions.internal.wildcardsupport.WildcardDummyAction;
 
 public final class OverPermissions extends JavaPlugin {
     private TemporaryPermissionManager tempManager;
@@ -116,6 +85,15 @@ public final class OverPermissions extends JavaPlugin {
 
     private void initManagers( ) throws Throwable {
         String type = getConfig().getString("sql.type", "mysql").toLowerCase();
+        String wildcardSupportValue = getConfig().getString("wildcard-support", "STANDARD");
+        boolean wildcardSupport;
+        if(wildcardSupportValue.equals("STANDARD")) {
+            wildcardSupport = true;
+        } else if(wildcardSupportValue.equals("NONE")){
+            wildcardSupport = false;
+        } else {
+            throw new StartException("The configuration option wildcard-support is set to an invalid value: " + wildcardSupportValue);
+        }
         DatabaseMultiSourceFactory database;
         switch (type) {
             default:
@@ -133,9 +111,9 @@ public final class OverPermissions extends JavaPlugin {
         uuidDataSource = database.createUUIDDataSource();
         userDataSourceFactory = database;
         tempManager = new TemporaryPermissionManager(this, database);
-        groupManager = new LocalGroupManager(groupDataSourceFactory, tempManager);
+        groupManager = new LocalGroupManager(groupDataSourceFactory, tempManager, wildcardSupport);
         groupManager.reloadGroups();
-        userManager = new LocalUserManager(this, groupManager, uuidDataSource, tempManager, userDataSourceFactory);
+        userManager = new LocalUserManager(this, groupManager, uuidDataSource, tempManager, userDataSourceFactory, wildcardSupport);
     }
 
     private void initDefaultGroup( ) {
@@ -171,17 +149,21 @@ public final class OverPermissions extends JavaPlugin {
         new OverPermissionsCommand(this).register();
     }
 
-    private void initWildcardSupport( ) {
-        String configValue = getConfig().getString("wildcard-support", "HALF");
-        switch (configValue) {
-            case "HALF":
-                wildcardAction = new HalfWildcardInjectorAction(this);
-                break;
-            case "NONE":
+    private void injectBukkitActions( ) {
+        String wildcardSupportValue = getConfig().getString("wildcard-support", "HALF");
+        String injectionModeValue = getConfig().getString("injection-mode", "FULL");
+        if(injectionModeValue.equalsIgnoreCase("FULL")) {
+            if(wildcardSupportValue.equals("STANDARD")) {
+                wildcardAction = new HalfWildcardPlayerInjectorAction(this);
+            } else if(wildcardSupportValue.equals("NONE")) {
                 wildcardAction = new WildcardDummyAction();
-                break;
-            default:
-                throw new StartException("Invalid configuration option: 'wildcard-support.' (" + configValue + ")");
+            } else {
+                throw new StartException("Invalid configuration option: 'wildcard-support': (" + wildcardSupportValue + ")");
+            }
+        } else if(injectionModeValue.equalsIgnoreCase("NONE")){
+            //The wildcard support case is handled in 'initManagers( )' for now.
+        } else {
+            throw new StartException("Invalid configuration option: 'injection-mode': (" + injectionModeValue + ")");
         }
     }
 
@@ -228,7 +210,7 @@ public final class OverPermissions extends JavaPlugin {
             initManagers();
             initDefaultGroup();
             initCommands();
-            initWildcardSupport();
+            injectBukkitActions();
             registerEvents();
             initMetrics();
             registerApi();

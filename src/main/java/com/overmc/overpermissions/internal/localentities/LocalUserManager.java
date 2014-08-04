@@ -41,7 +41,7 @@ public class LocalUserManager implements UserManager {
             .build(new CacheLoader<UUID, LocalUser>() {
                 @Override
                 public LocalUser load(UUID uuid) throws Exception {
-                    LocalUser user = new LocalUser(uuid, plugin, tempManager, dataSourceCache.get(uuid));
+                    LocalUser user = new LocalUser(uuid, plugin, tempManager, dataSourceCache.get(uuid), wildcardSupport);
                     user.recalculateParentData();
                     user.reloadMetadata();
                     user.reloadPermissions();
@@ -55,9 +55,12 @@ public class LocalUserManager implements UserManager {
     private final GroupManager groupManager;
     private final UUIDDataSource uuidSource;
     private final TemporaryPermissionManager tempManager;
+    
     private final UserDataSourceFactory userDataSourceFactory;
+    
+    private final boolean wildcardSupport;
 
-    public LocalUserManager(OverPermissions plugin, GroupManager groupManager, UUIDDataSource uuidSource, TemporaryPermissionManager tempManager, UserDataSourceFactory userDataSourceFactory) {
+    public LocalUserManager(OverPermissions plugin, GroupManager groupManager, UUIDDataSource uuidSource, TemporaryPermissionManager tempManager, UserDataSourceFactory userDataSourceFactory, boolean wildcardSupport) {
         Preconditions.checkNotNull(plugin, "plugin");
         Preconditions.checkNotNull(groupManager, "group manager");
         Preconditions.checkNotNull(uuidSource, "uuid source");
@@ -68,6 +71,7 @@ public class LocalUserManager implements UserManager {
         this.groupManager = groupManager;
         this.tempManager = tempManager;
         this.userDataSourceFactory = userDataSourceFactory;
+        this.wildcardSupport = wildcardSupport;
     }
 
     private UUID getUniqueId(String name) {

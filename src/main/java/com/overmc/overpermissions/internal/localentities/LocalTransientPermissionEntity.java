@@ -22,8 +22,8 @@ public abstract class LocalTransientPermissionEntity extends LocalPermissionEnti
     // Concurrency locks
     private final ReadWriteLock transientNodesLock = new ReentrantReadWriteLock();
 
-    public LocalTransientPermissionEntity(PermissionEntityDataSource dataSource) {
-        super(dataSource);
+    public LocalTransientPermissionEntity(PermissionEntityDataSource dataSource, boolean wildcardSupport) {
+        super(dataSource, wildcardSupport);
     }
 
     @Override

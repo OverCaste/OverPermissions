@@ -3,7 +3,6 @@ package com.overmc.overpermissions.internal.localentities;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -11,11 +10,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import org.bukkit.permissions.Permission;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
 import com.overmc.overpermissions.api.GroupManager;
 import com.overmc.overpermissions.api.MetadataBatch;
 import com.overmc.overpermissions.api.MetadataEntry;
@@ -35,20 +35,19 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
 
     private final String name;
     private final UUID uniqueId;
-    private int priority;
     private final Set<PermissionGroup> parents = new CopyOnWriteArraySet<>(); // These are fast for iteration, but fairly slow for modification.
     private final Set<PermissionGroup> children = new CopyOnWriteArraySet<>();
 
     // World specific data
     private final ConcurrentMap<String, LocalGroupWorldData> worldDataMap = new ConcurrentHashMap<>();
 
-    // Concurrency locks
-    private final ReadWriteLock priorityLock = new ReentrantReadWriteLock();
-
     private final Set<LocalUser> playersInGroup = Collections.newSetFromMap(new ConcurrentHashMap<LocalUser, Boolean>());
 
-    public LocalGroup(GroupDataSource groupSource, TemporaryPermissionManager tempManager, String name, int priority) {
-        super(groupSource);
+    private int priority;
+    private final Object priorityLock = new Object();
+
+    public LocalGroup(GroupDataSource groupSource, TemporaryPermissionManager tempManager, String name, int priority, boolean wildcardSupport) {
+        super(groupSource, wildcardSupport);
         Preconditions.checkNotNull(groupSource, "groupSource");
         Preconditions.checkNotNull(tempManager, "tempManager");
         Preconditions.checkNotNull(name, "name");
@@ -216,6 +215,30 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
     }
 
     @Override
+    public boolean hasGlobalPermission(Permission permission) {
+        Preconditions.checkNotNull(permission);
+        return hasGlobalPermission(permission.getName());
+    }
+
+    @Override
+    public boolean hasPermission(Permission permission, String worldName) {
+        Preconditions.checkNotNull(permission);
+        return hasPermission(permission.getName(), worldName);
+    }
+
+    @Override
+    public boolean getGlobalPermission(Permission permission) {
+        Preconditions.checkNotNull(permission);
+        return getGlobalPermission(permission.getName());
+    }
+
+    @Override
+    public boolean getPermission(Permission permission, String worldName) {
+        Preconditions.checkNotNull(permission);
+        return getPermission(permission.getName(), worldName);
+    }
+
+    @Override
     public boolean addGlobalPermissionNode(String permissionNode) {
         Preconditions.checkNotNull(permissionNode, "permission node");
         return addInternalPermissionNode(permissionNode);
@@ -286,6 +309,20 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
             }
         }
         return builder.build();
+    }
+    
+    @Override
+    public Map<String, Boolean> getPermissionValues(String worldName) {
+        LocalGroupWorldData world = getWorldData(worldName);
+        if(world == null) {
+            return Collections.emptyMap();
+        }
+        return world.getInternalPermissionValues();
+    }
+    
+    @Override
+    public Map<String, Boolean> getGlobalPermissionValues() {
+        return getInternalPermissionValues();
     }
 
     @Override
@@ -471,17 +508,17 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
 
     @Override
     public Set<PermissionGroup> getParents( ) {
-        return parents;
+        return Sets.newTreeSet(parents); //Defensive copy, natural ordering.
     }
 
     @Override
     public Set<PermissionGroup> getChildren( ) {
-        return children;
+        return Sets.newTreeSet(children);
     }
 
     @Override
     public Set<PermissionGroup> getAllParents( ) {
-        HashSet<PermissionGroup> ret = new HashSet<>(10);
+        Set<PermissionGroup> ret = Sets.newTreeSet();
         for (PermissionGroup g : getParents()) {
             ret.add(g);
             ret.addAll(g.getAllParents());
@@ -516,19 +553,16 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
 
     @Override
     public int getPriority( ) {
-        priorityLock.readLock().lock();
-        try {
-            if (priority == -1) {
-                priorityLock.readLock().unlock();
-                priorityLock.writeLock().lock(); // TODO make better
-                priority = groupDataSource.getPriority();
-                priorityLock.writeLock().unlock();
-                priorityLock.readLock().lock();
+        int tempPriority = priority;
+        if (tempPriority == -1) {
+            synchronized (priorityLock) {
+                tempPriority = priority;
+                if (tempPriority == -1) {
+                    tempPriority = priority = groupDataSource.getPriority();
+                }
             }
-            return priority;
-        } finally {
-            priorityLock.readLock().unlock();
         }
+        return tempPriority;
     }
 
     @Override
