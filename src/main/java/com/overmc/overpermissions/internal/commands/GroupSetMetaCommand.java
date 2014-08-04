@@ -2,24 +2,15 @@ package com.overmc.overpermissions.internal.commands;
 
 import static com.overmc.overpermissions.internal.Messages.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.PluginCommand;
-import org.bukkit.command.TabExecutor;
+import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 
 import com.google.common.base.Joiner;
 import com.overmc.overpermissions.api.PermissionGroup;
-import com.overmc.overpermissions.events.GroupMetaAddByPlayerEvent;
-import com.overmc.overpermissions.events.GroupMetaAddEvent;
-import com.overmc.overpermissions.events.GroupMetaClearByPlayerEvent;
-import com.overmc.overpermissions.events.GroupMetaClearEvent;
-import com.overmc.overpermissions.events.GroupMetaEvent;
+import com.overmc.overpermissions.events.*;
 import com.overmc.overpermissions.internal.Messages;
 import com.overmc.overpermissions.internal.OverPermissions;
 

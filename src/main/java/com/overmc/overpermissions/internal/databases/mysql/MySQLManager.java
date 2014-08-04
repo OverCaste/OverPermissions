@@ -1,10 +1,6 @@
 package com.overmc.overpermissions.internal.databases.mysql;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
@@ -12,11 +8,7 @@ import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 import com.overmc.overpermissions.internal.Messages;
 import com.overmc.overpermissions.internal.StartException;
 import com.overmc.overpermissions.internal.databases.DatabaseMultiSourceFactory;
-import com.overmc.overpermissions.internal.datasources.GroupDataSource;
-import com.overmc.overpermissions.internal.datasources.GroupManagerDataSource;
-import com.overmc.overpermissions.internal.datasources.TemporaryPermissionEntityDataSource;
-import com.overmc.overpermissions.internal.datasources.UUIDDataSource;
-import com.overmc.overpermissions.internal.datasources.UserDataSource;
+import com.overmc.overpermissions.internal.datasources.*;
 
 public final class MySQLManager implements DatabaseMultiSourceFactory {
     private volatile boolean databaseInitialized;

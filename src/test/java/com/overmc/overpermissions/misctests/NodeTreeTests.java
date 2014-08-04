@@ -2,9 +2,7 @@ package com.overmc.overpermissions.misctests;
 
 import static org.junit.Assert.*;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import org.junit.Test;
 

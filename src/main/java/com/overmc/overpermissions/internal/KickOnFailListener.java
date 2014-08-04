@@ -1,8 +1,6 @@
 package com.overmc.overpermissions.internal;
 
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
+import org.bukkit.event.*;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 public final class KickOnFailListener implements Listener {

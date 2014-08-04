@@ -1,9 +1,6 @@
 package com.overmc.overpermissions.internal.commands;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -12,10 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.Plugin;
 
-import com.overmc.overpermissions.api.GroupManager;
-import com.overmc.overpermissions.api.PermissionGroup;
-import com.overmc.overpermissions.api.PermissionUser;
-import com.overmc.overpermissions.api.UserManager;
+import com.overmc.overpermissions.api.*;
 import com.overmc.overpermissions.internal.util.TimeUtils;
 
 final class CommandUtils {

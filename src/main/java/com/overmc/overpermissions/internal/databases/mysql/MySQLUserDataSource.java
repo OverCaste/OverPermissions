@@ -2,19 +2,10 @@ package com.overmc.overpermissions.internal.databases.mysql;
 
 import static com.overmc.overpermissions.internal.databases.mysql.MySQLManager.attemptClose;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.sql.*;
+import java.util.*;
 
-import com.overmc.overpermissions.api.MetadataEntry;
-import com.overmc.overpermissions.api.PermissionGroup;
-import com.overmc.overpermissions.api.TemporaryPermissionEntry;
+import com.overmc.overpermissions.api.*;
 import com.overmc.overpermissions.internal.datasources.PermissionEntityDataSource;
 import com.overmc.overpermissions.internal.datasources.UserDataSource;
 

@@ -1,9 +1,6 @@
 package com.overmc.overpermissions.internal.databases.mysql;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.concurrent.TimeUnit;
 
 import com.overmc.overpermissions.api.TemporaryNodeBatch;

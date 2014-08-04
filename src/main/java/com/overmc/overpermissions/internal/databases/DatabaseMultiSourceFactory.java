@@ -1,9 +1,6 @@
 package com.overmc.overpermissions.internal.databases;
 
-import com.overmc.overpermissions.internal.datasources.GroupManagerDataSourceFactory;
-import com.overmc.overpermissions.internal.datasources.TemporaryPermissionEntityDataSourceFactory;
-import com.overmc.overpermissions.internal.datasources.UUIDDataSourceFactory;
-import com.overmc.overpermissions.internal.datasources.UserDataSourceFactory;
+import com.overmc.overpermissions.internal.datasources.*;
 
 public interface DatabaseMultiSourceFactory extends UUIDDataSourceFactory, UserDataSourceFactory, GroupManagerDataSourceFactory, TemporaryPermissionEntityDataSourceFactory {
 }

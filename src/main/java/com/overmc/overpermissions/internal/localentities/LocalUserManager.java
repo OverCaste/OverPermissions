@@ -9,18 +9,14 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import com.google.common.base.Preconditions;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
+import com.google.common.cache.*;
 import com.overmc.overpermissions.api.GroupManager;
 import com.overmc.overpermissions.api.UserManager;
 import com.overmc.overpermissions.exceptions.InvalidOnlineUsernameException;
 import com.overmc.overpermissions.exceptions.InvalidUsernameException;
 import com.overmc.overpermissions.internal.OverPermissions;
 import com.overmc.overpermissions.internal.TemporaryPermissionManager;
-import com.overmc.overpermissions.internal.datasources.UUIDDataSource;
-import com.overmc.overpermissions.internal.datasources.UserDataSource;
-import com.overmc.overpermissions.internal.datasources.UserDataSourceFactory;
+import com.overmc.overpermissions.internal.datasources.*;
 
 public class LocalUserManager implements UserManager {
     public static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9\\_]{1,16}$");

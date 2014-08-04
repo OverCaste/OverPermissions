@@ -1,8 +1,6 @@
 package com.overmc.nodedisplayapi;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class ElementBoxNode {
     private final String name;
