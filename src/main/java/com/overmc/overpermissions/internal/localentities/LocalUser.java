@@ -84,8 +84,21 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
     }
 
     public void recalculateParentData( ) {
-        Collections.sort(parents);
-        Collections.sort(allParents);
+        PermissionGroup[] tempSortArray;
+        synchronized (parents) {
+            tempSortArray = parents.toArray(new PermissionGroup[parents.size()]);
+            Arrays.sort(tempSortArray);
+            parents.clear();
+            parents.addAll(Arrays.asList(tempSortArray));
+        }
+
+        synchronized (allParents) {
+            tempSortArray = allParents.toArray(new PermissionGroup[allParents.size()]);
+            Arrays.sort(tempSortArray);
+            allParents.clear();
+            allParents.addAll(Arrays.asList(tempSortArray));
+        }
+
         recalculatePermissions(); // Recalculate with new parents
     }
 
@@ -216,7 +229,6 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
         }
         return false;
     }
-    
 
     @Override
     public boolean hasGlobalPermission(Permission permission) {
@@ -329,16 +341,16 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
         }
         return builder.build();
     }
-    
+
     @Override
-    public Map<String, Boolean> getGlobalPermissionValues() {
+    public Map<String, Boolean> getGlobalPermissionValues( ) {
         return getInternalPermissionValues();
     }
-    
+
     @Override
     public Map<String, Boolean> getPermissionValues(String worldName) {
         LocalUserWorldData world = getWorldData(worldName);
-        if(world == null) {
+        if (world == null) {
             return Collections.emptyMap();
         }
         return world.getInternalPermissionValues();
@@ -631,7 +643,7 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     @Override
     public Set<PermissionGroup> getAllParents( ) {
-        return Sets.newTreeSet(allParents); //Defensive copy, tree sets are ordered, which is mandated for this method.
+        return Sets.newTreeSet(allParents); // Defensive copy, tree sets are ordered, which is mandated for this method.
     }
 
     @Override

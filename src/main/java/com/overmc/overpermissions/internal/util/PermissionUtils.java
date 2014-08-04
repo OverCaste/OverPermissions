@@ -20,7 +20,6 @@ public class PermissionUtils {
     }
 
     public static boolean getPermissionValue(String permission, String baseNode, Set<String> nodes) {
-        System.out.println("Permission value for " + permission + ", " + baseNode + ": " + nodes.contains("+" + baseNode) + ", " + nodes.contains("-" + baseNode) + ", " + nodes.contains(baseNode));
         if (nodes.contains("+" + baseNode)) {
             return true;
         }
