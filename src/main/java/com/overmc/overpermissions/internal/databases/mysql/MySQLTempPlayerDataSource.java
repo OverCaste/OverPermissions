@@ -22,6 +22,14 @@ public class MySQLTempPlayerDataSource implements TemporaryPermissionEntityDataS
         PreparedStatement pst = null;
         try {
             Connection con = sqlManager.getConnection();
+            pst = con.prepareStatement("DELETE FROM Player_Global_Temporary_Permissions WHERE timeout < ?"); //Purge global tables of outdated temp permissions
+            pst.setLong(1, System.currentTimeMillis());
+            pst.executeUpdate();
+            pst.close();
+            pst = con.prepareStatement("DELETE FROM Player_World_Temporary_Permissions WHERE timeout < ?"); //Purge world tables of outdated temp permissions
+            pst.setLong(1, System.currentTimeMillis());
+            pst.executeUpdate();
+            pst.close();
             pst = con.prepareStatement(""
                     + "SELECT permission_node, timeout "
                     + "FROM Player_Global_Temporary_Permissions "

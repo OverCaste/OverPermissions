@@ -21,6 +21,14 @@ public class MySQLTempGroupDataSource implements TemporaryPermissionEntityDataSo
         PreparedStatement pst = null;
         try {
             Connection con = sqlManager.getConnection();
+            pst = con.prepareStatement("DELETE FROM Group_Global_Temporary_Permissions WHERE timeout < ?"); //Purge global tables of outdated temp permissions
+            pst.setLong(1, System.currentTimeMillis());
+            pst.executeUpdate();
+            pst.close();
+            pst = con.prepareStatement("DELETE FROM Group_World_Temporary_Permissions WHERE timeout < ?"); //Purge world tables of outdated temp permissions
+            pst.setLong(1, System.currentTimeMillis());
+            pst.executeUpdate();
+            pst.close();
             pst = con.prepareStatement(""
                     + "SELECT permission_node, timeout "
                     + "FROM Group_Global_Temporary_Permissions "
