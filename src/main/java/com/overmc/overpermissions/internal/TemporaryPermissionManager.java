@@ -56,7 +56,7 @@ public class TemporaryPermissionManager {
             }
         });
 
-        BukkitTask task = runnable.runTaskLater(plugin, convertMillisToTicks(deltaTime));
+        BukkitTask task = runnable.runTaskLaterAsynchronously(plugin, convertMillisToTicks(deltaTime));
         globalTaskIdMap.put(globalKey, task.getTaskId());
         entityGlobalTaskMap.put(entity.getUniqueId(), globalKey);
     }
@@ -90,7 +90,7 @@ public class TemporaryPermissionManager {
             }
         });
 
-        BukkitTask task = runnable.runTaskLater(plugin, convertMillisToTicks(deltaTime));
+        BukkitTask task = runnable.runTaskLaterAsynchronously(plugin, convertMillisToTicks(deltaTime));
         worldTaskIdMap.put(worldKey, task.getTaskId());
         entityWorldTaskMap.put(entity.getUniqueId(), worldKey);
     }
