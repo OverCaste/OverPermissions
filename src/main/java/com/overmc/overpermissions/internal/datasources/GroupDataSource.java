@@ -11,10 +11,11 @@ public interface GroupDataSource extends PermissionEntityDataSource, WorldDataSo
     public int getPriority( );
 
     public void addParent(PermissionGroup parent);
-
     public void removeParent(PermissionGroup parent);
+    
+    public void addChild(PermissionGroup child);
+    public void removeChild(PermissionGroup child);
 
     public Collection<String> getParents( );
-
     public Collection<String> getChildren( );
 }

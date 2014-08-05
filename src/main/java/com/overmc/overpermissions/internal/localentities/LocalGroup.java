@@ -3,6 +3,7 @@ package com.overmc.overpermissions.internal.localentities;
 import java.util.*;
 import java.util.concurrent.*;
 
+import org.bukkit.Bukkit;
 import org.bukkit.permissions.Permission;
 
 import com.google.common.base.Charsets;
@@ -13,7 +14,8 @@ import com.overmc.overpermissions.internal.TemporaryPermissionManager;
 import com.overmc.overpermissions.internal.datasources.GroupDataSource;
 
 /**
- * A class that represents a ram stored version of a database group.
+ * A class that represents a ram stored version of a database group.<br>
+ * By definition, PermissionGroups should be treated like Bukkit's Player objects, and only names should be stored.
  */
 public class LocalGroup extends LocalPermissionEntity implements PermissionGroup {
     private final GroupDataSource groupDataSource;
@@ -26,8 +28,9 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
 
     // World specific data
     private final ConcurrentMap<String, LocalGroupWorldData> worldDataMap = new ConcurrentHashMap<>();
-
-    private final Set<LocalUser> playersInGroup = Collections.newSetFromMap(new ConcurrentHashMap<LocalUser, Boolean>());
+    
+    // Users in this group, they are updated if things change.
+    private final Set<LocalUser> usersInGroup = Collections.synchronizedSet(new HashSet<LocalUser>(32));
 
     private int priority;
     private final Object priorityLock = new Object();
@@ -106,32 +109,17 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
         children.clear();
         children.addAll(newChildren);
     }
-
-    // Recalculating permissions will also recalculate the permissions of all players in this group, to instantly propagate the change.
-    // Metadata is automatically checked. There isn't a proper 'store.'
-    @Override
-    protected void recalculatePermission(String node) {
-        Preconditions.checkNotNull(node, "node");
-        super.recalculatePermission(node);
-        for (LocalUser u : playersInGroup) {
-            u.recalculatePermission(node);
+    
+    public void recalculatePlayerGroupData( ) {
+        for(LocalUser user : usersInGroup) {
+            user.recalculateParentData();
         }
-    }
-
-    @Override
-    protected void recalculatePermissions(Iterable<String> nodes) {
-        Preconditions.checkNotNull(nodes, "nodes");
-        super.recalculatePermissions(nodes);
-        for (LocalUser u : playersInGroup) {
-            u.recalculatePermissions(nodes);
-        }
-    }
-
-    @Override
-    protected void recalculatePermissions( ) {
-        super.recalculatePermissions();
-        for (LocalUser u : playersInGroup) {
-            u.recalculatePermissions();
+        for(PermissionGroup child : children) {
+            if(child instanceof LocalGroup) {
+                ((LocalGroup)child).recalculatePlayerGroupData();
+            } else {
+                Bukkit.getLogger().warning("Group " + child.getName() + " (" + child.getClass().getName() + ")'s type isn't a local group, it's attributes can't be reloaded.");
+            }
         }
     }
 
@@ -517,6 +505,12 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
         Preconditions.checkNotNull(parent, "parent");
         boolean success = parents.add(parent);
         if (success) {
+            if(parent instanceof LocalGroup) {
+                ((LocalGroup)parent).addChild(this);
+            } else {
+                Bukkit.getLogger().warning("Invalid group to add a child to: " + parent.getClass().getName() + " (" + parent.getName() + ")");
+            }
+            recalculatePlayerGroupData();
             groupDataSource.addParent(parent);
         }
         return success;
@@ -527,7 +521,31 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
         Preconditions.checkNotNull(parent, "parent");
         boolean success = parents.remove(parent);
         if (success) {
+            if(parent instanceof LocalGroup) {
+                ((LocalGroup)parent).removeChild(this);
+            } else {
+                Bukkit.getLogger().warning("Invalid group to remove a child from: " + parent.getClass().getName() + " (" + parent.getName() + ")");
+            }
+            recalculatePlayerGroupData();
             groupDataSource.removeParent(parent);
+        }
+        return success;
+    }
+    
+    private boolean addChild(PermissionGroup child) {
+        Preconditions.checkNotNull(child, "child");
+        boolean success = children.add(child);
+        if(success) {
+            groupDataSource.addChild(child);
+        }
+        return success;
+    }
+    
+    private boolean removeChild(PermissionGroup child) {
+        Preconditions.checkNotNull(child, "child");
+        boolean success = children.remove(child);
+        if(success) {
+            groupDataSource.removeChild(child);
         }
         return success;
     }
@@ -565,12 +583,12 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
     protected void cancelTempPermission(String node) {
         tempManager.cancelGlobalTemporaryPermission(this, node);
     }
-
-    void addUserToGroup(LocalUser user) {
-        playersInGroup.add(user);
+    
+    public void addUserToGroup(LocalUser user) {
+        usersInGroup.add(user);
     }
-
-    void removeUserFromGroup(LocalUser user) {
-        playersInGroup.remove(user);
+    
+    public void removeUserFromGroup(LocalUser user) {
+        usersInGroup.remove(user);
     }
 }

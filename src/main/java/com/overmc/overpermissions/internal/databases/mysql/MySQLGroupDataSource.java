@@ -374,6 +374,16 @@ public class MySQLGroupDataSource implements GroupDataSource {
             attemptClose(pst);
         }
     }
+    
+    @Override
+    public void addChild(PermissionGroup child) {
+        //Due to linking tables, these methods are useless.
+    }
+
+    @Override
+    public void removeChild(PermissionGroup child) {
+        //^
+    }
 
     @Override
     public Collection<String> getParents( ) {

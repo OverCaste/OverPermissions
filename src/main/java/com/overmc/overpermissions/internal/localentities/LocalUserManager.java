@@ -7,21 +7,21 @@ import java.util.regex.Pattern;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 import com.google.common.base.Preconditions;
 import com.google.common.cache.*;
-import com.overmc.overpermissions.api.GroupManager;
-import com.overmc.overpermissions.api.UserManager;
+import com.overmc.overpermissions.api.*;
 import com.overmc.overpermissions.exceptions.InvalidOnlineUsernameException;
 import com.overmc.overpermissions.exceptions.InvalidUsernameException;
-import com.overmc.overpermissions.internal.OverPermissions;
 import com.overmc.overpermissions.internal.TemporaryPermissionManager;
 import com.overmc.overpermissions.internal.datasources.*;
 
 public class LocalUserManager implements UserManager {
     public static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9\\_]{1,16}$");
 
-    private Cache<UUID, UserDataSource> dataSourceCache = CacheBuilder.newBuilder().softValues()
+    private Cache<UUID, UserDataSource> dataSourceCache = CacheBuilder.newBuilder()
+            .softValues()
             .expireAfterAccess(15, TimeUnit.MINUTES)
             .maximumSize(Bukkit.getMaxPlayers() * 2)
             .build(new CacheLoader<UUID, UserDataSource>() {
@@ -31,9 +31,21 @@ public class LocalUserManager implements UserManager {
                 }
             }); // These are cheap, why not have a huge cache of them?
 
-    private Cache<UUID, LocalUser> userCache = CacheBuilder.newBuilder().softValues()
+    private Cache<UUID, LocalUser> userCache = CacheBuilder.newBuilder()
+            .softValues()
             .expireAfterAccess(3, TimeUnit.MINUTES)
             .maximumSize((Bukkit.getMaxPlayers() * 5) / 4) // Some server owners don't appreciate the concept of 'maximum players'
+            .removalListener(new RemovalListener<UUID, LocalUser>() {
+                @Override
+                public void onRemoval(RemovalNotification<UUID, LocalUser> notification) {
+                    LocalUser user = notification.getValue();
+                    for (PermissionGroup g : user.getParents()) {
+                        if (g instanceof LocalGroup) {
+                            ((LocalGroup) g).removeUserFromGroup(user); //No one should have references of this user here anymore.
+                        }
+                    }
+                }
+            })
             .build(new CacheLoader<UUID, LocalUser>() {
                 @Override
                 public LocalUser load(UUID uuid) throws Exception {
@@ -43,20 +55,27 @@ public class LocalUserManager implements UserManager {
                     user.reloadPermissions();
                     user.recalculatePermissions();
                     user.reloadParents(groupManager);
+                    for (PermissionGroup g : user.getParents()) {
+                        if (g instanceof LocalGroup) {
+                            ((LocalGroup) g).addUserToGroup(user);
+                        }
+                    }
                     return user;
                 }
             });
 
-    private final OverPermissions plugin;
+    private final Plugin plugin;
     private final GroupManager groupManager;
     private final UUIDDataSource uuidSource;
     private final TemporaryPermissionManager tempManager;
-    
+
     private final UserDataSourceFactory userDataSourceFactory;
-    
+
+    private final String defaultGroup;
     private final boolean wildcardSupport;
 
-    public LocalUserManager(OverPermissions plugin, GroupManager groupManager, UUIDDataSource uuidSource, TemporaryPermissionManager tempManager, UserDataSourceFactory userDataSourceFactory, boolean wildcardSupport) {
+    public LocalUserManager(Plugin plugin, GroupManager groupManager, UUIDDataSource uuidSource, TemporaryPermissionManager tempManager, UserDataSourceFactory userDataSourceFactory,
+            String defaultGroup, boolean wildcardSupport) {
         Preconditions.checkNotNull(plugin, "plugin");
         Preconditions.checkNotNull(groupManager, "group manager");
         Preconditions.checkNotNull(uuidSource, "uuid source");
@@ -67,6 +86,7 @@ public class LocalUserManager implements UserManager {
         this.groupManager = groupManager;
         this.tempManager = tempManager;
         this.userDataSourceFactory = userDataSourceFactory;
+        this.defaultGroup = defaultGroup;
         this.wildcardSupport = wildcardSupport;
     }
 
@@ -119,7 +139,7 @@ public class LocalUserManager implements UserManager {
         LocalUser permissionUser = getPermissionUser(player);
         permissionUser.setPlayer(player);
         if (permissionUser.getParents().size() == 0) { // Set their group to the default group if possible.
-            permissionUser.addParent(groupManager.getGroup(plugin.getDefaultGroupName()));
+            permissionUser.addParent(groupManager.getGroup(defaultGroup));
         }
     }
 

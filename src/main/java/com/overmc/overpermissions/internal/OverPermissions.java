@@ -113,7 +113,7 @@ public final class OverPermissions extends JavaPlugin {
         tempManager = new TemporaryPermissionManager(this, database);
         groupManager = new LocalGroupManager(groupDataSourceFactory, tempManager, wildcardSupport);
         groupManager.reloadGroups();
-        userManager = new LocalUserManager(this, groupManager, uuidDataSource, tempManager, userDataSourceFactory, wildcardSupport);
+        userManager = new LocalUserManager(this, groupManager, uuidDataSource, tempManager, userDataSourceFactory, getDefaultGroupName(), wildcardSupport);
     }
 
     private void initDefaultGroup( ) {

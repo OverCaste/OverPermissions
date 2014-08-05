@@ -7,7 +7,7 @@ import org.junit.Test;
 import com.overmc.overpermissions.exceptions.TimeFormatException;
 import com.overmc.overpermissions.internal.util.TimeUtils;
 
-public class TimeUtilTests {
+public final class TimeUtilTests {
     @Test
     public void testTimeIntegers( ) {
         assertEquals("5m parsed should be 5*60*1000 = 300000ms", TimeUtils.parseMilliseconds("5m"), 5L * 60L * 1000L);
