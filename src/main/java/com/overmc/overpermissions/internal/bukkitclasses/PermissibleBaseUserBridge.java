@@ -44,14 +44,14 @@ public class PermissibleBaseUserBridge extends PermissibleBase {
         try {
             return userFetcher.call();
         } catch (Exception e) {
-            throw new RuntimeException(e); //This should never happen in any reasonable implementation.
+            throw new RuntimeException(e); // This should never happen in any reasonable implementation.
         }
     }
-    
+
     @Override
     public boolean isPermissionSet(String permission) {
         Preconditions.checkNotNull(permission, "permission");
-        return getUser( ).hasPermission(permission, player.getWorld().getName());
+        return getUser().hasPermission(permission, player.getWorld().getName());
     }
 
     @Override
@@ -65,7 +65,7 @@ public class PermissibleBaseUserBridge extends PermissibleBase {
         Preconditions.checkNotNull(permission, "permission");
         String lowercasePermission = permission.toLowerCase();
         if (isPermissionSet(lowercasePermission)) {
-            return getUser( ).getPermission(lowercasePermission, player.getWorld().getName());
+            return getUser().getPermission(lowercasePermission, player.getWorld().getName());
         }
         Permission perm = Bukkit.getServer().getPluginManager().getPermission(lowercasePermission);
         if (perm != null) {
@@ -80,7 +80,7 @@ public class PermissibleBaseUserBridge extends PermissibleBase {
         String lowercasePermission = permission.getName().toLowerCase();
 
         if (isPermissionSet(lowercasePermission)) {
-            return getUser( ).getPermission(lowercasePermission, player.getWorld().getName());
+            return getUser().getPermission(lowercasePermission, player.getWorld().getName());
         }
         return permission.getDefault().getValue(isOp());
     }
@@ -112,31 +112,31 @@ public class PermissibleBaseUserBridge extends PermissibleBase {
 
     @Override
     public void clearPermissions( ) {
-        //Do nothing
+        // Do nothing
     }
 
     @Override
     public Set<PermissionAttachmentInfo> getEffectivePermissions( ) {
-        PermissionUser user = getUser( );
+        PermissionUser user = getUser();
         Set<PermissionAttachmentInfo> ret = new HashSet<>();
         Map<String, Boolean> values = Maps.newHashMap();
-        for(Map.Entry<String, Boolean> entry : user.getPermissionValues(player.getWorld().getName()).entrySet()) {
+        for (Map.Entry<String, Boolean> entry : user.getPermissionValues(player.getWorld().getName()).entrySet()) {
             values.put(entry.getKey(), entry.getValue());
         }
-        for(Map.Entry<String, Boolean> entry : user.getGlobalPermissionValues().entrySet()) {
+        for (Map.Entry<String, Boolean> entry : user.getGlobalPermissionValues().entrySet()) {
             values.put(entry.getKey(), entry.getValue());
         }
-        for(PermissionGroup g : user.getAllParents()) { //This is guaranteed natural ordering.
-            for(Map.Entry<String, Boolean> entry : g.getPermissionValues(player.getWorld().getName()).entrySet()) {
+        for (PermissionGroup g : user.getAllParents()) { // This is guaranteed natural ordering.
+            for (Map.Entry<String, Boolean> entry : g.getPermissionValues(player.getWorld().getName()).entrySet()) {
                 values.put(entry.getKey(), entry.getValue());
             }
         }
-        for(PermissionGroup g : user.getAllParents()) { //This is guaranteed natural ordering.
-            for(Map.Entry<String, Boolean> entry : g.getGlobalPermissionValues().entrySet()) {
+        for (PermissionGroup g : user.getAllParents()) { // This is guaranteed natural ordering.
+            for (Map.Entry<String, Boolean> entry : g.getGlobalPermissionValues().entrySet()) {
                 values.put(entry.getKey(), entry.getValue());
             }
         }
-        for(Map.Entry<String, Boolean> entry : values.entrySet()) {
+        for (Map.Entry<String, Boolean> entry : values.entrySet()) {
             ret.add(new PermissionAttachmentInfo(player, entry.getKey(), null, entry.getValue()));
         }
         return ret;

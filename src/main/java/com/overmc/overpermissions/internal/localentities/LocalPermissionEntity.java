@@ -29,9 +29,9 @@ public abstract class LocalPermissionEntity {
     private final PermissionEntityDataSource dataSource;
 
     private final boolean wildcardSupport;
-    
+
     public LocalPermissionEntity(PermissionEntityDataSource dataSource, boolean wildcardSupport) {
-        if(wildcardSupport) {
+        if (wildcardSupport) {
             permissions = new NodeTree<Boolean>();
         } else {
             permissions = new HashMap<String, Boolean>();
@@ -445,7 +445,7 @@ public abstract class LocalPermissionEntity {
         }
         return ret;
     }
-    
+
     public boolean areWildcardsSupported( ) {
         return wildcardSupport;
     }

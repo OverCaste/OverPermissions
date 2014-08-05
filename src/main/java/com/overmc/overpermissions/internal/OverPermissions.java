@@ -87,9 +87,9 @@ public final class OverPermissions extends JavaPlugin {
         String type = getConfig().getString("sql.type", "mysql").toLowerCase();
         String wildcardSupportValue = getConfig().getString("wildcard-support", "STANDARD");
         boolean wildcardSupport;
-        if(wildcardSupportValue.equals("STANDARD")) {
+        if (wildcardSupportValue.equals("STANDARD")) {
             wildcardSupport = true;
-        } else if(wildcardSupportValue.equals("NONE")){
+        } else if (wildcardSupportValue.equals("NONE")) {
             wildcardSupport = false;
         } else {
             throw new StartException("The configuration option wildcard-support is set to an invalid value: " + wildcardSupportValue);
@@ -152,16 +152,16 @@ public final class OverPermissions extends JavaPlugin {
     private void injectBukkitActions( ) {
         String wildcardSupportValue = getConfig().getString("wildcard-support", "HALF");
         String injectionModeValue = getConfig().getString("injection-mode", "FULL");
-        if(injectionModeValue.equalsIgnoreCase("FULL")) {
-            if(wildcardSupportValue.equals("STANDARD")) {
+        if (injectionModeValue.equalsIgnoreCase("FULL")) {
+            if (wildcardSupportValue.equals("STANDARD")) {
                 wildcardAction = new HalfWildcardPlayerInjectorAction(this);
-            } else if(wildcardSupportValue.equals("NONE")) {
+            } else if (wildcardSupportValue.equals("NONE")) {
                 wildcardAction = new WildcardDummyAction();
             } else {
                 throw new StartException("Invalid configuration option: 'wildcard-support': (" + wildcardSupportValue + ")");
             }
-        } else if(injectionModeValue.equalsIgnoreCase("NONE")){
-            //The wildcard support case is handled in 'initManagers( )' for now.
+        } else if (injectionModeValue.equalsIgnoreCase("NONE")) {
+            // The wildcard support case is handled in 'initManagers( )' for now.
         } else {
             throw new StartException("Invalid configuration option: 'injection-mode': (" + injectionModeValue + ")");
         }

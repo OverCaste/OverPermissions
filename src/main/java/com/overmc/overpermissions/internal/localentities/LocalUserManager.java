@@ -41,7 +41,7 @@ public class LocalUserManager implements UserManager {
                     LocalUser user = notification.getValue();
                     for (PermissionGroup g : user.getParents()) {
                         if (g instanceof LocalGroup) {
-                            ((LocalGroup) g).removeUserFromGroup(user); //No one should have references of this user here anymore.
+                            ((LocalGroup) g).removeUserFromGroup(user); // No one should have references of this user here anymore.
                         }
                     }
                 }

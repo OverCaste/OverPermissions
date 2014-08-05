@@ -28,7 +28,7 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
 
     // World specific data
     private final ConcurrentMap<String, LocalGroupWorldData> worldDataMap = new ConcurrentHashMap<>();
-    
+
     // Users in this group, they are updated if things change.
     private final Set<LocalUser> usersInGroup = Collections.synchronizedSet(new HashSet<LocalUser>(32));
 
@@ -109,14 +109,14 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
         children.clear();
         children.addAll(newChildren);
     }
-    
+
     public void recalculatePlayerGroupData( ) {
-        for(LocalUser user : usersInGroup) {
+        for (LocalUser user : usersInGroup) {
             user.recalculateParentData();
         }
-        for(PermissionGroup child : children) {
-            if(child instanceof LocalGroup) {
-                ((LocalGroup)child).recalculatePlayerGroupData();
+        for (PermissionGroup child : children) {
+            if (child instanceof LocalGroup) {
+                ((LocalGroup) child).recalculatePlayerGroupData();
             } else {
                 Bukkit.getLogger().warning("Group " + child.getName() + " (" + child.getClass().getName() + ")'s type isn't a local group, it's attributes can't be reloaded.");
             }
@@ -284,18 +284,18 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
         }
         return builder.build();
     }
-    
+
     @Override
     public Map<String, Boolean> getPermissionValues(String worldName) {
         LocalGroupWorldData world = getWorldData(worldName);
-        if(world == null) {
+        if (world == null) {
             return Collections.emptyMap();
         }
         return world.getInternalPermissionValues();
     }
-    
+
     @Override
-    public Map<String, Boolean> getGlobalPermissionValues() {
+    public Map<String, Boolean> getGlobalPermissionValues( ) {
         return getInternalPermissionValues();
     }
 
@@ -427,11 +427,7 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
         Preconditions.checkNotNull(key, "key");
         Preconditions.checkNotNull(value, "value");
         Preconditions.checkNotNull(worldName, "world name");
-        LocalGroupWorldData world = getWorldData(worldName);
-        if (world == null) {
-            return;
-        }
-        world.setInternalMeta(key, value);
+        getOrCreateWorld(worldName).setInternalMeta(key, value);
     }
 
     @Override
@@ -482,7 +478,7 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
 
     @Override
     public Set<PermissionGroup> getParents( ) {
-        return Sets.newTreeSet(parents); //Defensive copy, natural ordering.
+        return Sets.newTreeSet(parents); // Defensive copy, natural ordering.
     }
 
     @Override
@@ -505,8 +501,8 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
         Preconditions.checkNotNull(parent, "parent");
         boolean success = parents.add(parent);
         if (success) {
-            if(parent instanceof LocalGroup) {
-                ((LocalGroup)parent).addChild(this);
+            if (parent instanceof LocalGroup) {
+                ((LocalGroup) parent).addChild(this);
             } else {
                 Bukkit.getLogger().warning("Invalid group to add a child to: " + parent.getClass().getName() + " (" + parent.getName() + ")");
             }
@@ -521,8 +517,8 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
         Preconditions.checkNotNull(parent, "parent");
         boolean success = parents.remove(parent);
         if (success) {
-            if(parent instanceof LocalGroup) {
-                ((LocalGroup)parent).removeChild(this);
+            if (parent instanceof LocalGroup) {
+                ((LocalGroup) parent).removeChild(this);
             } else {
                 Bukkit.getLogger().warning("Invalid group to remove a child from: " + parent.getClass().getName() + " (" + parent.getName() + ")");
             }
@@ -531,20 +527,20 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
         }
         return success;
     }
-    
+
     private boolean addChild(PermissionGroup child) {
         Preconditions.checkNotNull(child, "child");
         boolean success = children.add(child);
-        if(success) {
+        if (success) {
             groupDataSource.addChild(child);
         }
         return success;
     }
-    
+
     private boolean removeChild(PermissionGroup child) {
         Preconditions.checkNotNull(child, "child");
         boolean success = children.remove(child);
-        if(success) {
+        if (success) {
             groupDataSource.removeChild(child);
         }
         return success;
@@ -583,11 +579,11 @@ public class LocalGroup extends LocalPermissionEntity implements PermissionGroup
     protected void cancelTempPermission(String node) {
         tempManager.cancelGlobalTemporaryPermission(this, node);
     }
-    
+
     public void addUserToGroup(LocalUser user) {
         usersInGroup.add(user);
     }
-    
+
     public void removeUserFromGroup(LocalUser user) {
         usersInGroup.remove(user);
     }

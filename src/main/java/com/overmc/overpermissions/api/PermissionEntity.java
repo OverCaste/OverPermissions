@@ -125,7 +125,7 @@ public interface PermissionEntity extends UniqueEntity {
      * @see TransientPermissionEntity#getTransientPermissionNodes()
      */
     public NodeBatch getPermissionNodes( );
-    
+
     /**
      * Retrieves a new map of all of the permission-value pairs represented by this entity.<br>
      * This method will not poll global nodes, or parents' or subtypes' nodes.
@@ -135,7 +135,7 @@ public interface PermissionEntity extends UniqueEntity {
      * @see #getPermissionNodes()
      */
     public Map<String, Boolean> getPermissionValues(String world);
-    
+
     /**
      * Retrieves a new map of all of the permission-value pairs represented by this entity.<br>
      * This method will not poll world nodes, or parents' or subtypes' nodes.
@@ -144,5 +144,5 @@ public interface PermissionEntity extends UniqueEntity {
      * 
      * @see #getPermissionNodes()
      */
-    public Map<String, Boolean> getGlobalPermissionValues();
+    public Map<String, Boolean> getGlobalPermissionValues( );
 }

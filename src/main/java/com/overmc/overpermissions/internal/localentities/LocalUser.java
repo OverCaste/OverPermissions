@@ -87,11 +87,11 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     public void recalculateParentData( ) {
         allParents.clear();
-        for(PermissionGroup group : parents) {
+        for (PermissionGroup group : parents) {
             allParents.addIfAbsent(group);
             allParents.addAllAbsent(group.getAllParents());
         }
-        
+
         PermissionGroup[] tempSortArray;
         tempSortArray = parents.toArray(new PermissionGroup[parents.size()]);
         Arrays.sort(tempSortArray);
@@ -111,7 +111,7 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
         Preconditions.checkNotNull(permissionNode, "permission node");
         super.recalculatePermission(permissionNode);
         String baseNode = PermissionUtils.getBaseNode(permissionNode);
-        synchronized(attachmentLock) {
+        synchronized (attachmentLock) {
             if (attachment != null) {
                 attachment.setPermission(baseNode, getPermission(baseNode, player.getWorld().getName()));
             }
@@ -123,7 +123,7 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
         Preconditions.checkNotNull(nodes, "nodes");
         super.recalculatePermissions(nodes);
 
-        synchronized(attachmentLock) {
+        synchronized (attachmentLock) {
             if (attachment != null) {
                 for (String node : nodes) {
                     String baseNode = PermissionUtils.getBaseNode(node);
@@ -136,7 +136,7 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
     @Override
     public void recalculatePermissions( ) {
         super.recalculatePermissions();
-        synchronized(attachmentLock) {
+        synchronized (attachmentLock) {
             if (attachment != null) {
                 for (String node : getInternalPermissionNodes()) {
                     String baseNode = PermissionUtils.getBaseNode(node);
@@ -657,8 +657,8 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
         boolean success = parents.addIfAbsent(parent);
         if (success) {
             userDataSource.addParent(parent);
-            if(parent instanceof LocalGroup) {
-                ((LocalGroup)parent).addUserToGroup(this);
+            if (parent instanceof LocalGroup) {
+                ((LocalGroup) parent).addUserToGroup(this);
             } else {
                 plugin.getLogger().warning("Group can't have a user added to it, it's not a LocalGroup: " + parent.getName() + "(" + parent.getClass().getName() + ")");
             }
@@ -673,8 +673,8 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
         boolean success = parents.remove(parent);
         if (success) {
             userDataSource.removeParent(parent);
-            if(parent instanceof LocalGroup) {
-                ((LocalGroup)parent).removeUserFromGroup(this);
+            if (parent instanceof LocalGroup) {
+                ((LocalGroup) parent).removeUserFromGroup(this);
             } else {
                 plugin.getLogger().warning("Group can't have a user removed from it, it's not a LocalGroup: " + parent.getName() + "(" + parent.getClass().getName() + ")");
             }
@@ -686,15 +686,15 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
     @Override
     public void setParent(PermissionGroup parent) {
         Preconditions.checkNotNull(parent, "parent");
-        for(PermissionGroup g : parents) {
-            if(g instanceof LocalGroup) {
-                ((LocalGroup)g).removeUserFromGroup(this);
+        for (PermissionGroup g : parents) {
+            if (g instanceof LocalGroup) {
+                ((LocalGroup) g).removeUserFromGroup(this);
             } else {
                 plugin.getLogger().warning("Group can't have a user removed from it, it's not a LocalGroup: " + g.getName() + "(" + g.getClass().getName() + ")");
             }
         }
-        if(parent instanceof LocalGroup) {
-            ((LocalGroup)parent).addUserToGroup(this);
+        if (parent instanceof LocalGroup) {
+            ((LocalGroup) parent).addUserToGroup(this);
         } else {
             plugin.getLogger().warning("Group can't have a user added to it, it's not a LocalGroup: " + parent.getName() + "(" + parent.getClass().getName() + ")");
         }
@@ -715,7 +715,7 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
     }
 
     public synchronized void setPlayer(Player player) {
-        synchronized(attachmentLock) {
+        synchronized (attachmentLock) {
             this.player = player;
             if (this.attachment != null) {
                 this.attachment.remove();

@@ -19,14 +19,14 @@ public class LocalGroupManager implements GroupManager {
 
     private final Map<String, LocalGroup> groups = new HashMap<>();
     private final ReadWriteLock groupLock = new ReentrantReadWriteLock(); // Need fine grained control for atomic operations.
-    
+
     private final boolean wildcardSupport;
 
     public LocalGroupManager(GroupManagerDataSourceFactory sourceFactory, TemporaryPermissionManager tempManager, boolean wildcardSupport) {
         this.sourceFactory = sourceFactory;
         this.tempManager = tempManager;
         this.dataSource = sourceFactory.createGroupManagerDataSource();
-        
+
         this.wildcardSupport = wildcardSupport;
     }
 
