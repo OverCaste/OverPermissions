@@ -1,4 +1,4 @@
-package com.overmc.overpermissions.internal;
+package com.overmc.overpermissions.exceptions;
 
 public class StartException extends RuntimeException {
     private static final long serialVersionUID = 5317781735534101801L;

@@ -2,6 +2,7 @@ package com.overmc.overpermissions.internal;
 
 import java.io.IOException;
 import java.security.acl.Group;
+import java.util.ArrayList;
 import java.util.concurrent.*;
 
 import org.bukkit.Bukkit;
@@ -13,10 +14,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.overmc.overpermissions.api.*;
+import com.overmc.overpermissions.exceptions.MissingDependencyException;
+import com.overmc.overpermissions.exceptions.StartException;
 import com.overmc.overpermissions.internal.commands.*;
 import com.overmc.overpermissions.internal.databases.DatabaseMultiSourceFactory;
 import com.overmc.overpermissions.internal.databases.mysql.MySQLManager;
-import com.overmc.overpermissions.internal.datasources.*;
+import com.overmc.overpermissions.internal.datasources.UUIDDataSource;
+import com.overmc.overpermissions.internal.dependencies.*;
 import com.overmc.overpermissions.internal.injectoractions.*;
 import com.overmc.overpermissions.internal.localentities.LocalGroupManager;
 import com.overmc.overpermissions.internal.localentities.LocalUserManager;
@@ -27,10 +31,10 @@ public final class OverPermissions extends JavaPlugin {
     private LocalGroupManager groupManager;
     private LocalUserManager userManager;
     private MetricsLite metrics;
+    private DependencyDownloader dependencyDownloader;
     private String defaultGroup;
 
-    private GroupManagerDataSourceFactory groupDataSourceFactory;
-    private UserDataSourceFactory userDataSourceFactory;
+    private DatabaseMultiSourceFactory database;
     private UUIDDataSource uuidDataSource;
 
     // Listeners
@@ -68,22 +72,33 @@ public final class OverPermissions extends JavaPlugin {
         }
     };
 
-    private void initConfig( ) throws Throwable {
+    private void initConfig( ) throws Exception {
         saveDefaultConfig();
         getConfig().options().copyDefaults(true);
         reloadConfig();
     }
 
-    private void initKickOnFail( ) throws Throwable {
+    private void initKickOnFail( ) throws Exception {
         kickOnFailListener = new KickOnFailListener(this);
         getServer().getPluginManager().registerEvents(kickOnFailListener, this);
     }
 
-    private void deinitKickOnFail( ) throws Throwable {
+    private void deinitKickOnFail( ) throws Exception {
         HandlerList.unregisterAll(kickOnFailListener);
     }
+    
+    private void initDependencies( ) throws Exception {
+        dependencyDownloader = new DependencyDownloader(getDataFolder().getParentFile());
+        ArrayList<Dependency> missingDependencies = new ArrayList<>(5);
+        if(getConfig().getBoolean("sql.use-pool", false)) {
+            dependencyDownloader.ensureDependencyExists(DefaultDependencies.HIKARI_CP, missingDependencies);
+        }
+        if(!missingDependencies.isEmpty()) {
+            throw new MissingDependencyException(missingDependencies);
+        }
+    }
 
-    private void initManagers( ) throws Throwable {
+    private void initManagers( ) throws Exception {
         String type = getConfig().getString("sql.type", "mysql").toLowerCase();
         String wildcardSupportValue = getConfig().getString("wildcard-support", "STANDARD");
         boolean wildcardSupport;
@@ -100,20 +115,21 @@ public final class OverPermissions extends JavaPlugin {
                 getLogger().warning("Type value " + type + " wasn't recognized. Defaulting to mysql.");
             case "mysql": {
                 database = new MySQLManager(exec,
-                        "jdbc:mysql://" + getConfig().getString("sql.address", "localhost") + "/",
+                        getConfig().getString("sql.address", "localhost"),
+                        getConfig().getString("sql.port", ""),
                         getConfig().getString("sql.dbname", "OverPermissions"),
                         getConfig().getString("sql.dbusername", "root"),
-                        getConfig().getString("sql.dbpassword", ""));
+                        getConfig().getString("sql.dbpassword", ""),
+                        getConfig().getBoolean("sql.use-pool", false));
             }
 
         }
-        groupDataSourceFactory = database;
+        this.database = database;
         uuidDataSource = database.createUUIDDataSource();
-        userDataSourceFactory = database;
         tempManager = new TemporaryPermissionManager(this, database);
-        groupManager = new LocalGroupManager(groupDataSourceFactory, tempManager, wildcardSupport);
+        groupManager = new LocalGroupManager(database, tempManager, wildcardSupport);
         groupManager.reloadGroups();
-        userManager = new LocalUserManager(this, groupManager, uuidDataSource, tempManager, userDataSourceFactory, getDefaultGroupName(), wildcardSupport);
+        userManager = new LocalUserManager(this, groupManager, uuidDataSource, tempManager, database, getDefaultGroupName(), wildcardSupport);
     }
 
     private void initDefaultGroup( ) {
@@ -124,7 +140,7 @@ public final class OverPermissions extends JavaPlugin {
         }
     }
 
-    private void initCommands( ) throws Throwable {
+    private void initCommands( ) throws Exception {
         new GroupCreateCommand(this).register();
         new GroupDeleteCommand(this).register();
         new GroupAddCommand(this).register();
@@ -207,6 +223,7 @@ public final class OverPermissions extends JavaPlugin {
         try {
             initConfig();
             initKickOnFail();
+            initDependencies();
             initManagers();
             initDefaultGroup();
             initCommands();
@@ -217,11 +234,14 @@ public final class OverPermissions extends JavaPlugin {
             initPlayers();
             deinitKickOnFail(); // Started successfully, can remove this listener.
             getLogger().info(ChatColor.GREEN + "Successfully enabled!");
+        } catch (MissingDependencyException e) {
+            Bukkit.getLogger().warning(e.getSimpleMessage());
+            Bukkit.getServer().shutdown();
         } catch (StartException e) {
             failureStarting = true;
-            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "OverPermissions failed to start: " + e.getSimpleMessage());
-        } catch (Throwable t) {
-            t.printStackTrace();
+            Bukkit.getLogger().severe("OverPermissions failed to start: " + e.getSimpleMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
             failureStarting = true;
         }
     }
@@ -240,10 +260,19 @@ public final class OverPermissions extends JavaPlugin {
 
     @Override
     public void onDisable( ) {
-        exec.shutdown();
         if (!failureStarting) {
             deinitPlayers();
             getLogger().info("disabled.");
+        }
+        if(exec != null) {
+            exec.shutdown();
+        }
+        if(database != null) {
+            try {
+                database.shutdown();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
     }
 

@@ -7,8 +7,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.plugin.Plugin;
 
+import com.overmc.overpermissions.exceptions.StartException;
 import com.overmc.overpermissions.internal.NodeTree;
-import com.overmc.overpermissions.internal.StartException;
 import com.overmc.overpermissions.internal.util.ReflectionUtils;
 
 public class HalfWildcardPlayerInjectorAction implements WildcardAction {
