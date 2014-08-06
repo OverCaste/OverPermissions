@@ -9,7 +9,7 @@ import org.bukkit.permissions.PermissibleBase;
 
 import com.overmc.overpermissions.api.PermissionUser;
 import com.overmc.overpermissions.api.UserManager;
-import com.overmc.overpermissions.internal.StartException;
+import com.overmc.overpermissions.exceptions.StartException;
 import com.overmc.overpermissions.internal.bukkitclasses.PermissibleBaseUserBridge;
 import com.overmc.overpermissions.internal.util.ReflectionUtils;
 

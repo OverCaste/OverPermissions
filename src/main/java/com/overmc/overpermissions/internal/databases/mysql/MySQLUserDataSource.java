@@ -49,8 +49,7 @@ public class MySQLUserDataSource implements UserDataSource {
 
     private int getOrCreateDatabaseUserUid( ) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("SELECT select_or_insert_player(?, ?)");
             pst.setLong(1, uuid.getLeastSignificantBits());
             pst.setLong(2, uuid.getMostSignificantBits());
@@ -68,8 +67,7 @@ public class MySQLUserDataSource implements UserDataSource {
 
     private int getDatabaseUserUid( ) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("SELECT uid FROM Players WHERE lower_uid = ? AND upper_uid = ?");
             pst.setLong(1, uuid.getLeastSignificantBits());
             pst.setLong(2, uuid.getMostSignificantBits());
@@ -93,8 +91,7 @@ public class MySQLUserDataSource implements UserDataSource {
             return ret;
         }
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("SELECT permission_node from Player_Global_Permissions INNER JOIN Permissions ON Player_Global_Permissions.permission_uid=Permissions.uid WHERE player_uid=?");
             pst.setInt(1, uid);
             ResultSet rs = pst.executeQuery();
@@ -118,8 +115,7 @@ public class MySQLUserDataSource implements UserDataSource {
             return ret;
         }
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con
                     .prepareStatement("SELECT permission_node, timeout FROM Player_Global_Temporary_Permissions INNER JOIN Permissions ON Player_Global_Temporary_Permissions.permission_uid=Permissions.uid WHERE player_uid=?");
             pst.setInt(1, uid);
@@ -145,8 +141,7 @@ public class MySQLUserDataSource implements UserDataSource {
             return ret;
         }
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("SELECT meta_key, meta_value FROM Player_Global_Meta WHERE player_uid=?");
             pst.setInt(1, uid);
             ResultSet rs = pst.executeQuery();
@@ -166,8 +161,7 @@ public class MySQLUserDataSource implements UserDataSource {
     @Override
     public void addPermission(String permissionNode) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("INSERT IGNORE INTO Player_Global_Permissions(permission_uid, player_uid) VALUES (select_or_insert_permission(?), ?)");
             pst.setString(1, permissionNode);
             pst.setInt(2, getOrCreateUid());
@@ -182,8 +176,7 @@ public class MySQLUserDataSource implements UserDataSource {
     @Override
     public void addPermissions(Iterable<String> permissionNodes) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("INSERT IGNORE INTO Player_Global_Permissions(permission_uid, player_uid) VALUES (select_or_insert_permission(?), ?)");
             pst.setInt(2, getOrCreateUid());
             for (String node : permissionNodes) {
@@ -205,8 +198,7 @@ public class MySQLUserDataSource implements UserDataSource {
             return;
         }
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("DELETE FROM Player_Global_Permissions WHERE permission_uid=(SELECT uid FROM Permissions WHERE permission_node=?) AND player_uid=?");
             pst.setString(1, permissionNode);
             pst.setInt(2, uid);
@@ -225,8 +217,7 @@ public class MySQLUserDataSource implements UserDataSource {
             return;
         }
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("DELETE FROM Player_Global_Permissions WHERE permission_uid=(SELECT uid FROM Permissions WHERE permission_node=?) AND player_uid=?");
             pst.setInt(2, getOrCreateUid());
             for (String node : permissionNodes) {
@@ -244,8 +235,7 @@ public class MySQLUserDataSource implements UserDataSource {
     @Override
     public void addTempPermission(String permissionNode, long timeInMillis) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("INSERT IGNORE INTO Player_Global_Temporary_Permissions(permission_uid, player_uid, timeout) VALUES (select_or_insert_permission(?), ?, ?)");
             pst.setString(1, permissionNode);
             pst.setInt(2, getOrCreateUid());
@@ -261,8 +251,7 @@ public class MySQLUserDataSource implements UserDataSource {
     @Override
     public void addTempPermissions(Iterable<TemporaryPermissionEntry> entries) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("INSERT IGNORE INTO Player_Global_Temporary_Permissions(permission_uid, player_uid, timeout) VALUES (select_or_insert_permission(?), ?, ?)");
             pst.setInt(2, getOrCreateUid());
             for (TemporaryPermissionEntry e : entries) {
@@ -285,8 +274,7 @@ public class MySQLUserDataSource implements UserDataSource {
             return;
         }
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("DELETE FROM Player_Global_Temporary_Permissions WHERE permission_uid=(SELECT uid FROM Permissions WHERE permission_node=?) AND player_uid=?");
             pst.setString(1, permissionNode);
             pst.setInt(2, uid);
@@ -305,8 +293,7 @@ public class MySQLUserDataSource implements UserDataSource {
             return;
         }
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("DELETE FROM Player_Global_Temporary_Permissions WHERE permission_uid=(SELECT uid FROM Permissions WHERE permission_node=?) AND player_uid=?");
             pst.setInt(2, uid);
             for (TemporaryPermissionEntry e : entries) {
@@ -324,8 +311,7 @@ public class MySQLUserDataSource implements UserDataSource {
     @Override
     public void setMeta(String key, String value) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("INSERT INTO Player_Global_Meta(player_uid, meta_key, meta_value) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE meta_value = ?");
             pst.setInt(1, getOrCreateUid());
             pst.setString(2, key);
@@ -346,8 +332,7 @@ public class MySQLUserDataSource implements UserDataSource {
             return;
         }
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("DELETE FROM Player_Global_Meta WHERE player_uid=? AND meta_key=?");
             pst.setInt(1, uid);
             pst.setString(2, key);
@@ -363,8 +348,7 @@ public class MySQLUserDataSource implements UserDataSource {
     public void setMetaEntries(Iterable<MetadataEntry> entries) {
         PreparedStatement insertStatement = null;
         PreparedStatement deleteStatement = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             insertStatement = con.prepareStatement("INSERT INTO Player_Global_Meta(player_uid, meta_key, meta_value) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE meta_value = ?");
             deleteStatement = con.prepareStatement("DELETE FROM Player_Global_Meta WHERE player_uid=? AND meta_key=?");
             insertStatement.setInt(1, getOrCreateUid());
@@ -393,8 +377,7 @@ public class MySQLUserDataSource implements UserDataSource {
     @Override
     public void addParent(PermissionGroup parent) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("INSERT IGNORE INTO Player_Groups(group_uid, player_uid) VALUES ((SELECT uid FROM Permission_Groups WHERE name=?), ?)");
             pst.setString(1, parent.getName());
             pst.setInt(2, getOrCreateUid());
@@ -413,8 +396,7 @@ public class MySQLUserDataSource implements UserDataSource {
             return;
         }
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("DELETE FROM Player_Groups WHERE group_uid=(SELECT uid FROM Permission_Groups WHERE name=?) AND player_uid=?");
             pst.setString(1, parent.getName());
             pst.setInt(2, uid);
@@ -429,8 +411,7 @@ public class MySQLUserDataSource implements UserDataSource {
     @Override
     public void setParent(PermissionGroup parent) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("DELETE FROM Player_Groups WHERE player_uid=?");
             pst.setInt(1, getOrCreateUid());
             pst.executeUpdate();
@@ -454,8 +435,7 @@ public class MySQLUserDataSource implements UserDataSource {
             return ret;
         }
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("SELECT name FROM Player_Groups INNER JOIN Permission_Groups ON Player_Groups.group_uid = Permission_Groups.uid WHERE player_uid=?");
             pst.setInt(1, uid);
             ResultSet rs = pst.executeQuery();

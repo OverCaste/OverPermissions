@@ -19,8 +19,7 @@ public class MySQLGroupManagerDataSource implements GroupManagerDataSource {
     public Collection<GroupDataEntry> getGroupEntries( ) {
         ArrayList<GroupDataEntry> groups = new ArrayList<GroupDataEntry>();
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("SELECT name, priority FROM Permission_Groups");
             ResultSet rs = pst.executeQuery();
             while (rs.next()) {
@@ -37,8 +36,7 @@ public class MySQLGroupManagerDataSource implements GroupManagerDataSource {
     @Override
     public void createGroup(String name, int priority) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("INSERT INTO Permission_Groups(priority, name) VALUES (?, ?)");
             pst.setInt(1, priority);
             pst.setString(2, name);
@@ -53,8 +51,7 @@ public class MySQLGroupManagerDataSource implements GroupManagerDataSource {
     @Override
     public void deleteGroup(String name) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("DELETE FROM Permission_Groups WHERE name = ?");
             pst.setString(1, name);
             pst.executeUpdate();

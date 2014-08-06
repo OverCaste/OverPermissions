@@ -34,8 +34,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
 
     private int readDatabaseGroupUid( ) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("SELECT uid FROM Permission_Groups WHERE name = ?");
             pst.setString(1, groupName);
             ResultSet rs = pst.executeQuery();
@@ -53,8 +52,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     @Override
     public int getPriority( ) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("SELECT priority FROM Permission_Groups WHERE uid=?");
             pst.setInt(1, getUid());
             ResultSet rs = pst.executeQuery();
@@ -73,8 +71,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     public Collection<String> getPermissions( ) {
         ArrayList<String> ret = new ArrayList<>();
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             // pst = con.prepareStatement("SELECT permission_node FROM Permissions WHERE uid=(SELECT permission_uid FROM Group_Global_Permissions WHERE group_uid=?)"); //This one works, but is dumber.
             pst = con.prepareStatement("SELECT permission_node from Group_Global_Permissions INNER JOIN Permissions ON Group_Global_Permissions.permission_uid=Permissions.uid WHERE group_uid=?");
             pst.setInt(1, getUid());
@@ -95,8 +92,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     public Collection<TemporaryPermissionEntry> getTempPermissions( ) {
         ArrayList<TemporaryPermissionEntry> ret = new ArrayList<>();
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con
                     .prepareStatement("SELECT permission_node, timeout FROM Group_Global_Temporary_Permissions INNER JOIN Permissions ON Group_Global_Temporary_Permissions.permission_uid=Permissions.uid WHERE group_uid=?");
             pst.setInt(1, getUid());
@@ -118,8 +114,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     public Map<String, String> getMetadata( ) {
         Map<String, String> ret = new HashMap<>();
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("SELECT meta_key, meta_value FROM Group_Global_Meta WHERE group_uid=?");
             pst.setInt(1, getUid());
             ResultSet rs = pst.executeQuery();
@@ -139,8 +134,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     @Override
     public void addPermission(String permissionNode) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("INSERT IGNORE INTO Group_Global_Permissions(permission_uid, group_uid) VALUES (select_or_insert_permission(?), ?)");
             pst.setString(1, permissionNode);
             pst.setInt(2, getUid());
@@ -155,8 +149,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     @Override
     public void addPermissions(Iterable<String> permissionNodes) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("INSERT IGNORE INTO Group_Global_Permissions(permission_uid, group_uid) VALUES (select_or_insert_permission(?), ?)");
             pst.setInt(2, getUid());
             for (String node : permissionNodes) {
@@ -174,8 +167,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     @Override
     public void removePermission(String permissionNode) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("DELETE FROM Group_Global_Permissions WHERE permission_uid=(SELECT uid FROM Permissions WHERE permission_node=?) AND group_uid=?");
             pst.setString(1, permissionNode);
             pst.setInt(2, getUid());
@@ -190,8 +182,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     @Override
     public void removePermissions(Iterable<String> permissionNodes) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("DELETE FROM Group_Global_Permissions WHERE permission_uid=(SELECT uid FROM Permissions WHERE permission_node=?) AND group_uid=?");
             pst.setInt(2, getUid());
             for (String node : permissionNodes) {
@@ -209,8 +200,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     @Override
     public void addTempPermission(String permissionNode, long timeInMillis) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("INSERT IGNORE INTO Group_Global_Temporary_Permissions(permission_uid, group_uid, timeout) VALUES (select_or_insert_permission(?), ?, ?)");
             pst.setString(1, permissionNode);
             pst.setInt(2, getUid());
@@ -226,8 +216,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     @Override
     public void addTempPermissions(Iterable<TemporaryPermissionEntry> entries) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("INSERT IGNORE INTO Group_Global_Temporary_Permissions(permission_uid, group_uid, timeout) VALUES (select_or_insert_permission(?), ?, ?)");
             pst.setInt(2, getUid());
             for (TemporaryPermissionEntry e : entries) {
@@ -246,8 +235,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     @Override
     public void removeTempPermission(String permissionNode) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("DELETE FROM Group_Global_Temporary_Permissions WHERE permission_uid=(SELECT uid FROM Permissions WHERE permission_node=?) AND group_uid=?");
             pst.setString(1, permissionNode);
             pst.setInt(2, getUid());
@@ -262,8 +250,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     @Override
     public void removeTempPermissions(Iterable<TemporaryPermissionEntry> entries) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("DELETE FROM Group_Global_Temporary_Permissions WHERE permission_uid=(SELECT uid FROM Permissions WHERE permission_node=?) AND group_uid=?");
             pst.setInt(2, getUid());
             for (TemporaryPermissionEntry e : entries) {
@@ -281,8 +268,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     @Override
     public void setMeta(String key, String value) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("INSERT INTO Group_Global_Meta(group_uid, meta_key, meta_value) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE meta_value = ?");
             pst.setInt(1, getUid());
             pst.setString(2, key);
@@ -299,8 +285,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     @Override
     public void removeMeta(String key) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("DELETE FROM Group_Global_Meta WHERE group_uid=? AND meta_key=?");
             pst.setInt(1, getUid());
             pst.setString(2, key);
@@ -316,8 +301,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     public void setMetaEntries(Iterable<MetadataEntry> entries) {
         PreparedStatement insertStatement = null;
         PreparedStatement deleteStatement = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             insertStatement = con.prepareStatement("INSERT INTO Group_Global_Meta(group_uid, meta_key, meta_value) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE meta_value = ?");
             deleteStatement = con.prepareStatement("DELETE FROM Group_Global_Meta WHERE group_uid=? AND meta_key=?");
             insertStatement.setInt(1, getUid());
@@ -346,8 +330,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     @Override
     public void addParent(PermissionGroup parent) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("INSERT IGNORE INTO Group_Parents(group_uid, parent_uid) VALUES (?, (SELECT uid FROM Permission_Groups WHERE name=?))");
             pst.setInt(1, getUid());
             pst.setString(2, parent.getName());
@@ -362,8 +345,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     @Override
     public void removeParent(PermissionGroup parent) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("DELETE FROM Group_Parents WHERE group_uid=? AND parent_uid=(SELECT uid FROM Permission_Groups WHERE name=?)");
             pst.setInt(1, getUid());
             pst.setString(2, parent.getName());
@@ -389,8 +371,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     public Collection<String> getParents( ) {
         ArrayList<String> ret = new ArrayList<>();
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("SELECT name FROM Group_Parents INNER JOIN Permission_Groups ON Group_Parents.parent_uid = Permission_Groups.uid WHERE group_uid=?");
             pst.setInt(1, getUid());
             ResultSet rs = pst.executeQuery();
@@ -409,8 +390,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
     public Collection<String> getChildren( ) {
         ArrayList<String> ret = new ArrayList<>();
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("SELECT name FROM Group_Parents INNER JOIN Permission_Groups ON Group_Parents.group_uid = Permission_Groups.uid WHERE parent_uid=?");
             pst.setInt(1, getUid());
             ResultSet rs = pst.executeQuery();

@@ -6,4 +6,6 @@ public interface Dependency {
     public URL getUrl( );
 
     public String getFileName( );
+    
+    public Iterable<? extends Dependency> getSubDependencies();
 }

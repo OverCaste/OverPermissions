@@ -24,8 +24,7 @@ public class MySQLGroupWorldDataSource implements PermissionEntityDataSource {
     @Override
     public void addPermission(String permissionNode) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("INSERT IGNORE INTO Group_World_Permissions(permission_uid, world_uid, group_uid) VALUES (select_or_insert_permission(?), select_or_insert_world(?), ?)");
             pst.setString(1, permissionNode);
             pst.setString(2, worldName);
@@ -41,8 +40,7 @@ public class MySQLGroupWorldDataSource implements PermissionEntityDataSource {
     @Override
     public void addPermissions(Iterable<String> permissionNodes) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("INSERT IGNORE INTO Group_World_Permissions(permission_uid, world_uid, group_uid) VALUES (select_or_insert_permission(?), select_or_insert_world(?), ?)");
             pst.setString(2, worldName);
             pst.setInt(3, groupSource.getUid());
@@ -61,8 +59,7 @@ public class MySQLGroupWorldDataSource implements PermissionEntityDataSource {
     @Override
     public void removePermission(String permissionNode) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con
                     .prepareStatement("DELETE FROM Group_World_Permissions WHERE permission_uid=(SELECT uid FROM Permissions WHERE permission_node=?) AND world_uid=(SELECT uid FROM Worlds WHERE name=?) AND group_uid=?");
             pst.setString(1, permissionNode);
@@ -79,8 +76,7 @@ public class MySQLGroupWorldDataSource implements PermissionEntityDataSource {
     @Override
     public void removePermissions(Iterable<String> permissionNodes) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con
                     .prepareStatement("DELETE FROM Group_World_Permissions WHERE permission_uid=(SELECT uid FROM Permissions WHERE permission_node=?) AND world_uid=(SELECT uid FROM Worlds WHERE name=?) AND group_uid=?");
             pst.setString(2, worldName);
@@ -100,8 +96,7 @@ public class MySQLGroupWorldDataSource implements PermissionEntityDataSource {
     @Override
     public void addTempPermission(String permissionNode, long timeInMillis) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con
                     .prepareStatement("INSERT IGNORE INTO Group_World_Temporary_Permissions(permission_uid, world_uid, group_uid, timeout) VALUES (select_or_insert_permission(?), select_or_insert_world(?), ?, ?)");
             pst.setString(1, permissionNode);
@@ -119,8 +114,7 @@ public class MySQLGroupWorldDataSource implements PermissionEntityDataSource {
     @Override
     public void addTempPermissions(Iterable<TemporaryPermissionEntry> permissionNodes) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con
                     .prepareStatement("INSERT IGNORE INTO Group_World_Temporary_Permissions(permission_uid, world_uid, group_uid, timeout) VALUES (select_or_insert_permission(?), select_or_insert_world(?), ?, ?)");
             pst.setString(2, worldName);
@@ -141,8 +135,7 @@ public class MySQLGroupWorldDataSource implements PermissionEntityDataSource {
     @Override
     public void removeTempPermission(String permissionNode) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con
                     .prepareStatement("DELETE FROM Group_World_Temporary_Permissions WHERE permission_uid=(SELECT uid FROM Permissions WHERE permission_node=?) AND world_uid=(SELECT uid FROM Worlds WHERE name=?) AND group_uid=?");
             pst.setString(1, permissionNode);
@@ -159,8 +152,7 @@ public class MySQLGroupWorldDataSource implements PermissionEntityDataSource {
     @Override
     public void removeTempPermissions(Iterable<TemporaryPermissionEntry> permissionNodes) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con
                     .prepareStatement("DELETE FROM Group_World_Temporary_Permissions WHERE permission_uid=(SELECT uid FROM Permissions WHERE permission_node=?) AND world_uid=(SELECT uid FROM Worlds WHERE name=?) AND group_uid=?");
             pst.setString(2, worldName);
@@ -180,8 +172,7 @@ public class MySQLGroupWorldDataSource implements PermissionEntityDataSource {
     @Override
     public void setMeta(String key, String value) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con
                     .prepareStatement("INSERT INTO Group_World_Meta(group_uid, world_uid, meta_key, meta_value) VALUES (?, (SELECT uid FROM Worlds WHERE name=?), ?, ?) ON DUPLICATE KEY UPDATE meta_value = ?");
             pst.setInt(1, groupSource.getUid());
@@ -200,8 +191,7 @@ public class MySQLGroupWorldDataSource implements PermissionEntityDataSource {
     @Override
     public void removeMeta(String key) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("DELETE FROM Group_World_Meta WHERE group_uid=? AND world_uid=(SELECT uid FROM Worlds WHERE name=?) AND meta_key=?");
             pst.setInt(1, groupSource.getUid());
             pst.setString(2, worldName);
@@ -218,8 +208,7 @@ public class MySQLGroupWorldDataSource implements PermissionEntityDataSource {
     public void setMetaEntries(Iterable<MetadataEntry> entries) {
         PreparedStatement insertStatement = null;
         PreparedStatement deleteStatement = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             insertStatement = con
                     .prepareStatement("INSERT INTO Group_World_Meta(group_uid, world_uid, meta_key, meta_value) VALUES (?, (SELECT uid FROM Worlds WHERE name=?), ?, ?) ON DUPLICATE KEY UPDATE meta_value = ?");
             deleteStatement = con.prepareStatement("DELETE FROM Group_World_Meta WHERE group_uid=? AND world_uid=(SELECT uid FROM Worlds WHERE name=?) AND meta_key=?");
@@ -252,8 +241,7 @@ public class MySQLGroupWorldDataSource implements PermissionEntityDataSource {
     public Collection<String> getPermissions( ) {
         ArrayList<String> ret = new ArrayList<>();
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con
                     .prepareStatement("SELECT permission_node FROM Group_World_Permissions INNER JOIN Permissions ON Group_World_Permissions.permission_uid = Permissions.uid WHERE world_uid=(SELECT uid FROM Worlds WHERE name=?) AND group_uid=?");
             pst.setString(1, worldName);
@@ -274,8 +262,7 @@ public class MySQLGroupWorldDataSource implements PermissionEntityDataSource {
     public Collection<TemporaryPermissionEntry> getTempPermissions( ) {
         ArrayList<TemporaryPermissionEntry> ret = new ArrayList<>();
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con
                     .prepareStatement("SELECT permission_node, timeout FROM Group_World_Temporary_Permissions INNER JOIN Permissions ON Group_World_Temporary_Permissions.permission_uid = Permissions.uid WHERE world_uid=(SELECT uid FROM Worlds WHERE name=?) AND group_uid=?");
             pst.setString(1, worldName);
@@ -296,8 +283,7 @@ public class MySQLGroupWorldDataSource implements PermissionEntityDataSource {
     public Map<String, String> getMetadata( ) {
         HashMap<String, String> ret = new HashMap<String, String>(64);
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("SELECT meta_key, meta_value FROM Group_World_Meta WHERE world_uid=(SELECT uid FROM Worlds WHERE name=?) AND group_uid = ?)");
             pst.setString(1, worldName);
             pst.setInt(2, groupSource.getUid());

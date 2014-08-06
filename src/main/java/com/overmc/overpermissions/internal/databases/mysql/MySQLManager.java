@@ -5,44 +5,39 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
 import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
+import com.overmc.overpermissions.exceptions.StartException;
 import com.overmc.overpermissions.internal.Messages;
-import com.overmc.overpermissions.internal.StartException;
 import com.overmc.overpermissions.internal.databases.DatabaseMultiSourceFactory;
+import com.overmc.overpermissions.internal.databases.PoolDataSource;
 import com.overmc.overpermissions.internal.datasources.*;
 
 public final class MySQLManager implements DatabaseMultiSourceFactory {
+    public static final int GLOBAL_WORLD_UID = 1;
+    public static final int GLOBAL_SERVER_UID = 1;
+    
     private volatile boolean databaseInitialized;
 
-    private Connection con = null;
-
     private final ExecutorService executor;
+    private final PoolDataSource connectionPool;
+    
 
-    private final String dbUrl;
     private final String dbName;
-    private final String dbUsername;
-    private final String dbPassword;
-
-    static {
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
 
     public Connection getConnection( ) throws SQLException {
-        if ((con == null) || con.isClosed()) {
-            con = DriverManager.getConnection(dbUrl + dbName, dbUsername, dbPassword);
-        }
-        return con;
+        return connectionPool.getDatabaseConnection();
     }
 
-    public MySQLManager(ExecutorService executor, String dbUrl, String dbName, String dbUsername, String dbPassword) throws Throwable {
+    public MySQLManager(ExecutorService executor, String serverName, String serverPort, String dbName, String dbUsername, String dbPassword, boolean usePool) throws Exception {
         this.executor = executor;
-        this.dbUrl = dbUrl;
         this.dbName = dbName;
-        this.dbUsername = dbUsername;
-        this.dbPassword = dbPassword;
+        if(serverPort.length() == 0) {
+            serverPort = "3306"; //The default MySQL port
+        }
+        if(usePool) {
+            connectionPool = new MySQLHikariCPPoolDataSource(serverName, serverPort, dbName, dbUsername, dbPassword);
+        } else {
+            connectionPool = new MySQLVanillaPoolDataSource(serverName, serverPort, dbName, dbUsername, dbPassword);
+        }
         initDatabase();
     }
 
@@ -50,9 +45,10 @@ public final class MySQLManager implements DatabaseMultiSourceFactory {
         if (databaseInitialized) {
             return;
         }
+        Connection con = null;
         Statement st = null;
         try {
-            con = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
+            con = connectionPool.getBaseConnection();
             st = con.createStatement();
             st.executeUpdate("CREATE DATABASE IF NOT EXISTS " + dbName);
             st.close();
@@ -70,19 +66,13 @@ public final class MySQLManager implements DatabaseMultiSourceFactory {
             st.executeUpdate("CREATE TABLE IF NOT EXISTS Worlds"
                     + "("
                     + "uid int UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,"
-                    + "name varchar(16) NOT NULL,"
-                    + "UNIQUE KEY name (name)"
-                    + ")");
-            st.executeUpdate("CREATE TABLE IF NOT EXISTS Servers"
-                    + "("
-                    + "uid int UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,"
                     + "name varchar(64) NOT NULL,"
                     + "UNIQUE KEY name (name)"
                     + ")");
             st.executeUpdate("CREATE TABLE IF NOT EXISTS Permissions"
                     + "("
                     + "uid int UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,"
-                    + "permission_node varchar(64) NOT NULL,"
+                    + "permission_node varchar(256) NOT NULL,"
                     + "INDEX permission_node (permission_node ASC)"
                     + ")");
             st.executeUpdate("CREATE TABLE IF NOT EXISTS Uuid_Player_Maps"
@@ -257,7 +247,7 @@ public final class MySQLManager implements DatabaseMultiSourceFactory {
                     "RETURN return_value;" +
                     "END ");
             st.executeUpdate("DROP FUNCTION IF EXISTS select_or_insert_permission");
-            st.executeUpdate("CREATE FUNCTION select_or_insert_permission (p_permission_node VARCHAR(64))" +
+            st.executeUpdate("CREATE FUNCTION select_or_insert_permission (p_permission_node VARCHAR(256))" +
                     "RETURNS INT UNSIGNED " +
                     "DETERMINISTIC " +
                     "MODIFIES SQL DATA " +
@@ -290,6 +280,7 @@ public final class MySQLManager implements DatabaseMultiSourceFactory {
             handleStartingSqlException(e);
         } finally {
             attemptClose(st);
+            attemptClose(con);
         }
     }
 
@@ -308,12 +299,22 @@ public final class MySQLManager implements DatabaseMultiSourceFactory {
         return new MySQLUserDataSource(this, uuid);
     }
 
+    public static void attemptClose(Connection con) {
+        try {
+            if (con != null) {
+                con.close();
+            }
+        } catch (SQLException ex) {
+
+        }
+    }
+    
     public static void attemptClose(Statement st) {
         try {
             if (st != null) {
                 st.close();
             }
-        } catch (Throwable t) {
+        } catch (SQLException ex) {
 
         }
     }
@@ -323,7 +324,7 @@ public final class MySQLManager implements DatabaseMultiSourceFactory {
             if (rs != null) {
                 rs.close();
             }
-        } catch (Throwable t) {
+        } catch (SQLException ex) {
 
         }
     }
@@ -353,5 +354,10 @@ public final class MySQLManager implements DatabaseMultiSourceFactory {
     @Override
     public TemporaryPermissionEntityDataSource createTempPlayerDataSource(UUID playerUniqueId) {
         return new MySQLTempPlayerDataSource(this, playerUniqueId);
+    }
+
+    @Override
+    public void shutdown( ) {
+        connectionPool.shutdown( );
     }
 }

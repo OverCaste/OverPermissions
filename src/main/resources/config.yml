@@ -22,6 +22,9 @@ sql:
   #The address of your database installation. localhost should be fine if you don't know what this is.
   address: "localhost"
   
+  #The port of your database installation. This shouldn't be changed except under exceptional circumstances.
+  port: ""
+  
   #The database name to be used, this should only very rarely be changed.
   dbname: "OverPermissions"
   
@@ -30,6 +33,9 @@ sql:
   
   #The password to be used by the database.
   dbpassword: ""
+  
+  #Whether to use a connection pool for the database. Disabling this will reduce database performance but disable the BoneCP/SLF4J requirements.
+  use-pool: true
 #Don't touch these options unless told otherwise. They could have adverse effects on your database and configuration.
 internals:
   sql-schema-version: 1

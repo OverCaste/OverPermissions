@@ -15,8 +15,7 @@ public class MySQLUUIDDataSource extends AbstractUUIDDataSource {
     @Override
     public void setNameUuid(String name, UUID uuid) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con
                     .prepareStatement("INSERT INTO Uuid_Player_Maps(username, player_uid) VALUES (?, (SELECT uid FROM Players WHERE lower_uid=? AND upper_uid=?)) ON DUPLICATE KEY UPDATE player_uid=(SELECT uid FROM Players WHERE lower_uid=? AND upper_uid=?)");
             pst.setString(1, name);
@@ -35,8 +34,7 @@ public class MySQLUUIDDataSource extends AbstractUUIDDataSource {
     @Override
     public UUID getDatabaseNameUuid(String name) {
         PreparedStatement pst = null;
-        try {
-            Connection con = sqlManager.getConnection();
+        try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("SELECT lower_uid, upper_uid FROM Uuid_Player_Maps WHERE username=? INNER JOIN Players ON Uuid_Player_Maps.player_uid=Players.uid");
             ResultSet rs = pst.executeQuery();
             if (rs.first()) {
