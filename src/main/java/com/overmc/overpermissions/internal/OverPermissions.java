@@ -269,6 +269,13 @@ public final class OverPermissions extends JavaPlugin {
     public String getDefaultGroupName( ) {
         return defaultGroup;
     }
+    
+    /**
+     * @return the Database connector that this OverPermissions instance is using to store persistant data.
+     */
+    public Database getPermissionDatabase( ) {
+        return database;
+    }
 
     /**
      * @return the {@link ExecutorService} used by this plugin, with proper error recording.
