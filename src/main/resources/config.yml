@@ -1,9 +1,41 @@
-# www.overmc.com
+#The default group for people to be put into. Default is the only one extant at initialization.
 default-group: 'default'
+
+#Whether people should be disconnected if the plugin fails to initialize.
 kick-on-failure: true
+
+#Whether OverPermissions should allow wildcard (*) support.
+# STANDARD - Fairly fast, this is the recommended setting. It allows you to use nodes like (*, node.*, my.*.node but NOT (no*e.*.othe*node)
+# NONE - The fastest possible though not by very much. Any node with * in it will be checked literally.
+wildcard-support: STANDARD
+
+#Should OverPermissions inject it's permission resolver into Bukkit. You will need a CraftBukkit fork if you want to use this.
+#If permissions are injected, other plugins won't be able to add attachments. If you receive errors along those lines, disable this option.
+# NONE - Don't inject classes into the Bukkit SuperPermissions system. This option takes the most memory.
+# FULL - Inject classes into the Bukkit SuperPermissions system. This will save quite a bit of memory, and remain fast.
+injection-mode: FULL
+
 sql:
+  #The only current supported type currently is mysql.
   type: mysql
+  
+  #The address of your database installation. localhost should be fine if you don't know what this is.
   address: "localhost"
+  
+  #The port of your database installation. This shouldn't be changed except under exceptional circumstances.
+  port: ""
+  
+  #The database name to be used, this should only very rarely be changed.
   dbname: "OverPermissions"
+  
+  #The user from which to modify the database from. 'root' is fine if you don't know what this is.
   dbusername: "root"
+  
+  #The password to be used by the database.
   dbpassword: ""
+  
+  #Whether to use a connection pool for the database. Disabling this will reduce database performance but disable the BoneCP/SLF4J requirements.
+  use-pool: true
+#Don't touch these options unless told otherwise. They could have adverse effects on your database and configuration.
+internals:
+  sql-schema-version: 1

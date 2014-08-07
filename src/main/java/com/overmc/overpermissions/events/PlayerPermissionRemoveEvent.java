@@ -2,29 +2,30 @@ package com.overmc.overpermissions.events;
 
 import org.bukkit.event.HandlerList;
 
-import com.overmc.overpermissions.PermissionChangeCause;
-
 public class PlayerPermissionRemoveEvent extends PlayerPermissionEvent {
+    private static final HandlerList handlers = new HandlerList();
 
-	private static final HandlerList handlers = new HandlerList();
-	private final PermissionChangeCause cause;
+    private final boolean temporary;
 
-	public static HandlerList getHandlerList( ) {
-		return handlers;
-	}
+    public static HandlerList getHandlerList( ) {
+        return handlers;
+    }
 
-	public PlayerPermissionRemoveEvent(String playerName, String worldName, String node, PermissionChangeCause cause) {
-		super(playerName, worldName, node);
-		this.cause = cause;
-	}
+    public PlayerPermissionRemoveEvent(String playerName, String worldName, String node, boolean temporary) {
+        super(playerName, worldName, node);
+        this.temporary = temporary;
+    }
 
-	public PermissionChangeCause getCause( ) {
-		return cause;
-	}
+    public PlayerPermissionRemoveEvent(String playerName, String worldName, String node) {
+        this(playerName, worldName, node, false);
+    }
 
-	@Override
-	public HandlerList getHandlers( ) {
-		return handlers;
-	}
+    @Override
+    public HandlerList getHandlers( ) {
+        return handlers;
+    }
 
+    public boolean isTemporary( ) {
+        return temporary;
+    }
 }
