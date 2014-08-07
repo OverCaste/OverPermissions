@@ -5,10 +5,10 @@ import java.util.UUID;
 
 import com.overmc.overpermissions.internal.databases.AbstractUUIDDataSource;
 
-public class MySQLUUIDDataSource extends AbstractUUIDDataSource {
+public class MySQLUUIDHandler extends AbstractUUIDDataSource {
     private final MySQLManager sqlManager;
 
-    public MySQLUUIDDataSource(MySQLManager sqlManager) {
+    public MySQLUUIDHandler(MySQLManager sqlManager) {
         this.sqlManager = sqlManager;
     }
 

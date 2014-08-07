@@ -66,7 +66,7 @@ public class LocalUserManager implements UserManager {
 
     private final Plugin plugin;
     private final GroupManager groupManager;
-    private final UUIDDataSource uuidSource;
+    private final UUIDHandler uuidSource;
     private final TemporaryPermissionManager tempManager;
 
     private final UserDataSourceFactory userDataSourceFactory;
@@ -74,7 +74,7 @@ public class LocalUserManager implements UserManager {
     private final String defaultGroup;
     private final boolean wildcardSupport;
 
-    public LocalUserManager(Plugin plugin, GroupManager groupManager, UUIDDataSource uuidSource, TemporaryPermissionManager tempManager, UserDataSourceFactory userDataSourceFactory,
+    public LocalUserManager(Plugin plugin, GroupManager groupManager, UUIDHandler uuidSource, TemporaryPermissionManager tempManager, UserDataSourceFactory userDataSourceFactory,
             String defaultGroup, boolean wildcardSupport) {
         Preconditions.checkNotNull(plugin, "plugin");
         Preconditions.checkNotNull(groupManager, "group manager");

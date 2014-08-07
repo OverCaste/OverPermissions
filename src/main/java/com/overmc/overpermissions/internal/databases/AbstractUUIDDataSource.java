@@ -8,14 +8,14 @@ import org.bukkit.entity.Player;
 
 import com.google.common.base.Charsets;
 import com.overmc.overpermissions.exceptions.InvalidOnlineUsernameException;
-import com.overmc.overpermissions.internal.datasources.UUIDDataSource;
+import com.overmc.overpermissions.internal.datasources.UUIDHandler;
 import com.overmc.overpermissions.internal.uuidutils.UUIDFetcher;
 
 // The operations that are most expensive are in order:
 // 1. Getting an online UUID from Mojang's servers
 // 2. Retrieving a UUID from the database
 // 3. Creating an offline UUID/Retrieving a player's UUID
-public abstract class AbstractUUIDDataSource implements UUIDDataSource {
+public abstract class AbstractUUIDDataSource implements UUIDHandler {
     @Override
     public UUID getNameUuid(String name) {
         @SuppressWarnings("deprecation")

@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import com.overmc.overpermissions.exceptions.InvalidOnlineUsernameException;
 
-public interface UUIDDataSource {
+public interface UUIDHandler {
     public UUID getNameUuid(String name);
 
     public UUID getOrCreateNameUuid(String name) throws InvalidOnlineUsernameException;

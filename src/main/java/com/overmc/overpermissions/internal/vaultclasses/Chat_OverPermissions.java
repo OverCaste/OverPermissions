@@ -12,7 +12,6 @@ import com.overmc.overpermissions.api.*;
 import com.overmc.overpermissions.internal.OverPermissions;
 
 public class Chat_OverPermissions extends Chat {
-
     protected final Plugin plugin;
     private OverPermissions overPerms;
     private UserManager userManager;

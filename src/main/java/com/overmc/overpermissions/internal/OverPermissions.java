@@ -16,9 +16,9 @@ import com.overmc.overpermissions.api.*;
 import com.overmc.overpermissions.exceptions.MissingDependencyException;
 import com.overmc.overpermissions.exceptions.StartException;
 import com.overmc.overpermissions.internal.commands.*;
-import com.overmc.overpermissions.internal.databases.DatabaseMultiSourceFactory;
+import com.overmc.overpermissions.internal.databases.Database;
 import com.overmc.overpermissions.internal.databases.mysql.MySQLManager;
-import com.overmc.overpermissions.internal.datasources.UUIDDataSource;
+import com.overmc.overpermissions.internal.datasources.UUIDHandler;
 import com.overmc.overpermissions.internal.dependencies.*;
 import com.overmc.overpermissions.internal.injectoractions.*;
 import com.overmc.overpermissions.internal.localentities.LocalGroupManager;
@@ -31,8 +31,8 @@ public final class OverPermissions extends JavaPlugin {
     private DependencyDownloader dependencyDownloader;
     private String defaultGroup;
 
-    private DatabaseMultiSourceFactory database;
-    private UUIDDataSource uuidDataSource;
+    private Database database;
+    private UUIDHandler uuidHandler;
 
     // Listeners
     private GeneralListener generalListener;
@@ -106,7 +106,7 @@ public final class OverPermissions extends JavaPlugin {
         } else {
             throw new StartException("The configuration option wildcard-support is set to an invalid value: " + wildcardSupportValue);
         }
-        DatabaseMultiSourceFactory database;
+        Database database;
         switch (type) {
             default:
                 getLogger().warning("Type value " + type + " wasn't recognized. Defaulting to mysql.");
@@ -122,11 +122,11 @@ public final class OverPermissions extends JavaPlugin {
 
         }
         this.database = database;
-        uuidDataSource = database.createUUIDDataSource();
+        uuidHandler = database.createUUIDHandler();
         tempManager = new TemporaryPermissionManager(this, database);
         groupManager = new LocalGroupManager(database, tempManager, wildcardSupport);
         groupManager.reloadGroups();
-        userManager = new LocalUserManager(this, groupManager, uuidDataSource, tempManager, database, getDefaultGroupName(), wildcardSupport);
+        userManager = new LocalUserManager(this, groupManager, uuidHandler, tempManager, database, getDefaultGroupName(), wildcardSupport);
     }
 
     private void initDefaultGroup( ) {

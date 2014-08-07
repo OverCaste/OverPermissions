@@ -7,11 +7,11 @@ import java.util.concurrent.ExecutorService;
 import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 import com.overmc.overpermissions.exceptions.StartException;
 import com.overmc.overpermissions.internal.Messages;
-import com.overmc.overpermissions.internal.databases.DatabaseMultiSourceFactory;
+import com.overmc.overpermissions.internal.databases.Database;
 import com.overmc.overpermissions.internal.databases.PoolDataSource;
 import com.overmc.overpermissions.internal.datasources.*;
 
-public final class MySQLManager implements DatabaseMultiSourceFactory {
+public final class MySQLManager implements Database {
     public static final int GLOBAL_WORLD_UID = 1;
     public static final int GLOBAL_SERVER_UID = 1;
     
@@ -342,8 +342,8 @@ public final class MySQLManager implements DatabaseMultiSourceFactory {
     }
 
     @Override
-    public UUIDDataSource createUUIDDataSource( ) {
-        return new MySQLUUIDDataSource(this);
+    public UUIDHandler createUUIDHandler( ) {
+        return new MySQLUUIDHandler(this);
     }
 
     @Override
