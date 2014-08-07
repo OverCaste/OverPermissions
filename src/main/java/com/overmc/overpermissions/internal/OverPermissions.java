@@ -1,6 +1,5 @@
 package com.overmc.overpermissions.internal;
 
-import java.io.IOException;
 import java.security.acl.Group;
 import java.util.ArrayList;
 import java.util.concurrent.*;
@@ -24,13 +23,11 @@ import com.overmc.overpermissions.internal.dependencies.*;
 import com.overmc.overpermissions.internal.injectoractions.*;
 import com.overmc.overpermissions.internal.localentities.LocalGroupManager;
 import com.overmc.overpermissions.internal.localentities.LocalUserManager;
-import com.overmc.overpermissions.internal.metrics.MetricsLite;
 
 public final class OverPermissions extends JavaPlugin {
     private TemporaryPermissionManager tempManager;
     private LocalGroupManager groupManager;
     private LocalUserManager userManager;
-    private MetricsLite metrics;
     private DependencyDownloader dependencyDownloader;
     private String defaultGroup;
 
@@ -188,17 +185,6 @@ public final class OverPermissions extends JavaPlugin {
         getServer().getPluginManager().registerEvents(generalListener, this);
     }
 
-    private void initMetrics( ) {
-        try {
-            metrics = new MetricsLite(this);
-            metrics.start();
-            getLogger().info("Successfully connected to metrics!");
-        } catch (IOException e) {
-            getLogger().warning("Failed to connect to the metrics server!");
-            e.printStackTrace();
-        }
-    }
-
     private void registerApi( ) {
         getServer().getServicesManager().register(UserManager.class, userManager, this, ServicePriority.Normal);
         getServer().getServicesManager().register(GroupManager.class, groupManager, this, ServicePriority.Normal);
@@ -229,7 +215,6 @@ public final class OverPermissions extends JavaPlugin {
             initCommands();
             injectBukkitActions();
             registerEvents();
-            initMetrics();
             registerApi();
             initPlayers();
             deinitKickOnFail(); // Started successfully, can remove this listener.
