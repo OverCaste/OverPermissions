@@ -12,7 +12,7 @@ import org.bukkit.plugin.Plugin;
 import com.overmc.overpermissions.api.*;
 import com.overmc.overpermissions.internal.util.TimeUtils;
 
-final class CommandUtils {
+public final class CommandUtils {
     private CommandUtils( ) {
         // Don't instantiate.
     }

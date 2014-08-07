@@ -714,7 +714,7 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
         tempManager.cancelGlobalTemporaryPermission(this, node);
     }
 
-    public synchronized void setPlayer(Player player) {
+    public void setPlayer(Player player) {
         synchronized (attachmentLock) {
             this.player = player;
             if (this.attachment != null) {
