@@ -298,6 +298,110 @@ public final class MySQLManager implements Database {
     public UserDataSource createUserDataSource(UUID uuid) {
         return new MySQLUserDataSource(this, uuid);
     }
+    
+    public int getWorldUid(String worldName) {
+        PreparedStatement pst = null;
+        try(Connection con = getConnection()) {
+            pst = con.prepareStatement("SELECT uid FROM Worlds WHERE name = ?");
+            pst.setString(1, worldName);
+            ResultSet rs = pst.executeQuery();
+            if (rs.first() && rs.isLast()) {
+                return rs.getInt("uid");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            attemptClose(pst);
+        }
+        return -1;
+    }
+    
+    public int getOrCreateWorldUid(String worldName) {
+        PreparedStatement pst = null;
+        try(Connection con = getConnection()) {
+            pst = con.prepareStatement("SELECT select_or_insert_world(?)");
+            pst.setString(1, worldName);
+            ResultSet rs = pst.executeQuery();
+            if (rs.first() && rs.isLast()) {
+                return rs.getInt("uid");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            attemptClose(pst);
+        }
+        return -1;
+    }
+    
+    public String getWorldName(int worldUid) {
+        PreparedStatement pst = null;
+        try(Connection con = getConnection()) {
+            pst = con.prepareStatement("SELECT name FROM Worlds WHERE uid = ?");
+            pst.setInt(1, worldUid);
+            ResultSet rs = pst.executeQuery();
+            if (rs.first() && rs.isLast()) {
+                return rs.getString("name");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            attemptClose(pst);
+        }
+        return null;
+    }
+    
+    public int getPlayerUid(UUID uuid) {
+        PreparedStatement pst = null;
+        try(Connection con = getConnection()) {
+            pst = con.prepareStatement("SELECT uid FROM Players WHERE lower_uid = ? AND upper_uid = ?");
+            pst.setLong(1, uuid.getLeastSignificantBits());
+            pst.setLong(2, uuid.getMostSignificantBits());
+            ResultSet rs = pst.executeQuery();
+            if (rs.first() && rs.isLast()) {
+                return rs.getInt("uid");
+            }
+        } catch (SQLException e) { // TODO properly handle sql exceptions
+            e.printStackTrace();
+        } finally {
+            attemptClose(pst);
+        }
+        return -1;
+    }
+    
+    public int getOrCreatePlayerUid(UUID uuid) {
+        PreparedStatement pst = null;
+        try(Connection con = getConnection()) {
+            pst = con.prepareStatement("SELECT select_or_insert_player(?, ?)");
+            pst.setLong(1, uuid.getLeastSignificantBits());
+            pst.setLong(2, uuid.getMostSignificantBits());
+            ResultSet rs = pst.executeQuery();
+            if (rs.first() && rs.isLast()) {
+                return rs.getInt("uid");
+            }
+        } catch (SQLException e) { // TODO properly handle sql exceptions
+            e.printStackTrace();
+        } finally {
+            attemptClose(pst);
+        }
+        return -1;
+    }
+    
+    public UUID getPlayerUuid(int playerUid) {
+        PreparedStatement pst = null;
+        try(Connection con = getConnection()) {
+            pst = con.prepareStatement("SELECT lower_uid, upper_uid FROM Players WHERE uid = ?");
+            pst.setInt(1, playerUid);
+            ResultSet rs = pst.executeQuery();
+            if (rs.first() && rs.isLast()) {
+                return new UUID(rs.getLong("upper_uid"), rs.getLong("lower_uid"));
+            }
+        } catch (SQLException e) { // TODO properly handle sql exceptions
+            e.printStackTrace();
+        } finally {
+            attemptClose(pst);
+        }
+        return null;
+    }
 
     public static void attemptClose(Connection con) {
         try {

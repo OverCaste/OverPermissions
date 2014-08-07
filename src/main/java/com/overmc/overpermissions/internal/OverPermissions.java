@@ -276,6 +276,13 @@ public final class OverPermissions extends JavaPlugin {
     public Database getPermissionDatabase( ) {
         return database;
     }
+    
+    /**
+     * @return the retriever/handler for player name <-> UUID relation ships
+     */
+    public UUIDHandler getUniqueIdHandler( ) {
+        return uuidHandler;
+    }
 
     /**
      * @return the {@link ExecutorService} used by this plugin, with proper error recording.
