@@ -10,4 +10,6 @@ public interface UUIDHandler {
     public UUID getOrCreateNameUuid(String name) throws InvalidOnlineUsernameException;
 
     public void setNameUuid(String name, UUID uuid);
+    
+    public String getLastSeenName(UUID uuid);
 }

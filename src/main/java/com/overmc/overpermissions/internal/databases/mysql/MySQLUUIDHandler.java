@@ -17,12 +17,14 @@ public class MySQLUUIDHandler extends AbstractUUIDDataSource {
         PreparedStatement pst = null;
         try(Connection con = sqlManager.getConnection()) {
             pst = con
-                    .prepareStatement("INSERT INTO Uuid_Player_Maps(username, player_uid) VALUES (?, (SELECT uid FROM Players WHERE lower_uid=? AND upper_uid=?)) ON DUPLICATE KEY UPDATE player_uid=(SELECT uid FROM Players WHERE lower_uid=? AND upper_uid=?)");
+                    .prepareStatement("INSERT INTO Uuid_Player_Maps(username, player_uid, last_seen) VALUES (?, (SELECT uid FROM Players WHERE lower_uid=? AND upper_uid=?), ?) ON DUPLICATE KEY UPDATE player_uid=(SELECT uid FROM Players WHERE lower_uid=? AND upper_uid=?), last_seen=?");
             pst.setString(1, name);
             pst.setLong(2, uuid.getLeastSignificantBits());
             pst.setLong(3, uuid.getMostSignificantBits());
-            pst.setLong(4, uuid.getLeastSignificantBits());
-            pst.setLong(5, uuid.getMostSignificantBits());
+            pst.setLong(4, System.currentTimeMillis());
+            pst.setLong(5, uuid.getLeastSignificantBits());
+            pst.setLong(6, uuid.getMostSignificantBits());
+            pst.setLong(7, System.currentTimeMillis());
             pst.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -39,6 +41,23 @@ public class MySQLUUIDHandler extends AbstractUUIDDataSource {
             ResultSet rs = pst.executeQuery();
             if (rs.first()) {
                 return new UUID(rs.getLong("upper_uid"), rs.getLong("lower_uid"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            MySQLManager.attemptClose(pst);
+        }
+        return null;
+    }
+
+    @Override
+    public String getLastSeenName(UUID uuid) {
+        PreparedStatement pst = null;
+        try(Connection con = sqlManager.getConnection()) {
+            pst = con.prepareStatement("SELECT username FROM Uuid_Player_Maps WHERE lower_uid=? AND upper_uid=? ORDER BY last_seen DESC LIMIT 1");
+            ResultSet rs = pst.executeQuery();
+            if (rs.first()) {
+                return rs.getString("username");
             }
         } catch (SQLException e) {
             e.printStackTrace();

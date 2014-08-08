@@ -79,6 +79,7 @@ public final class MySQLManager implements Database {
                     + "("
                     + "player_uid int UNSIGNED NOT NULL,"
                     + "username varchar(16) NOT NULL PRIMARY KEY,"
+                    + "last_seen bigint UNSIGNED NOT NULL,"
                     + "INDEX username (username ASC),"
                     + "FOREIGN KEY(player_uid) REFERENCES Players(uid)"
                     + ")");
