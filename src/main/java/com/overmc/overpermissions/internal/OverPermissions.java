@@ -163,7 +163,7 @@ public final class OverPermissions extends JavaPlugin {
     }
 
     private void injectBukkitActions( ) {
-        String wildcardSupportValue = getConfig().getString("wildcard-support", "HALF");
+        String wildcardSupportValue = getConfig().getString("wildcard-support", "STANDARD");
         String injectionModeValue = getConfig().getString("injection-mode", "FULL");
         if (injectionModeValue.equalsIgnoreCase("FULL")) {
             if (wildcardSupportValue.equals("STANDARD")) {
