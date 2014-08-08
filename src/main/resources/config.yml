@@ -15,6 +15,10 @@ wildcard-support: STANDARD
 # FULL - Inject classes into the Bukkit SuperPermissions system. This will save quite a bit of memory, and remain fast.
 injection-mode: FULL
 
+#Should OverPermissions treat all players as 'online'?
+#Set this if you're running an offline server behind a BungeeCord proxy or other authentication service.
+force-online-mode: false
+
 sql:
   #The only current supported type currently is mysql.
   type: mysql

@@ -117,7 +117,8 @@ public final class OverPermissions extends JavaPlugin {
                         getConfig().getString("sql.dbname", "OverPermissions"),
                         getConfig().getString("sql.dbusername", "root"),
                         getConfig().getString("sql.dbpassword", ""),
-                        getConfig().getBoolean("sql.use-pool", false));
+                        getConfig().getBoolean("sql.use-pool", false),
+                        getConfig().getBoolean("force-online-mode", false));
             }
 
         }

@@ -16,6 +16,12 @@ import com.overmc.overpermissions.internal.uuidutils.UUIDFetcher;
 // 2. Retrieving a UUID from the database
 // 3. Creating an offline UUID/Retrieving a player's UUID
 public abstract class AbstractUUIDDataSource implements UUIDHandler {
+    private final boolean forceOnlineMode;
+    
+    public AbstractUUIDDataSource(boolean forceOnlineMode) {
+        this.forceOnlineMode = forceOnlineMode;
+    }
+    
     @Override
     public UUID getNameUuid(String name) {
         @SuppressWarnings("deprecation")
@@ -35,7 +41,7 @@ public abstract class AbstractUUIDDataSource implements UUIDHandler {
         if (p != null) {
             return p.getUniqueId();
         }
-        if (!Bukkit.getOnlineMode()) {
+        if (!forceOnlineMode && !Bukkit.getOnlineMode()) {
             return getOfflineUuid(name);
         }
         UUID uuid = getDatabaseNameUuid(name);

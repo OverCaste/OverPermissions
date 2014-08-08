@@ -8,7 +8,8 @@ import com.overmc.overpermissions.internal.databases.AbstractUUIDDataSource;
 public class MySQLUUIDHandler extends AbstractUUIDDataSource {
     private final MySQLManager sqlManager;
 
-    public MySQLUUIDHandler(MySQLManager sqlManager) {
+    public MySQLUUIDHandler(MySQLManager sqlManager, boolean forceOnlineMode) {
+        super(forceOnlineMode);
         this.sqlManager = sqlManager;
     }
 

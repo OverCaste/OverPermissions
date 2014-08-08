@@ -19,17 +19,18 @@ public final class MySQLManager implements Database {
 
     private final ExecutorService executor;
     private final PoolDataSource connectionPool;
-    
 
     private final String dbName;
+    private final boolean forceOnlineMode;
 
     public Connection getConnection( ) throws SQLException {
         return connectionPool.getDatabaseConnection();
     }
 
-    public MySQLManager(ExecutorService executor, String serverName, String serverPort, String dbName, String dbUsername, String dbPassword, boolean usePool) throws Exception {
+    public MySQLManager(ExecutorService executor, String serverName, String serverPort, String dbName, String dbUsername, String dbPassword, boolean usePool, boolean forceOnlineMode) throws Exception {
         this.executor = executor;
         this.dbName = dbName;
+        this.forceOnlineMode = forceOnlineMode;
         if(serverPort.length() == 0) {
             serverPort = "3306"; //The default MySQL port
         }
@@ -448,7 +449,7 @@ public final class MySQLManager implements Database {
 
     @Override
     public UUIDHandler createUUIDHandler( ) {
-        return new MySQLUUIDHandler(this);
+        return new MySQLUUIDHandler(this, forceOnlineMode);
     }
 
     @Override
