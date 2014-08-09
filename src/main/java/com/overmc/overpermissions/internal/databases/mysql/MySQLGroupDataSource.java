@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 
 import com.overmc.overpermissions.api.*;
+import com.overmc.overpermissions.exceptions.DatabaseConnectionException;
 import com.overmc.overpermissions.internal.datasources.GroupDataSource;
 import com.overmc.overpermissions.internal.datasources.PermissionEntityDataSource;
 
@@ -21,7 +22,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
         this.groupName = groupName;
     }
 
-    int getUid( ) {
+    int getUid( ) throws DatabaseConnectionException {
         if (groupUid == -1) { // Double checked locking lazy initialization... Now ain't that a mouthful.
             synchronized (this) {
                 if (groupUid == -1) {
@@ -32,7 +33,7 @@ public class MySQLGroupDataSource implements GroupDataSource {
         return groupUid;
     }
 
-    private int readDatabaseGroupUid( ) {
+    private int readDatabaseGroupUid( ) throws DatabaseConnectionException {
         PreparedStatement pst = null;
         try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("SELECT uid FROM Permission_Groups WHERE name = ?");

@@ -4,11 +4,10 @@ import java.sql.*;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
-import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
+import com.mysql.jdbc.CommunicationsException;
+import com.overmc.overpermissions.exceptions.DatabaseConnectionException;
 import com.overmc.overpermissions.exceptions.StartException;
-import com.overmc.overpermissions.internal.Messages;
-import com.overmc.overpermissions.internal.databases.Database;
-import com.overmc.overpermissions.internal.databases.PoolDataSource;
+import com.overmc.overpermissions.internal.databases.*;
 import com.overmc.overpermissions.internal.datasources.*;
 
 public final class MySQLManager implements Database {
@@ -18,12 +17,12 @@ public final class MySQLManager implements Database {
     private volatile boolean databaseInitialized;
 
     private final ExecutorService executor;
-    private final PoolDataSource connectionPool;
+    private final ConnectionPool connectionPool;
 
     private final String dbName;
     private final boolean forceOnlineMode;
 
-    public Connection getConnection( ) throws SQLException {
+    public Connection getConnection( ) throws SQLException, DatabaseConnectionException {
         return connectionPool.getDatabaseConnection();
     }
 
@@ -35,14 +34,14 @@ public final class MySQLManager implements Database {
             serverPort = "3306"; //The default MySQL port
         }
         if(usePool) {
-            connectionPool = new MySQLHikariCPPoolDataSource(serverName, serverPort, dbName, dbUsername, dbPassword);
+            connectionPool = new MySQLHikariConnectionPool(serverName, serverPort, dbName, dbUsername, dbPassword);
         } else {
-            connectionPool = new MySQLVanillaPoolDataSource(serverName, serverPort, dbName, dbUsername, dbPassword);
+            connectionPool = new SingleConnectionPool(dbUsername, dbPassword, "jdbc:mysql://" + serverName + ":" + serverPort + "/", dbName);
         }
         initDatabase();
     }
 
-    private void initDatabase( ) throws StartException {
+    private void initDatabase( ) throws StartException, DatabaseConnectionException {
         if (databaseInitialized) {
             return;
         }
@@ -279,7 +278,8 @@ public final class MySQLManager implements Database {
                     "RETURN return_value;" +
                     "END ");
         } catch (SQLException e) {
-            handleStartingSqlException(e);
+            e.printStackTrace();
+            throw new StartException(e.getMessage());
         } finally {
             attemptClose(st);
             attemptClose(con);
@@ -301,7 +301,7 @@ public final class MySQLManager implements Database {
         return new MySQLUserDataSource(this, uuid);
     }
     
-    public int getWorldUid(String worldName) {
+    public int getWorldUid(String worldName) throws DatabaseConnectionException {
         PreparedStatement pst = null;
         try(Connection con = getConnection()) {
             pst = con.prepareStatement("SELECT uid FROM Worlds WHERE name = ?");
@@ -318,7 +318,7 @@ public final class MySQLManager implements Database {
         return -1;
     }
     
-    public int getOrCreateWorldUid(String worldName) {
+    public int getOrCreateWorldUid(String worldName) throws DatabaseConnectionException {
         PreparedStatement pst = null;
         try(Connection con = getConnection()) {
             pst = con.prepareStatement("SELECT select_or_insert_world(?)");
@@ -335,7 +335,7 @@ public final class MySQLManager implements Database {
         return -1;
     }
     
-    public String getWorldName(int worldUid) {
+    public String getWorldName(int worldUid) throws DatabaseConnectionException {
         PreparedStatement pst = null;
         try(Connection con = getConnection()) {
             pst = con.prepareStatement("SELECT name FROM Worlds WHERE uid = ?");
@@ -352,7 +352,7 @@ public final class MySQLManager implements Database {
         return null;
     }
     
-    public int getPlayerUid(UUID uuid) {
+    public int getPlayerUid(UUID uuid) throws DatabaseConnectionException {
         PreparedStatement pst = null;
         try(Connection con = getConnection()) {
             pst = con.prepareStatement("SELECT uid FROM Players WHERE lower_uid = ? AND upper_uid = ?");
@@ -370,7 +370,7 @@ public final class MySQLManager implements Database {
         return -1;
     }
     
-    public int getOrCreatePlayerUid(UUID uuid) {
+    public int getOrCreatePlayerUid(UUID uuid) throws DatabaseConnectionException {
         PreparedStatement pst = null;
         try(Connection con = getConnection()) {
             pst = con.prepareStatement("SELECT select_or_insert_player(?, ?)");
@@ -388,7 +388,7 @@ public final class MySQLManager implements Database {
         return -1;
     }
     
-    public UUID getPlayerUuid(int playerUid) {
+    public UUID getPlayerUuid(int playerUid) throws DatabaseConnectionException {
         PreparedStatement pst = null;
         try(Connection con = getConnection()) {
             pst = con.prepareStatement("SELECT lower_uid, upper_uid FROM Players WHERE uid = ?");
@@ -404,7 +404,31 @@ public final class MySQLManager implements Database {
         }
         return null;
     }
+    
+    public ConnectionPool getConnectionPool( ) {
+        return connectionPool;
+    }
+    
+    @Override
+    public UUIDHandler createUUIDHandler( ) {
+        return new MySQLUUIDHandler(this, forceOnlineMode);
+    }
 
+    @Override
+    public TemporaryPermissionEntityDataSource createTempGroupDataSource(String groupName) {
+        return new MySQLTempGroupDataSource(this, groupName);
+    }
+
+    @Override
+    public TemporaryPermissionEntityDataSource createTempPlayerDataSource(UUID playerUniqueId) {
+        return new MySQLTempPlayerDataSource(this, playerUniqueId);
+    }
+
+    @Override
+    public void shutdown( ) {
+        connectionPool.shutdown( );
+    }
+    
     public static void attemptClose(Connection con) {
         try {
             if (con != null) {
@@ -434,36 +458,16 @@ public final class MySQLManager implements Database {
 
         }
     }
-
-    private static void handleStartingSqlException(SQLException ex) {
+    
+    public static DatabaseConnectionException handleSqlException(SQLException ex) throws DatabaseConnectionException {
         if (ex instanceof CommunicationsException) {
-            throw new StartException(Messages.format(Messages.ERROR_SQL_NOT_CONNECTED));
+            return new DatabaseConnectionException();
         }
         else if (ex instanceof SQLException) {
             if (ex.getMessage().startsWith("Unable to open a test connection")) {
-                throw new StartException(Messages.format(Messages.ERROR_SQL_NOT_CONNECTED));
+                return new DatabaseConnectionException();
             }
         }
-        throw new RuntimeException("An unknown SQL exception has occurred.", ex);
-    }
-
-    @Override
-    public UUIDHandler createUUIDHandler( ) {
-        return new MySQLUUIDHandler(this, forceOnlineMode);
-    }
-
-    @Override
-    public TemporaryPermissionEntityDataSource createTempGroupDataSource(String groupName) {
-        return new MySQLTempGroupDataSource(this, groupName);
-    }
-
-    @Override
-    public TemporaryPermissionEntityDataSource createTempPlayerDataSource(UUID playerUniqueId) {
-        return new MySQLTempPlayerDataSource(this, playerUniqueId);
-    }
-
-    @Override
-    public void shutdown( ) {
-        connectionPool.shutdown( );
+        throw new RuntimeException("An unknown SQL exception has occurred.", ex);        
     }
 }
