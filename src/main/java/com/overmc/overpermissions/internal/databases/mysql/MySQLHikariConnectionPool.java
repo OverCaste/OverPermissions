@@ -22,12 +22,12 @@ public class MySQLHikariConnectionPool extends SingleConnectionPool {
         config.addDataSourceProperty("password", dbPassword);
         config.addDataSourceProperty("prepStmtCacheSize", "250");
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "1024");
-        config.addDataSourceProperty("connectionTimeout", "1000"); //Timeout after one second instead of the 30 default.
         config.addDataSourceProperty("cachePrepStmts", "true");
         config.addDataSourceProperty("useServerPrepStmts", "true");
         config.addDataSourceProperty("cacheServerConfiguration", "true");
         config.addDataSourceProperty("rewriteBatchedStatements", "true"); // We don't have that many big batches.
         config.setPoolName("for OverPermissions JDBC"); //Code from hikari: LOGGER.info("HikariCP pool {} is shutting down.", configuration.getPoolName());
+        config.setConnectionTimeout(1000L); //Timeout after one second instead of the 30 default.
         connectionPool = new HikariDataSource(config);
     }
 
