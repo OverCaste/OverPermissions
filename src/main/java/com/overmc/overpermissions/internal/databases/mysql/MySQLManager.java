@@ -4,7 +4,7 @@ import java.sql.*;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
-import com.mysql.jdbc.CommunicationsException;
+import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 import com.overmc.overpermissions.exceptions.DatabaseConnectionException;
 import com.overmc.overpermissions.exceptions.StartException;
 import com.overmc.overpermissions.internal.databases.*;
@@ -19,36 +19,35 @@ public final class MySQLManager implements Database {
     private final ExecutorService executor;
     private final ConnectionPool connectionPool;
 
-    private final String dbName;
     private final boolean forceOnlineMode;
 
     public Connection getConnection( ) throws SQLException, DatabaseConnectionException {
-        return connectionPool.getDatabaseConnection();
+        return connectionPool.getConnection();
     }
 
     public MySQLManager(ExecutorService executor, String serverName, String serverPort, String dbName, String dbUsername, String dbPassword, boolean usePool, boolean forceOnlineMode) throws Exception {
         this.executor = executor;
-        this.dbName = dbName;
         this.forceOnlineMode = forceOnlineMode;
         if(serverPort.length() == 0) {
             serverPort = "3306"; //The default MySQL port
         }
+        String url = "jdbc:mysql://" + serverName + ":" + serverPort + "/";
+        initDatabase(url, dbName, dbUsername, dbPassword); //The database needs to be created so that the connection pool doesn't throw an exception, thus this constructor overhead is necessary.
         if(usePool) {
-            connectionPool = new MySQLHikariConnectionPool(serverName, serverPort, dbName, dbUsername, dbPassword);
+            connectionPool = new MySQLHikariConnectionPool.Builder(dbName).setServerPort(serverPort).setDatabaseUsername(dbUsername).setDatabasePassword(dbPassword).setPluginName("OverPermissions").build();
         } else {
-            connectionPool = new SingleConnectionPool(dbUsername, dbPassword, "jdbc:mysql://" + serverName + ":" + serverPort + "/", dbName);
+            connectionPool = new SingleConnectionPool(dbUsername, dbPassword, url, dbName);
         }
-        initDatabase();
     }
 
-    private void initDatabase( ) throws StartException, DatabaseConnectionException {
+    private void initDatabase(String url, String dbName, String username, String password) throws StartException, DatabaseConnectionException {
         if (databaseInitialized) {
             return;
         }
         Connection con = null;
         Statement st = null;
         try {
-            con = connectionPool.getBaseConnection();
+            con = DriverManager.getConnection(url, username, password);
             st = con.createStatement();
             st.executeUpdate("CREATE DATABASE IF NOT EXISTS " + dbName);
             st.close();

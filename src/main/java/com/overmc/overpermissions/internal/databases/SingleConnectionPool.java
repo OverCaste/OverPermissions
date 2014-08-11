@@ -14,7 +14,6 @@ public class SingleConnectionPool implements ConnectionPool {
     private final String url;
     private final String databaseName;
     
-    private volatile UncloseableConnection baseConnection;
     private volatile UncloseableConnection databaseConnection;
     
     public SingleConnectionPool(String username, String password, String url, String databaseName) {
@@ -25,25 +24,7 @@ public class SingleConnectionPool implements ConnectionPool {
     }
     
     @Override
-    public Connection getBaseConnection( ) throws DatabaseConnectionException {
-        Connection cachedCon = baseConnection;
-        try {
-            if (cachedCon == null || cachedCon.isClosed()) {
-                synchronized (this) {
-                    cachedCon = baseConnection;
-                    if (cachedCon == null || cachedCon.isClosed()) {
-                        cachedCon = baseConnection = new UncloseableConnection(DriverManager.getConnection(url, username, password));
-                    }
-                }
-            }
-        } catch (SQLException ex) {
-            throw MySQLManager.handleSqlException(ex);
-        }
-        return cachedCon;
-    }
-
-    @Override
-    public Connection getDatabaseConnection( ) throws DatabaseConnectionException {
+    public Connection getConnection( ) throws DatabaseConnectionException {
         Connection cachedCon = databaseConnection;
         try {
             if (cachedCon == null || cachedCon.isClosed()) {
@@ -63,12 +44,9 @@ public class SingleConnectionPool implements ConnectionPool {
     @Override
     public void shutdown( ) {
         try {
-            baseConnection.closeConnection();
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
-        try {
-            databaseConnection.closeConnection();
+            if(databaseConnection != null) {
+                databaseConnection.closeConnection();
+            }
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
