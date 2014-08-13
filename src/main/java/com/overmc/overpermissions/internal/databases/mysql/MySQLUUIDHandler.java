@@ -38,7 +38,8 @@ public class MySQLUUIDHandler extends AbstractUUIDDataSource {
     public UUID getDatabaseNameUuid(String name) {
         PreparedStatement pst = null;
         try(Connection con = sqlManager.getConnection()) {
-            pst = con.prepareStatement("SELECT lower_uid, upper_uid FROM Uuid_Player_Maps WHERE username=? INNER JOIN Players ON Uuid_Player_Maps.player_uid=Players.uid");
+            pst = con.prepareStatement("SELECT lower_uid, upper_uid FROM Uuid_Player_Maps INNER JOIN Players ON Uuid_Player_Maps.player_uid=Players.uid WHERE username=?");
+            pst.setString(1, name);
             ResultSet rs = pst.executeQuery();
             if (rs.first()) {
                 return new UUID(rs.getLong("upper_uid"), rs.getLong("lower_uid"));
@@ -56,6 +57,8 @@ public class MySQLUUIDHandler extends AbstractUUIDDataSource {
         PreparedStatement pst = null;
         try(Connection con = sqlManager.getConnection()) {
             pst = con.prepareStatement("SELECT username FROM Uuid_Player_Maps WHERE lower_uid=? AND upper_uid=? ORDER BY last_seen DESC LIMIT 1");
+            pst.setLong(1, uuid.getLeastSignificantBits());
+            pst.setLong(2, uuid.getMostSignificantBits());
             ResultSet rs = pst.executeQuery();
             if (rs.first()) {
                 return rs.getString("username");
