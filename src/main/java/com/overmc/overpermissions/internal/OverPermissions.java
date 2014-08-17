@@ -73,6 +73,7 @@ public final class OverPermissions extends JavaPlugin {
         saveDefaultConfig();
         getConfig().options().copyDefaults(true);
         reloadConfig();
+        defaultGroup = getConfig().getString("default-group", "default");
     }
 
     private void initKickOnFail( ) throws Exception {
@@ -123,7 +124,7 @@ public final class OverPermissions extends JavaPlugin {
 
         }
         this.database = database;
-        uuidHandler = database.createUUIDHandler();
+        uuidHandler = database.getUUIDHandler();
         tempManager = new TemporaryPermissionManager(this, database);
         groupManager = new LocalGroupManager(database, tempManager, wildcardSupport);
         groupManager.reloadGroups();
@@ -131,7 +132,6 @@ public final class OverPermissions extends JavaPlugin {
     }
 
     private void initDefaultGroup( ) {
-        defaultGroup = getConfig().getString("default-group", "default");
         if (!groupManager.doesGroupExist(defaultGroup)) { // group doesn't exist.
             groupManager.createGroup(defaultGroup, 0);
             getLogger().info("Successfully created default group: " + defaultGroup);
@@ -198,9 +198,14 @@ public final class OverPermissions extends JavaPlugin {
         PermissionUser user = userManager.getPermissionUser(player);
         tempManager.initializePlayerTemporaryPermissions(user);
     }
+    
+    void initPlayerUUID(Player player) {
+        uuidHandler.setNameUuid(player.getName(), player.getUniqueId());
+    }
 
     private void initPlayers( ) {
         for (Player p : Bukkit.getOnlinePlayers()) {
+            initPlayerUUID(p);
             initPlayer(p);
         }
     }

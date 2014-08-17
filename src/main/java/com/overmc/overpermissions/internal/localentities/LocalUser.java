@@ -157,7 +157,6 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
         if (hasInternalPermission(permission)) {
             return getInternalPermission(permission);
         }
-        System.out.println("Parents: " + allParents);
         for (PermissionGroup parent : allParents) {
             if (parent.hasGlobalPermission(permission)) {
                 return parent.getGlobalPermission(permission);

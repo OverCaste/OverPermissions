@@ -13,6 +13,11 @@ final class GeneralListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
+    public void handlePlayerLogin(PlayerLoginEvent e) {
+        plugin.initPlayerUUID(e.getPlayer());
+    }
+    
+    @EventHandler(priority = EventPriority.LOWEST)
     public void handlePlayerJoin(PlayerJoinEvent e) {
         plugin.initPlayer(e.getPlayer());
     }

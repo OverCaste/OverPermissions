@@ -19,7 +19,7 @@ public final class MySQLManager implements Database {
     private final ExecutorService executor;
     private final ConnectionPool connectionPool;
 
-    private final boolean forceOnlineMode;
+    private final UUIDHandler uuidHandler;
 
     public Connection getConnection( ) throws SQLException, DatabaseConnectionException {
         return connectionPool.getConnection();
@@ -27,7 +27,6 @@ public final class MySQLManager implements Database {
 
     public MySQLManager(ExecutorService executor, String serverName, String serverPort, String dbName, String dbUsername, String dbPassword, boolean usePool, boolean forceOnlineMode) throws Exception {
         this.executor = executor;
-        this.forceOnlineMode = forceOnlineMode;
         if(serverPort.length() == 0) {
             serverPort = "3306"; //The default MySQL port
         }
@@ -38,6 +37,7 @@ public final class MySQLManager implements Database {
         } else {
             connectionPool = new SingleConnectionPool(dbUsername, dbPassword, url, dbName);
         }
+        uuidHandler = new MySQLUUIDHandler(this, forceOnlineMode);
     }
 
     private void initDatabase(String url, String dbName, String username, String password) throws StartException, DatabaseConnectionException {
@@ -60,7 +60,7 @@ public final class MySQLManager implements Database {
                     + "uid int UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,"
                     + "lower_uid BIGINT NOT NULL,"
                     + "upper_uid BIGINT NOT NULL,"
-                    + "INDEX uuid (lower_uid, upper_uid)"
+                    + "CONSTRAINT uuid UNIQUE (lower_uid, upper_uid)"
                     + ")");
             st.executeUpdate("CREATE TABLE IF NOT EXISTS Worlds"
                     + "("
@@ -409,8 +409,8 @@ public final class MySQLManager implements Database {
     }
     
     @Override
-    public UUIDHandler createUUIDHandler( ) {
-        return new MySQLUUIDHandler(this, forceOnlineMode);
+    public UUIDHandler getUUIDHandler( ) {
+        return uuidHandler;
     }
 
     @Override

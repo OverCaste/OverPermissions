@@ -4,5 +4,5 @@ import com.overmc.overpermissions.internal.datasources.*;
 
 public interface Database extends UserDataSourceFactory, GroupManagerDataSourceFactory, TemporaryPermissionEntityDataSourceFactory {
     public void shutdown( );
-    public UUIDHandler createUUIDHandler( );
+    public UUIDHandler getUUIDHandler( );
 }
