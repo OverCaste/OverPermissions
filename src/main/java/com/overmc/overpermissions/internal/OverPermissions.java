@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.concurrent.*;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.ServicePriority;
@@ -224,7 +223,7 @@ public final class OverPermissions extends JavaPlugin {
             registerApi();
             initPlayers();
             deinitKickOnFail(); // Started successfully, can remove this listener.
-            getLogger().info(ChatColor.GREEN + "Successfully enabled!");
+            getLogger().info("Successfully enabled.");
         } catch (MissingDependencyException e) {
             Bukkit.getLogger().warning(e.getSimpleMessage());
             Bukkit.getServer().shutdown();
