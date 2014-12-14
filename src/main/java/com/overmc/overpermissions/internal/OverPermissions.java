@@ -111,7 +111,7 @@ public final class OverPermissions extends JavaPlugin {
             default:
                 getLogger().warning("Type value " + type + " wasn't recognized. Defaulting to mysql.");
             case "mysql": {
-                database = new MySQLManager(exec,
+                database = new MySQLManager(getLogger(), exec,
                         getConfig().getString("sql.address", "localhost"),
                         getConfig().getString("sql.port", ""),
                         getConfig().getString("sql.dbname", "OverPermissions"),
