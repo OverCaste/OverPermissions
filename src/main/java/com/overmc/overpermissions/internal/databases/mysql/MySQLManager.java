@@ -405,7 +405,7 @@ public final class MySQLManager implements Database {
             pst.setLong(2, uuid.getMostSignificantBits());
             ResultSet rs = pst.executeQuery();
             if (rs.first() && rs.isLast()) {
-                return rs.getInt("uid");
+                return rs.getInt(1);
             }
         } catch (SQLException e) { // TODO properly handle sql exceptions
             e.printStackTrace();
