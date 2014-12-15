@@ -352,7 +352,7 @@ public final class MySQLManager implements Database {
             pst.setString(1, worldName);
             ResultSet rs = pst.executeQuery();
             if (rs.first() && rs.isLast()) {
-                return rs.getInt("uid");
+                return rs.getInt(1);
             }
         } catch (SQLException e) {
             e.printStackTrace();
