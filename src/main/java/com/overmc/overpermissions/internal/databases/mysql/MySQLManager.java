@@ -29,6 +29,7 @@ public final class MySQLManager implements Database {
 
     public MySQLManager(Logger logger, ExecutorService executor, String serverName, String serverPort, String dbName, String dbUsername, String dbPassword, boolean usePool, boolean forceOnlineMode) throws Exception {
         this.executor = executor;
+        this.logger = logger;
         if (serverPort.length() == 0) {
             serverPort = "3306"; // The default MySQL port
         }
@@ -41,7 +42,6 @@ public final class MySQLManager implements Database {
             connectionPool = new SingleConnectionPool(dbUsername, dbPassword, url, dbName);
         }
         uuidHandler = new MySQLUUIDHandler(this, forceOnlineMode);
-        this.logger = logger;
     }
 
     private void initDatabase(String url, String dbName, String username, String password) throws StartException, DatabaseConnectionException {
