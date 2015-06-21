@@ -5,17 +5,20 @@ import java.util.ArrayList;
 import net.milkbowl.vault.permission.Permission;
 
 import org.bukkit.Bukkit;
-import org.bukkit.event.*;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.plugin.Plugin;
 
-import com.overmc.overpermissions.api.*;
+import com.overmc.overpermissions.api.GroupManager;
+import com.overmc.overpermissions.api.PermissionGroup;
+import com.overmc.overpermissions.api.PermissionUser;
+import com.overmc.overpermissions.api.UserManager;
 import com.overmc.overpermissions.internal.OverPermissions;
 
 public class Permission_OverPermissions extends Permission {
-
-    private final String name = "OverPermissions";
     private OverPermissions overPerms;
     private UserManager userManager;
     private GroupManager groupManager;
@@ -39,7 +42,7 @@ public class Permission_OverPermissions extends Permission {
     @Override
     public String getName( )
     {
-        return name;
+        return "OverPermissions";
     }
 
     @Override
@@ -149,7 +152,7 @@ public class Permission_OverPermissions extends Permission {
     @Override
     public String[] getPlayerGroups(String worldName, String playerName)
     {
-        ArrayList<String> ret = new ArrayList<>();
+        ArrayList<String> ret = new ArrayList<String>();
         if (!userManager.doesUserExist(playerName)) {
             return new String[0];
         }
@@ -193,7 +196,7 @@ public class Permission_OverPermissions extends Permission {
     @Override
     public String[] getGroups( )
     {
-        ArrayList<String> groupNames = new ArrayList<>();
+        ArrayList<String> groupNames = new ArrayList<String>();
         for (PermissionGroup s : groupManager.getGroups()) {
             groupNames.add(s.getName());
         }

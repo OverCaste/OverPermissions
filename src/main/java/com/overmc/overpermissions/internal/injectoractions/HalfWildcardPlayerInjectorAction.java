@@ -28,11 +28,11 @@ public class HalfWildcardPlayerInjectorAction implements WildcardAction {
             permNodesField.setAccessible(true);
 
         } catch (ClassNotFoundException e) {
-            throw new StartException("The option 'wildcard-support' is enabled, but the server implementation wasn't CraftBukkit!");
+            throw new StartException("The option 'wildcard-support' is enabled, but the server implementation wasn't compatible!");
         } catch (NoSuchFieldException e) {
-            throw new StartException("The option 'wildcard-support' is enabled, but the CraftBukkit implementation wasn't compatible!");
+            throw new StartException("The option 'wildcard-support' is enabled, but the Bukkit implementation wasn't compatible!");
         } catch (SecurityException e) {
-            throw new StartException("There was a security exception thrown while trying to inject Wildcard support into CraftBukkit!");
+            throw new StartException("There was a security exception thrown while trying to inject Wildcard support into Bukkit!");
         } catch (IllegalArgumentException e) {
             throw new RuntimeException(e);
         }

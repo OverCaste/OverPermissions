@@ -2,15 +2,23 @@ package com.overmc.overpermissions.internal.commands;
 
 import static com.overmc.overpermissions.internal.Messages.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.bukkit.Bukkit;
-import org.bukkit.command.*;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
 import com.google.common.base.Joiner;
 import com.overmc.overpermissions.api.PermissionUser;
-import com.overmc.overpermissions.events.*;
+import com.overmc.overpermissions.events.PlayerMetaAddByPlayerEvent;
+import com.overmc.overpermissions.events.PlayerMetaAddEvent;
+import com.overmc.overpermissions.events.PlayerMetaRemoveByPlayerEvent;
+import com.overmc.overpermissions.events.PlayerMetaRemoveEvent;
 import com.overmc.overpermissions.internal.Messages;
 import com.overmc.overpermissions.internal.OverPermissions;
 
@@ -44,14 +52,14 @@ public class PlayerSetMetaCommand implements TabExecutor {
         final String worldName;
         final String value;
         if (Bukkit.getWorld(args[2]) != null) {
-            value = Joiner.on(' ').join(Arrays.copyOfRange(args, 3, args.length - 1));
+            value = Joiner.on(' ').join(Arrays.copyOfRange(args, 3, args.length));
             worldName = args[2];
         } else if ("global".equals(args[2])) {
             worldName = null;
-            value = Joiner.on(' ').join(Arrays.copyOfRange(args, 3, args.length - 1));
+            value = Joiner.on(' ').join(Arrays.copyOfRange(args, 3, args.length));
         } else {
             worldName = null;
-            value = Joiner.on(' ').join(Arrays.copyOfRange(args, 2, args.length - 1));
+            value = Joiner.on(' ').join(Arrays.copyOfRange(args, 2, args.length));
         }
         final boolean global = (worldName == null || "global".equals(worldName));
         if ("clear".equalsIgnoreCase(value)) {

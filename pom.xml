@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.overmc</groupId>
 	<artifactId>overpermissions</artifactId>
-	<version>2.0.0ALPHA1</version>
+	<version>2.0.0</version>
 	<name>OverPermissions</name>
 	<description>A SQL backed Bukkit permissions system with numerous optimizations, including concurrency, database indexing, and reentrant locking.</description>
 	<properties>
@@ -11,8 +11,8 @@
 	</properties>
 	<repositories>
 		<repository>
-			<id>bukkit-repo</id>
-			<url>http://repo.bukkit.org/content/groups/public/</url>
+			<id>spigot-repo</id>
+			<url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
 		</repository>
 	</repositories>
 
@@ -20,7 +20,7 @@
 		<dependency>
 			<groupId>org.bukkit</groupId>
 			<artifactId>bukkit</artifactId>
-			<version>1.7.9-R0.2</version>
+			<version>1.8.7-R0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>net.milkbowl.vault</groupId>
@@ -33,10 +33,10 @@
 			<version>5.1.29</version>
 		</dependency>
 		<dependency>
-		    <groupId>com.zaxxer</groupId>
-		    <artifactId>HikariCP-java6</artifactId>
-		    <version>2.0.1</version>
-		    <scope>compile</scope>
+			<groupId>com.zaxxer</groupId>
+			<artifactId>HikariCP-java6</artifactId>
+			<version>2.0.1</version>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -70,11 +70,11 @@
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>2.4</version>
 				<configuration>
-				    <archive>
-				        <manifestEntries>
-				            <Class-Path>lib/slf4j-api-1.7.5.jar lib/slf4j-jdk14-1.7.5.jar lib/jedis-2.4.2.jar lib/HikariCP-2.0.1.jar lib/javassist-3.18.1-GA.jar lib/mysql-connector-java-5.1.31.jar</Class-Path>
-				        </manifestEntries>
-				    </archive>
+					<archive>
+						<manifestEntries>
+							<Class-Path>lib/slf4j-api-1.7.5.jar lib/slf4j-jdk14-1.7.5.jar lib/jedis-2.4.2.jar lib/HikariCP-2.0.1.jar lib/javassist-3.18.1-GA.jar lib/mysql-connector-java-5.1.31.jar</Class-Path>
+						</manifestEntries>
+					</archive>
 				</configuration>
 			</plugin>
 			<plugin>

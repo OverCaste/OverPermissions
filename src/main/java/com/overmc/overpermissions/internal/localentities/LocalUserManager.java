@@ -10,17 +10,25 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import com.google.common.base.Preconditions;
-import com.google.common.cache.*;
-import com.overmc.overpermissions.api.*;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
+import com.overmc.overpermissions.api.GroupManager;
+import com.overmc.overpermissions.api.PermissionGroup;
+import com.overmc.overpermissions.api.UserManager;
 import com.overmc.overpermissions.exceptions.InvalidOnlineUsernameException;
 import com.overmc.overpermissions.exceptions.InvalidUsernameException;
 import com.overmc.overpermissions.internal.TemporaryPermissionManager;
-import com.overmc.overpermissions.internal.datasources.*;
+import com.overmc.overpermissions.internal.datasources.UUIDHandler;
+import com.overmc.overpermissions.internal.datasources.UserDataSource;
+import com.overmc.overpermissions.internal.datasources.UserDataSourceFactory;
 
 public class LocalUserManager implements UserManager {
     public static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9\\_]{1,16}$");
 
-    private Cache<UUID, UserDataSource> dataSourceCache = CacheBuilder.newBuilder()
+    private LoadingCache<UUID, UserDataSource> dataSourceCache = CacheBuilder.newBuilder()
             .softValues()
             .expireAfterAccess(15, TimeUnit.MINUTES)
             .maximumSize(Bukkit.getMaxPlayers() * 2)
@@ -31,7 +39,7 @@ public class LocalUserManager implements UserManager {
                 }
             }); // These are cheap, why not have a huge cache of them?
 
-    private Cache<UUID, LocalUser> userCache = CacheBuilder.newBuilder()
+    private LoadingCache<UUID, LocalUser> userCache = CacheBuilder.newBuilder()
             .softValues()
             .expireAfterAccess(3, TimeUnit.MINUTES)
             .maximumSize((Bukkit.getMaxPlayers() * 5) / 4) // Some server owners don't appreciate the concept of 'maximum players'
@@ -49,7 +57,7 @@ public class LocalUserManager implements UserManager {
             .build(new CacheLoader<UUID, LocalUser>() {
                 @Override
                 public LocalUser load(UUID uuid) throws Exception {
-                    LocalUser user = new LocalUser(uuid, plugin, tempManager, dataSourceCache.get(uuid), wildcardSupport);
+                    LocalUser user = new LocalUser(uuid, plugin, tempManager, dataSourceCache.getUnchecked(uuid), wildcardSupport);
                     user.recalculateParentData();
                     user.reloadMetadata();
                     user.reloadPermissions();

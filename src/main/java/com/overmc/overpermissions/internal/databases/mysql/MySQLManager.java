@@ -1,6 +1,11 @@
 package com.overmc.overpermissions.internal.databases.mysql;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
@@ -8,8 +13,14 @@ import java.util.logging.Logger;
 import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 import com.overmc.overpermissions.exceptions.DatabaseConnectionException;
 import com.overmc.overpermissions.exceptions.StartException;
-import com.overmc.overpermissions.internal.databases.*;
-import com.overmc.overpermissions.internal.datasources.*;
+import com.overmc.overpermissions.internal.databases.ConnectionPool;
+import com.overmc.overpermissions.internal.databases.Database;
+import com.overmc.overpermissions.internal.databases.SingleConnectionPool;
+import com.overmc.overpermissions.internal.datasources.GroupDataSource;
+import com.overmc.overpermissions.internal.datasources.GroupManagerDataSource;
+import com.overmc.overpermissions.internal.datasources.TemporaryPermissionEntityDataSource;
+import com.overmc.overpermissions.internal.datasources.UUIDHandler;
+import com.overmc.overpermissions.internal.datasources.UserDataSource;
 
 public final class MySQLManager implements Database {
     public static final int GLOBAL_WORLD_UID = 1;
@@ -253,6 +264,7 @@ public final class MySQLManager implements Database {
                         "END ");
             } catch (SQLException e) {
                 if(e.getErrorCode() == 1304) { //A race condition could make the CREATE FUNCTION statement occur when there is already a function defined.
+                    //This should only happen if you start two servers accessing the same mysql database at once, and it means that one will create it anyways.
                     logger.fine("A race condition stopped this instance of OverPermissions from creating the function 'select_or_insert_world.'");
                 } else {
                     throw e; //Propagate.
@@ -305,8 +317,7 @@ public final class MySQLManager implements Database {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
-            throw new StartException(e.getMessage());
+            throw handleSqlException(e);
         } finally {
             attemptClose(st);
             attemptClose(con);

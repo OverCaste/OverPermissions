@@ -2,15 +2,24 @@ package com.overmc.overpermissions.internal.commands;
 
 import static com.overmc.overpermissions.internal.Messages.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.bukkit.Bukkit;
-import org.bukkit.command.*;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
 import com.google.common.base.Joiner;
 import com.overmc.overpermissions.api.PermissionGroup;
-import com.overmc.overpermissions.events.*;
+import com.overmc.overpermissions.events.GroupMetaAddByPlayerEvent;
+import com.overmc.overpermissions.events.GroupMetaAddEvent;
+import com.overmc.overpermissions.events.GroupMetaClearByPlayerEvent;
+import com.overmc.overpermissions.events.GroupMetaClearEvent;
+import com.overmc.overpermissions.events.GroupMetaEvent;
 import com.overmc.overpermissions.internal.Messages;
 import com.overmc.overpermissions.internal.OverPermissions;
 
@@ -61,7 +70,7 @@ public class GroupSetMetaCommand implements TabExecutor {
         final String groupName = args[0];
         final String key = args[1];
         final String value = Joiner.on(' ').join(Arrays.copyOfRange(args, worldArgumentSet ? 3 : 2, args.length)); // If the world argument is set, skip it.
-        if (plugin.getGroupManager().doesGroupExist(groupName)) {
+        if (!plugin.getGroupManager().doesGroupExist(groupName)) {
             sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, groupName));
             return true;
         }

@@ -1,6 +1,6 @@
 package com.overmc.overpermissions.exceptions;
 
-public class DatabaseConnectionException extends RuntimeException {
+public class DatabaseConnectionException extends StartException {
     private static final long serialVersionUID = 3415494631439640130L;
 
     public DatabaseConnectionException() {
