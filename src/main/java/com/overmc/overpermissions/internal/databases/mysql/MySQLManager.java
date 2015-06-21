@@ -170,8 +170,8 @@ public final class MySQLManager implements Database {
                     + "("
                     + "group_uid int UNSIGNED NOT NULL,"
                     + "parent_uid int UNSIGNED NOT NULL,"
-                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid),"
-                    + "FOREIGN KEY(parent_uid) REFERENCES Permission_Groups(uid),"
+                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid) ON DELETE CASCADE ON UPDATE CASCADE,"
+                    + "FOREIGN KEY(parent_uid) REFERENCES Permission_Groups(uid) ON DELETE CASCADE ON UPDATE CASCADE,"
                     + "PRIMARY KEY(group_uid, parent_uid),"
                     + "INDEX group_uid (group_uid)"
                     + ")");
@@ -182,7 +182,7 @@ public final class MySQLManager implements Database {
                     + "group_uid int UNSIGNED NOT NULL,"
                     + "FOREIGN KEY(permission_uid) REFERENCES Permissions(uid),"
                     + "FOREIGN KEY(world_uid) REFERENCES Worlds(uid),"
-                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid),"
+                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid) ON DELETE CASCADE ON UPDATE CASCADE,"
                     + "PRIMARY KEY(permission_uid, world_uid, group_uid)"
                     + ")");
             st.executeUpdate("CREATE TABLE IF NOT EXISTS Group_Global_Permissions"
@@ -190,7 +190,7 @@ public final class MySQLManager implements Database {
                     + "permission_uid int UNSIGNED NOT NULL,"
                     + "group_uid int UNSIGNED NOT NULL,"
                     + "FOREIGN KEY(permission_uid) REFERENCES Permissions(uid),"
-                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid),"
+                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid) ON DELETE CASCADE ON UPDATE CASCADE,"
                     + "PRIMARY KEY(permission_uid, group_uid),"
                     + "INDEX group_uid (group_uid)"
                     + ")");
@@ -203,7 +203,7 @@ public final class MySQLManager implements Database {
                     + "INDEX timeout (timeout ASC),"
                     + "FOREIGN KEY(permission_uid) REFERENCES Permissions(uid),"
                     + "FOREIGN KEY(world_uid) REFERENCES Worlds(uid),"
-                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid),"
+                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid) ON DELETE CASCADE ON UPDATE CASCADE,"
                     + "PRIMARY KEY(permission_uid, world_uid, group_uid)"
                     + ")");
             st.executeUpdate("CREATE TABLE IF NOT EXISTS Group_Global_Temporary_Permissions"
@@ -213,7 +213,7 @@ public final class MySQLManager implements Database {
                     + "timeout bigint UNSIGNED NOT NULL,"
                     + "INDEX timeout (timeout ASC),"
                     + "FOREIGN KEY(permission_uid) REFERENCES Permissions(uid),"
-                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid),"
+                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid) ON DELETE CASCADE ON UPDATE CASCADE,"
                     + "PRIMARY KEY(permission_uid, group_uid),"
                     + "INDEX group_uid (group_uid)"
                     + ")");
@@ -222,7 +222,7 @@ public final class MySQLManager implements Database {
                     + "group_uid int UNSIGNED NOT NULL,"
                     + "meta_key varchar(50) NOT NULL,"
                     + "meta_value varchar(50) NOT NULL,"
-                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid),"
+                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid) ON DELETE CASCADE ON UPDATE CASCADE,"
                     + "PRIMARY KEY(group_uid, meta_key),"
                     + "INDEX group_uid (group_uid)"
                     + ")");
@@ -232,7 +232,7 @@ public final class MySQLManager implements Database {
                     + "world_uid int UNSIGNED NOT NULL,"
                     + "meta_key varchar(50) NOT NULL,"
                     + "meta_value varchar(50) NOT NULL,"
-                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid),"
+                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid) ON DELETE CASCADE ON UPDATE CASCADE,"
                     + "PRIMARY KEY(group_uid, world_uid, meta_key),"
                     + "INDEX group_world (group_uid, world_uid)"
                     + ")");
@@ -240,8 +240,8 @@ public final class MySQLManager implements Database {
                     + "("
                     + "group_uid int UNSIGNED NOT NULL,"
                     + "player_uid int UNSIGNED NOT NULL,"
-                    + "FOREIGN KEY(player_uid) REFERENCES Players(uid),"
-                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid),"
+                    + "FOREIGN KEY(player_uid) REFERENCES Players(uid) ON DELETE CASCADE ON UPDATE CASCADE,"
+                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid) ON DELETE CASCADE ON UPDATE CASCADE,"
                     + "PRIMARY KEY(group_uid, player_uid)"
                     + ")");
 

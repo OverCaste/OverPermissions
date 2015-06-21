@@ -6,7 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.Bukkit;
-import org.bukkit.command.*;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
 import com.overmc.overpermissions.api.PermissionGroup;
@@ -57,7 +60,7 @@ public final class GroupAddCommand implements TabExecutor {
         if (sender instanceof Player) {
             event = new GroupPermissionAddByPlayerEvent(group.getName(), worldName, permissionNode, (Player) sender);
         } else {
-            event = new GroupPermissionAddEvent(group.getName(), worldName, permissionNode);
+            event = new GroupPermissionAddEvent(group.getName(), permissionNode, worldName);
         }
         plugin.getServer().getPluginManager().callEvent(event);
         if (event.isCancelled()) {

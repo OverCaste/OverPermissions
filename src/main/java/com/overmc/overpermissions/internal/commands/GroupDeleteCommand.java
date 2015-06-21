@@ -5,9 +5,16 @@ import static com.overmc.overpermissions.internal.Messages.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bukkit.command.*;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
+import com.overmc.overpermissions.api.PermissionGroup;
 import com.overmc.overpermissions.events.GroupDeletionByPlayerEvent;
 import com.overmc.overpermissions.events.GroupDeletionEvent;
 import com.overmc.overpermissions.internal.Messages;
@@ -43,15 +50,34 @@ public class GroupDeleteCommand implements TabExecutor {
             sender.sendMessage(Messages.format(ERROR_GROUP_NOT_FOUND, groupName));
             return true;
         }
+        final PermissionGroup group = plugin.getGroupManager().getGroup(groupName);
         if (plugin.getDefaultGroupName().equalsIgnoreCase(groupName)) {
-            sender.sendMessage(Messages.format(ERROR_DELETE_DEFAULT_GROUP, groupName));
+            sender.sendMessage(Messages.format(ERROR_DELETE_DEFAULT_GROUP, group.getName()));
+            return true;
+        }
+        if(!group.getParents().isEmpty()) {
+            sender.sendMessage(Messages.format(ERROR_DELETE_GROUP_HAS_PARENTS, group.getName(), Joiner.on(", ").join(Iterables.transform(group.getParents(), new Function<PermissionGroup, String>() {
+                @Override
+                public String apply(PermissionGroup input) {
+                    return input.getName();
+                }
+            }))));
+            return true;
+        }
+        if(!group.getChildren().isEmpty()) {
+            sender.sendMessage(Messages.format(ERROR_DELETE_GROUP_HAS_CHILDREN, group.getName(), Joiner.on(", ").join(Iterables.transform(group.getChildren(), new Function<PermissionGroup, String>() {
+                @Override
+                public String apply(PermissionGroup input) {
+                    return input.getName();
+                }
+            }))));
             return true;
         }
         GroupDeletionEvent event;
         if (sender instanceof Player) {
-            event = new GroupDeletionByPlayerEvent(groupName, (Player) sender);
+            event = new GroupDeletionByPlayerEvent(group.getName(), (Player) sender);
         } else {
-            event = new GroupDeletionEvent(groupName);
+            event = new GroupDeletionEvent(group.getName());
         }
         plugin.getServer().getPluginManager().callEvent(event);
         if (event.isCancelled()) {
@@ -61,7 +87,7 @@ public class GroupDeleteCommand implements TabExecutor {
             @Override
             public void run( ) {
                 if (plugin.getGroupManager().deleteGroup(groupName)) {
-                    sender.sendMessage(Messages.format(SUCCESS_GROUP_DELETE, groupName));
+                    sender.sendMessage(Messages.format(SUCCESS_GROUP_DELETE, group.getName()));
                 } else {
                     sender.sendMessage(Messages.format(ERROR_UNKNOWN));
                 }

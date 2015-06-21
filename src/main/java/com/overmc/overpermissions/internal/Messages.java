@@ -30,6 +30,8 @@ public final class Messages {
     public static final String ERROR_INVALID_WORLD = RED + "'%s' isn't a valid world or 'global.'";
     public static final String ERROR_GROUP_NOT_FOUND = RED + "Couldn't find a group by the name of '%s'.";
     public static final String ERROR_DELETE_DEFAULT_GROUP = RED + "You can't delete group %s! It is the default group!";
+    public static final String ERROR_DELETE_GROUP_HAS_PARENTS = RED + "You can't delete group %s! It has one or more parents: (%s)";
+    public static final String ERROR_DELETE_GROUP_HAS_CHILDREN = RED + "You can't delete group %s! One or more groups have it as a parent: (%s)";
     public static final String ERROR_INVALID_INTEGER = RED + "'%s' isn't a valid number!";
     public static final String ERROR_INVALID_TIME = RED + "'%s' isn't a valid date! Use this format: 12.5d5h15m";
     public static final String ERROR_PLAYER_UNKNOWN_META_KEY_GLOBAL = RED + "%s isn't a set metadata key for player %s!";
