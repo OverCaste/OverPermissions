@@ -26,7 +26,7 @@ public class GroupRemoveCommand implements TabExecutor {
         this.plugin = plugin;
     }
 
-    public GroupRemoveCommand register( ) {
+    public GroupRemoveCommand register() {
         PluginCommand command = plugin.getCommand("groupremove");
         command.setExecutor(this);
         command.setTabCompleter(this);
@@ -68,7 +68,7 @@ public class GroupRemoveCommand implements TabExecutor {
         }
         plugin.getExecutor().submit(new Runnable() {
             @Override
-            public void run( ) {
+            public void run() {
                 if (global) {
                     if (group.removeGlobalPermissionNode(permission)) {
                         sender.sendMessage(Messages.format(SUCCESS_GROUP_REMOVE_GLOBAL, permission, group.getName()));

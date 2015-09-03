@@ -66,7 +66,7 @@ public final class CommandUtils {
             PermissionGroup g = groupManager.getGroup(groupName);
             for (String node : g.getPermissionNodes().getAllNodes()) {
                 if (node.toLowerCase().startsWith(currentValue)) {
-                    uniqueNodes.add(node);
+                    uniqueNodes.add(node.toLowerCase());
                 }
             }
         }
@@ -82,7 +82,7 @@ public final class CommandUtils {
             PermissionUser u = userManager.getPermissionUser(playerName);
             for (String node : u.getPermissionNodes().getAllNodes()) {
                 if (node.toLowerCase().startsWith(currentValue)) {
-                    uniqueNodes.add(node);
+                    uniqueNodes.add(node.toLowerCase());
                 }
             }
         }
@@ -98,13 +98,13 @@ public final class CommandUtils {
             PermissionUser u = userManager.getPermissionUser(playerName);
             for (String node : u.getPermissionNodes().getAllNodes()) {
                 if (node.toLowerCase().startsWith(currentValue)) {
-                    uniqueNodes.add(node);
+                    uniqueNodes.add(node.toLowerCase());
                 }
             }
             for (PermissionGroup g : u.getAllParents()) {
                 for (String node : g.getPermissionNodes().getAllNodes()) {
                     if (node.toLowerCase().startsWith(currentValue)) {
-                        uniqueNodes.add(node);
+                        uniqueNodes.add(node.toLowerCase());
                     }
                 }
             }
@@ -122,7 +122,7 @@ public final class CommandUtils {
             for (String node : u.getPermissionNodes().getAllNodes()) {
                 if (!node.startsWith("+") && !node.startsWith("-")) {
                     if (node.toLowerCase().startsWith(currentValue)) {
-                        uniqueNodes.add(node);
+                        uniqueNodes.add(node.toLowerCase());
                     }
                 }
             }
@@ -130,7 +130,7 @@ public final class CommandUtils {
                 for (String node : g.getPermissionNodes().getAllNodes()) {
                     if (!node.startsWith("+") && !node.startsWith("-")) {
                         if (node.toLowerCase().startsWith(currentValue)) {
-                            uniqueNodes.add(node);
+                            uniqueNodes.add(node.toLowerCase());
                         }
                     }
                 }
