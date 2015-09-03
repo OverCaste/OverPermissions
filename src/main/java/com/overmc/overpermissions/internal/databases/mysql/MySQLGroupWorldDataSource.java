@@ -1,13 +1,19 @@
 package com.overmc.overpermissions.internal.databases.mysql;
 
-import static com.overmc.overpermissions.internal.databases.mysql.MySQLManager.attemptClose;
-
-import java.sql.*;
-import java.util.*;
-
 import com.overmc.overpermissions.api.MetadataEntry;
 import com.overmc.overpermissions.api.TemporaryPermissionEntry;
 import com.overmc.overpermissions.internal.datasources.PermissionEntityDataSource;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.overmc.overpermissions.internal.databases.mysql.MySQLManager.attemptClose;
 
 public class MySQLGroupWorldDataSource implements PermissionEntityDataSource {
     private final MySQLManager sqlManager;
@@ -284,7 +290,7 @@ public class MySQLGroupWorldDataSource implements PermissionEntityDataSource {
         HashMap<String, String> ret = new HashMap<String, String>(64);
         PreparedStatement pst = null;
         try(Connection con = sqlManager.getConnection()) {
-            pst = con.prepareStatement("SELECT meta_key, meta_value FROM Group_World_Meta WHERE world_uid=(SELECT uid FROM Worlds WHERE name=?) AND group_uid = ?)");
+            pst = con.prepareStatement("SELECT meta_key, meta_value FROM Group_World_Meta WHERE world_uid=(SELECT uid FROM Worlds WHERE name=?) AND group_uid = ?");
             pst.setString(1, worldName);
             pst.setInt(2, groupSource.getUid());
             ResultSet rs = pst.executeQuery();
