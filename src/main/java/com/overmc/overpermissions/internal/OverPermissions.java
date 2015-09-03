@@ -1,27 +1,32 @@
 package com.overmc.overpermissions.internal;
 
-import java.security.acl.Group;
-import java.util.ArrayList;
-import java.util.concurrent.*;
-
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.event.HandlerList;
-import org.bukkit.plugin.ServicePriority;
-import org.bukkit.plugin.java.JavaPlugin;
-
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.overmc.overpermissions.api.*;
+import com.overmc.overpermissions.api.GroupManager;
+import com.overmc.overpermissions.api.PermissionUser;
+import com.overmc.overpermissions.api.UserManager;
 import com.overmc.overpermissions.exceptions.MissingDependencyException;
 import com.overmc.overpermissions.exceptions.StartException;
 import com.overmc.overpermissions.internal.commands.*;
 import com.overmc.overpermissions.internal.databases.Database;
 import com.overmc.overpermissions.internal.databases.mysql.MySQLManager;
 import com.overmc.overpermissions.internal.datasources.UUIDHandler;
-import com.overmc.overpermissions.internal.dependencies.*;
-import com.overmc.overpermissions.internal.injectoractions.*;
+import com.overmc.overpermissions.internal.dependencies.DefaultDependencies;
+import com.overmc.overpermissions.internal.dependencies.Dependency;
+import com.overmc.overpermissions.internal.dependencies.DependencyDownloader;
+import com.overmc.overpermissions.internal.injectoractions.BridgeInjectorAction;
+import com.overmc.overpermissions.internal.injectoractions.WildcardAction;
+import com.overmc.overpermissions.internal.injectoractions.WildcardDummyAction;
 import com.overmc.overpermissions.internal.localentities.LocalGroupManager;
 import com.overmc.overpermissions.internal.localentities.LocalUserManager;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.event.HandlerList;
+import org.bukkit.plugin.ServicePriority;
+import org.bukkit.plugin.java.JavaPlugin;
+
+import java.security.acl.Group;
+import java.util.ArrayList;
+import java.util.concurrent.*;
 
 public final class OverPermissions extends JavaPlugin {
     private TemporaryPermissionManager tempManager;
@@ -83,14 +88,14 @@ public final class OverPermissions extends JavaPlugin {
     private void deinitKickOnFail( ) throws Exception {
         HandlerList.unregisterAll(kickOnFailListener);
     }
-    
+
     private void initDependencies( ) throws Exception {
         dependencyDownloader = new DependencyDownloader(getDataFolder().getParentFile());
         ArrayList<Dependency> missingDependencies = new ArrayList<>(5);
-        if(getConfig().getBoolean("sql.use-pool", false)) {
+        if (getConfig().getBoolean("sql.use-pool", false)) {
             dependencyDownloader.ensureDependencyExists(DefaultDependencies.HIKARI_CP, missingDependencies);
         }
-        if(!missingDependencies.isEmpty()) {
+        if (!missingDependencies.isEmpty()) {
             throw new MissingDependencyException(missingDependencies);
         }
     }
@@ -163,18 +168,11 @@ public final class OverPermissions extends JavaPlugin {
     }
 
     private void injectBukkitActions( ) {
-        String wildcardSupportValue = getConfig().getString("wildcard-support", "STANDARD");
         String injectionModeValue = getConfig().getString("injection-mode", "FULL");
         if (injectionModeValue.equalsIgnoreCase("FULL")) {
-            if (wildcardSupportValue.equals("STANDARD")) {
-                wildcardAction = new HalfWildcardPlayerInjectorAction(this);
-            } else if (wildcardSupportValue.equals("NONE")) {
-                wildcardAction = new WildcardDummyAction();
-            } else {
-                throw new StartException("Invalid configuration option: 'wildcard-support': (" + wildcardSupportValue + ")");
-            }
+            wildcardAction = new BridgeInjectorAction(userManager);
         } else if (injectionModeValue.equalsIgnoreCase("NONE")) {
-            // The wildcard support case is handled in 'initManagers( )' for now.
+            wildcardAction = new WildcardDummyAction();
         } else {
             throw new StartException("Invalid configuration option: 'injection-mode': (" + injectionModeValue + ")");
         }
@@ -197,7 +195,7 @@ public final class OverPermissions extends JavaPlugin {
         PermissionUser user = userManager.getPermissionUser(player);
         tempManager.initializePlayerTemporaryPermissions(user);
     }
-    
+
     void initPlayerUUID(Player player) {
         uuidHandler.setNameUuid(player.getName(), player.getUniqueId());
     }
@@ -238,7 +236,6 @@ public final class OverPermissions extends JavaPlugin {
 
     void deinitPlayer(Player player) {
         tempManager.cancelTemporaryPermissions(userManager.getPermissionUser(player));
-        userManager.deinitializeUser(player);
         wildcardAction.deinitializePlayer(player);
     }
 
@@ -254,10 +251,10 @@ public final class OverPermissions extends JavaPlugin {
             deinitPlayers();
             getLogger().info("disabled.");
         }
-        if(exec != null) {
+        if (exec != null) {
             exec.shutdown();
         }
-        if(database != null) {
+        if (database != null) {
             try {
                 database.shutdown();
             } catch (Exception ex) {
@@ -274,14 +271,14 @@ public final class OverPermissions extends JavaPlugin {
     public String getDefaultGroupName( ) {
         return defaultGroup;
     }
-    
+
     /**
      * @return the Database connector that this OverPermissions instance is using to store persistant data.
      */
     public Database getPermissionDatabase( ) {
         return database;
     }
-    
+
     /**
      * @return the retriever/handler for player name <-> UUID relation ships
      */

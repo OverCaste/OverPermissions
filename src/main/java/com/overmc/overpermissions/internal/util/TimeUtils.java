@@ -1,16 +1,19 @@
 package com.overmc.overpermissions.internal.util;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.overmc.overpermissions.exceptions.TimeFormatException;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class TimeUtils {// TODO make less complicated, probably via StreamTokenizer
     private static final Pattern TIME_VALIDITY_PATTERN = Pattern.compile("^((?:\\d*\\.?\\d+)(?i)(?:" + Joiner.on('|').join(CalendarUnit.ALL_ALIASES) + "))*$"); // This pattern checks for validity in input, as it matches the whole string.
@@ -44,7 +47,7 @@ public final class TimeUtils {// TODO make less complicated, probably via Stream
             if (CalendarUnit.ALIAS_MAP.containsKey(aliasPortion)) {
                 CalendarUnit unit = CalendarUnit.ALIAS_MAP.get(aliasPortion);
                 BigDecimal value = new BigDecimal(numberPortion);
-                BigDecimal msValue = value.multiply(BigDecimal.valueOf(unit.getTimeInMillis(1L)));
+                BigDecimal msValue = value.multiply(BigDecimal.valueOf(unit.timeInMillis));
                 ret = ret.add(msValue.toBigInteger());
             } else {
                 throw new TimeFormatException("The unit " + aliasPortion + " isn't valid.");
@@ -58,53 +61,37 @@ public final class TimeUtils {// TODO make less complicated, probably via Stream
         }
     }
 
+    public static String parseReadableDate(long milliseconds) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = CalendarUnit.values().length - 1; i >= 0; i--) {
+            CalendarUnit u = CalendarUnit.values()[i];
+            int numUnits = (int) (milliseconds / u.timeInMillis);
+            if (numUnits >= 1) {
+                sb.append(", ");
+                sb.append(numUnits).append(" ");
+                if (numUnits >= 2) {
+                    sb.append(u.mainAliasPlural); //2 minutes
+                } else {
+                    sb.append(u.mainAlias); //1 minute
+                }
+                milliseconds -= numUnits * u.timeInMillis;
+            }
+        }
+        return sb.substring(2);
+    }
+
     public static ImmutableList<String> getTimeUnits( ) {
         return CalendarUnit.MAIN_ALIASES;
     }
 
-    private static enum CalendarUnit {
-        SECOND("s", "sec", "second", "secs", "seconds") {
-            @Override
-            public long getTimeInMillis(long input) {
-                return TimeUnit.SECONDS.toMillis(input);
-            }
-        },
-        MINUTE("m", "min", "minute", "mins", "minutes") {
-            @Override
-            public long getTimeInMillis(long input) {
-                return TimeUnit.MINUTES.toMillis(input);
-            }
-        },
-        HOUR("h", "hr", "hour", "hrs", "hours") {
-            @Override
-            public long getTimeInMillis(long input) {
-                return TimeUnit.HOURS.toMillis(input);
-            }
-        },
-        DAY("d", "day", "days") {
-            @Override
-            public long getTimeInMillis(long input) {
-                return TimeUnit.DAYS.toMillis(input);
-            }
-        },
-        WEEK("w", "wk", "week", "wks", "weeks") {
-            @Override
-            public long getTimeInMillis(long input) {
-                return TimeUnit.DAYS.toMillis(input) * 7L;
-            }
-        },
-        MONTH("mn", "month", "mns", "months") {
-            @Override
-            public long getTimeInMillis(long input) {
-                return TimeUnit.DAYS.toMillis(input) * 30L; // 30 days is close enough...
-            }
-        },
-        YEAR("y", "yr", "year", "yrs", "years") {
-            @Override
-            public long getTimeInMillis(long input) {
-                return TimeUnit.DAYS.toMillis(input) * 365L;
-            }
-        };
+    private enum CalendarUnit {
+        SECOND(TimeUnit.SECONDS.toMillis(1), "second", "seconds", "s", "sec", "secs"),
+        MINUTE(TimeUnit.MINUTES.toMillis(1), "minute", "minutes", "m", "min", "mins"),
+        HOUR(TimeUnit.HOURS.toMillis(1), "hour", "hrs", "h", "hr", "hours"),
+        DAY(TimeUnit.DAYS.toMillis(1), "day", "days", "d"),
+        WEEK(TimeUnit.DAYS.toMillis(1) * 7L, "week", "weeks", "w", "wk", "wks"),
+        MONTH(TimeUnit.DAYS.toMillis(1) * 30L, "month", "months", "mn", "mns"), // 30 days is close enough...
+        YEAR(TimeUnit.DAYS.toMillis(1) * 365L, "year", "years", "y", "yr", "yrs");
 
         private static ImmutableList<String> ALL_ALIASES = ImmutableList.copyOf(getAllAliases());
         private static ImmutableMap<String, CalendarUnit> ALIAS_MAP = getAliasMap();
@@ -113,9 +100,7 @@ public final class TimeUtils {// TODO make less complicated, probably via Stream
         private static Collection<String> getAllAliases( ) {
             ArrayList<String> aliases = new ArrayList<>();
             for (CalendarUnit c : values()) {
-                for (String a : c.aliases) {
-                    aliases.add(a);
-                }
+                Collections.addAll(aliases, c.aliases);
             }
             Collections.sort(aliases, STRING_LENGTH_COMPARATOR); // Sort them by largest to smallest so that the regex doesn't match a smaller value first.
             return aliases;
@@ -140,14 +125,20 @@ public final class TimeUtils {// TODO make less complicated, probably via Stream
             return aliases;
         }
 
+        private final long timeInMillis;
         private final String[] aliases;
         private final String mainAlias;
+        private final String mainAliasPlural;
 
-        CalendarUnit(String... aliases) {
-            this.aliases = aliases;
-            this.mainAlias = aliases[0];
+        CalendarUnit(long timeInMillis, String mainAlias, String mainAliasPlural, String... aliases) {
+            this.timeInMillis = timeInMillis;
+            this.mainAlias = mainAlias;
+            this.mainAliasPlural = mainAliasPlural;
+            String[] newAliases = new String[aliases.length + 2];
+            newAliases[0] = mainAlias;
+            newAliases[1] = mainAliasPlural;
+            System.arraycopy(aliases, 0, newAliases, 2, aliases.length);
+            this.aliases = newAliases;
         }
-
-        public abstract long getTimeInMillis(long input);
     }
 }

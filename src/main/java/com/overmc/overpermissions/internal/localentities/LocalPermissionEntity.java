@@ -1,17 +1,21 @@
 package com.overmc.overpermissions.internal.localentities;
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import com.google.common.base.Function;
-import com.google.common.collect.*;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.overmc.overpermissions.api.MetadataEntry;
 import com.overmc.overpermissions.api.TemporaryPermissionEntry;
 import com.overmc.overpermissions.internal.NodeTree;
 import com.overmc.overpermissions.internal.datasources.PermissionEntityDataSource;
 import com.overmc.overpermissions.internal.util.PermissionUtils;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public abstract class LocalPermissionEntity {
     private final ReadWriteLock nodesLock = new ReentrantReadWriteLock();
@@ -21,7 +25,7 @@ public abstract class LocalPermissionEntity {
 
     private final Set<String> nodes = new HashSet<>();
     private final Map<String, Boolean> permissions;
-    private final Map<String, String> meta = new HashMap<String, String>();
+    private final Map<String, String> meta = new HashMap<>();
 
     private final Set<String> tempNodes = new HashSet<>();
     private final ConcurrentMap<String, TemporaryPermissionEntry> tempEntries = new ConcurrentHashMap<>();
@@ -32,9 +36,9 @@ public abstract class LocalPermissionEntity {
 
     public LocalPermissionEntity(PermissionEntityDataSource dataSource, boolean wildcardSupport) {
         if (wildcardSupport) {
-            permissions = new NodeTree<Boolean>();
+            permissions = new NodeTree<>();
         } else {
-            permissions = new HashMap<String, Boolean>();
+            permissions = new HashMap<>();
         }
         this.wildcardSupport = wildcardSupport;
         this.dataSource = dataSource;
@@ -262,7 +266,7 @@ public abstract class LocalPermissionEntity {
         }
         tempEntries.put(permission, new TemporaryPermissionEntry(permission, System.currentTimeMillis() + timeInMillis));
         if (success) {
-            dataSource.addTempPermission(permission, timeInMillis);
+            dataSource.addTempPermission(permission, System.currentTimeMillis() + timeInMillis);
             registerTempPermission(permission, timeInMillis);
             recalculatePermission(permission);
         }

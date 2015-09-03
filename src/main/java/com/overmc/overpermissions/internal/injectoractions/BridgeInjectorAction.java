@@ -1,17 +1,16 @@
 package com.overmc.overpermissions.internal.injectoractions;
 
-import java.lang.reflect.Field;
-import java.util.concurrent.Callable;
-
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.permissions.PermissibleBase;
-
 import com.overmc.overpermissions.api.PermissionUser;
 import com.overmc.overpermissions.api.UserManager;
 import com.overmc.overpermissions.exceptions.StartException;
 import com.overmc.overpermissions.internal.bukkitclasses.PermissibleBaseUserBridge;
 import com.overmc.overpermissions.internal.util.ReflectionUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.permissions.PermissibleBase;
+
+import java.lang.reflect.Field;
+import java.util.concurrent.Callable;
 
 public class BridgeInjectorAction implements WildcardAction {
     private final Class<?> craftHumanEntityClass;
@@ -25,6 +24,7 @@ public class BridgeInjectorAction implements WildcardAction {
             craftHumanEntityClass = Class.forName(Bukkit.getServer().getClass().getPackage().getName() + ".entity.CraftHumanEntity");
 
             permField = craftHumanEntityClass.getDeclaredField("perm");
+            permField.setAccessible(true);
             ReflectionUtils.setFieldModifiable(permField);
         } catch (ClassNotFoundException e) {
             throw new StartException("The option 'injection-mode' is enabled, but the server implementation wasn't CraftBukkit!");
@@ -40,11 +40,9 @@ public class BridgeInjectorAction implements WildcardAction {
     public void injectBridge(Player p) {
         try {
             PermissibleBase playerPermissibleBase = (PermissibleBase) permField.get(p);
-            permField.set(playerPermissibleBase, new PermissibleBaseUserBridge(p, new UserFetcher(p.getName())));
+            permField.set(p, new PermissibleBaseUserBridge(p, new UserFetcher(p.getName())));
             playerPermissibleBase.recalculatePermissions();
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
+        } catch (IllegalArgumentException | IllegalAccessException e) {
             e.printStackTrace();
         }
     }

@@ -1,20 +1,7 @@
 package com.overmc.overpermissions.internal.localentities;
 
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
-
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
-
 import com.google.common.base.Preconditions;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
+import com.google.common.cache.*;
 import com.overmc.overpermissions.api.GroupManager;
 import com.overmc.overpermissions.api.PermissionGroup;
 import com.overmc.overpermissions.api.UserManager;
@@ -24,6 +11,14 @@ import com.overmc.overpermissions.internal.TemporaryPermissionManager;
 import com.overmc.overpermissions.internal.datasources.UUIDHandler;
 import com.overmc.overpermissions.internal.datasources.UserDataSource;
 import com.overmc.overpermissions.internal.datasources.UserDataSourceFactory;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
+
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 public class LocalUserManager implements UserManager {
     public static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9\\_]{1,16}$");
@@ -145,16 +140,8 @@ public class LocalUserManager implements UserManager {
     public void initializeUser(Player player) {
         Preconditions.checkNotNull(player, "player");
         LocalUser permissionUser = getPermissionUser(player);
-        permissionUser.setPlayer(player);
-        if (permissionUser.getParents().size() == 0) { // Set their group to the default group if possible.
+        if (permissionUser.getParents().size() == 0) { // Set their group to the default group if necessary.
             permissionUser.addParent(groupManager.getGroup(defaultGroup));
-        }
-    }
-
-    public void deinitializeUser(Player player) {
-        Preconditions.checkNotNull(player, "player");
-        if (userCache.asMap().containsKey(player.getUniqueId())) {
-            userCache.getUnchecked(player.getUniqueId()).setPlayer(null);
         }
     }
 }

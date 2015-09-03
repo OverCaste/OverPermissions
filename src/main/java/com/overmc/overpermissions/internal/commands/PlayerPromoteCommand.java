@@ -1,16 +1,21 @@
 package com.overmc.overpermissions.internal.commands;
 
-import static com.overmc.overpermissions.internal.Messages.*;
-
-import java.util.*;
-
-import org.bukkit.command.*;
-
 import com.google.common.collect.Iterables;
 import com.overmc.overpermissions.api.PermissionGroup;
 import com.overmc.overpermissions.api.PermissionUser;
 import com.overmc.overpermissions.internal.Messages;
 import com.overmc.overpermissions.internal.OverPermissions;
+import com.overmc.overpermissions.internal.util.CommandUtils;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import static com.overmc.overpermissions.internal.Messages.*;
 
 // ./playerpromote [player] (choice)
 public class PlayerPromoteCommand implements TabExecutor {

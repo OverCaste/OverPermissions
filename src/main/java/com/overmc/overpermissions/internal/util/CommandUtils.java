@@ -1,7 +1,9 @@
-package com.overmc.overpermissions.internal.commands;
+package com.overmc.overpermissions.internal.util;
 
-import java.util.*;
-
+import com.overmc.overpermissions.api.GroupManager;
+import com.overmc.overpermissions.api.PermissionGroup;
+import com.overmc.overpermissions.api.PermissionUser;
+import com.overmc.overpermissions.api.UserManager;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.PluginCommand;
@@ -9,15 +11,17 @@ import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.Plugin;
 
-import com.overmc.overpermissions.api.*;
-import com.overmc.overpermissions.internal.util.TimeUtils;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public final class CommandUtils {
     private CommandUtils( ) {
         // Don't instantiate.
     }
 
-    static void loadPermissionNodes(String currentValue, List<String> list) { // TODO properly cache instead of iterating through plugins every time.
+    public static void loadPermissionNodes(String currentValue, List<String> list) { // TODO properly cache instead of iterating through plugins every time.
         String symbol = ""; // Add the existing symbol to the start of guesses.
         if (currentValue.startsWith("+") || currentValue.startsWith("-")) {
             symbol = currentValue.substring(0, 1);
@@ -25,12 +29,8 @@ public final class CommandUtils {
         }
         if (currentValue.startsWith("/")) {
             PluginCommand command = Bukkit.getPluginCommand(currentValue.substring(1)); // Remove trailing /
-            if (command != null) {
-                if (command.getPermission() == null) {
-                    list.add("unknown");
-                } else {
-                    list.add(command.getPermission());
-                }
+            if (command != null && command.getPermission() != null) {
+                list.add(command.getPermission());
             }
         } else {
             Set<String> permissions = new HashSet<>(32);
@@ -60,7 +60,7 @@ public final class CommandUtils {
         }
     }
 
-    static void loadGroupPermissionNodes(GroupManager groupManager, String currentValue, String groupName, List<String> list) {
+    public static void loadGroupPermissionNodes(GroupManager groupManager, String currentValue, String groupName, List<String> list) {
         HashSet<String> uniqueNodes = new HashSet<>();
         if (groupManager.doesGroupExist(groupName)) {
             PermissionGroup g = groupManager.getGroup(groupName);
@@ -76,7 +76,7 @@ public final class CommandUtils {
     /**
      * Return all of a player's permissions, excluding those inherited from groups.
      */
-    static void loadPlayerPermissionNodes(UserManager userManager, String currentValue, String playerName, List<String> list) {
+    public static void loadPlayerPermissionNodes(UserManager userManager, String currentValue, String playerName, List<String> list) {
         HashSet<String> uniqueNodes = new HashSet<>();
         if (userManager.doesUserExist(playerName)) {
             PermissionUser u = userManager.getPermissionUser(playerName);
@@ -92,7 +92,7 @@ public final class CommandUtils {
     /**
      * Returns all of a player's permission nodes, including those inherited from groups.
      */
-    static void loadAllPlayerPermissionNodes(UserManager userManager, String currentValue, String playerName, List<String> list) {
+    public static void loadAllPlayerPermissionNodes(UserManager userManager, String currentValue, String playerName, List<String> list) {
         HashSet<String> uniqueNodes = new HashSet<>();
         if (userManager.doesUserExist(playerName)) {
             PermissionUser u = userManager.getPermissionUser(playerName);
@@ -115,7 +115,7 @@ public final class CommandUtils {
     /**
      * Returns all of a player's base permission nodes (minus the -/+ prefixes), including those inherited from groups.
      */
-    static void loadBasePlayerPermissionNodes(UserManager userManager, String currentValue, String playerName, List<String> list) {
+    public static void loadBasePlayerPermissionNodes(UserManager userManager, String currentValue, String playerName, List<String> list) {
         HashSet<String> uniqueNodes = new HashSet<>();
         if (userManager.doesUserExist(playerName)) {
             PermissionUser u = userManager.getPermissionUser(playerName);
@@ -139,7 +139,7 @@ public final class CommandUtils {
         list.addAll(uniqueNodes);
     }
 
-    static void loadGroupMetadata(GroupManager groupManager, String currentValue, String groupName, List<String> list) {
+    public static void loadGroupMetadata(GroupManager groupManager, String currentValue, String groupName, List<String> list) {
         HashSet<String> uniqueNodes = new HashSet<>();
         if (groupManager.doesGroupExist(groupName)) {
             PermissionGroup g = groupManager.getGroup(groupName);
@@ -150,7 +150,7 @@ public final class CommandUtils {
         list.addAll(uniqueNodes);
     }
 
-    static void loadPlayerMetadata(UserManager userManager, String currentValue, String playerName, List<String> list) {
+    public static void loadPlayerMetadata(UserManager userManager, String currentValue, String playerName, List<String> list) {
         HashSet<String> uniqueNodes = new HashSet<>();
         if (userManager.doesUserExist(playerName)) {
             PermissionUser u = userManager.getPermissionUser(playerName);
@@ -161,19 +161,19 @@ public final class CommandUtils {
         list.addAll(uniqueNodes);
     }
 
-    static void loadPrefixMetadataConstant(String currentValue, List<String> list) {
+    public static void loadPrefixMetadataConstant(String currentValue, List<String> list) {
         if ("prefix".startsWith(currentValue) && !list.contains("prefix")) {
             list.add("prefix");
         }
     }
 
-    static void loadSuffixMetadataConstant(String currentValue, List<String> list) {
+    public static void loadSuffixMetadataConstant(String currentValue, List<String> list) {
         if ("suffix".startsWith(currentValue) && !list.contains("suffix")) {
             list.add("suffix");
         }
     }
 
-    static void loadWorlds(String currentValue, List<String> list) {
+    public static void loadWorlds(String currentValue, List<String> list) {
         for (World w : Bukkit.getWorlds()) {
             if (w.getName().toLowerCase().startsWith(currentValue)) {
                 list.add(w.getName());
@@ -181,13 +181,13 @@ public final class CommandUtils {
         }
     }
 
-    static void loadGlobalWorldConstant(String currentValue, List<String> list) {
+    public static void loadGlobalWorldConstant(String currentValue, List<String> list) {
         if ("global".startsWith(currentValue) && !list.contains("global")) {
             list.add("global");
         }
     }
 
-    static void loadGroups(GroupManager groupManager, String currentValue, List<String> list) {
+    public static void loadGroups(GroupManager groupManager, String currentValue, List<String> list) {
         for (PermissionGroup g : groupManager.getGroups()) {
             if (g.getName().toLowerCase().startsWith(currentValue)) {
                 list.add(g.getName());
@@ -195,7 +195,7 @@ public final class CommandUtils {
         }
     }
 
-    static void loadExclusiveGroup(GroupManager groupManager, String currentValue, String exludedGroupName, List<String> list) {
+    public static void loadExclusiveGroup(GroupManager groupManager, String currentValue, String exludedGroupName, List<String> list) {
         for (PermissionGroup g : groupManager.getGroups()) {
             String groupName = g.getName().toLowerCase();
             if (groupName.startsWith(currentValue) && !groupName.equalsIgnoreCase(exludedGroupName)) { // Can't match the first group, obviously.
@@ -204,7 +204,7 @@ public final class CommandUtils {
         }
     }
 
-    static void loadGroupParents(GroupManager groupManager, String currentValue, String groupName, List<String> list) {
+    public static void loadGroupParents(GroupManager groupManager, String currentValue, String groupName, List<String> list) {
         if (groupManager.doesGroupExist(groupName)) {
             HashSet<String> parents = new HashSet<>();
             PermissionGroup group = groupManager.getGroup(groupName);
@@ -217,7 +217,7 @@ public final class CommandUtils {
         }
     }
 
-    static void loadPlayerGroups(UserManager userManager, String currentValue, String userName, List<String> list) {
+    public static void loadPlayerGroups(UserManager userManager, String currentValue, String userName, List<String> list) {
         if (userManager.doesUserExist(userName)) {
             HashSet<String> parents = new HashSet<>();
             PermissionUser user = userManager.getPermissionUser(userName);
@@ -230,7 +230,7 @@ public final class CommandUtils {
         }
     }
 
-    static void loadPlayers(String currentValue, List<String> list) {
+    public static void loadPlayers(String currentValue, List<String> list) {
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (p.getName().toLowerCase().startsWith(currentValue)) {
                 list.add(p.getName());
@@ -238,24 +238,38 @@ public final class CommandUtils {
         }
     }
 
-    static void loadTimeUnits(String currentValue, List<String> list) {
-        char lastChar = currentValue.charAt(currentValue.length() - 1);
-        if (Character.isDigit(lastChar)) {
-            list.addAll(TimeUtils.getTimeUnits());
+    private static String readBackwardsUntilNumeric(String x) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = x.length() - 1; i >= 0 && !Character.isDigit(x.charAt(i)); i--) {
+            sb.append(x.charAt(i));
+        }
+        return sb.reverse().toString();
+    }
+
+    public static void loadTimeUnits(String currentValue, List<String> list) {
+        if (currentValue == null || currentValue.isEmpty()) {
+            return;
+        }
+        String existingUnit = readBackwardsUntilNumeric(currentValue).toLowerCase();
+        String prefix = currentValue.substring(0, currentValue.length() - existingUnit.length());
+        for (String s : TimeUtils.getTimeUnits()) {
+            if (existingUnit.isEmpty() || s.toLowerCase().startsWith(existingUnit)) {
+                list.add(prefix + s);
+            }
         }
     }
 
-    static void loadClearValueConstant(String currentValue, List<String> list) {
+    public static void loadClearValueConstant(String currentValue, List<String> list) {
         if ("clear".startsWith(currentValue) && !list.contains("clear")) {
             list.add("clear");
         }
     }
 
-    static String getWorldName(String worldName) {
+    public static String getWorldName(String worldName) {
         return Bukkit.getWorld(worldName).getName();
     }
 
-    static String getPlayerName(String playerName) {
+    public static String getPlayerName(String playerName) {
         @SuppressWarnings("deprecation")
         Player p = Bukkit.getPlayerExact(playerName);
         if (p != null) {

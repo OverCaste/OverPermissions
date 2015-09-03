@@ -29,7 +29,7 @@ commands:
   groupcreate:
     description: Creates a group with the specified name and priority.
     aliases: [gc, creategroup]
-    permission: overpermissions.groupadd
+    permission: overpermissions.groupcreate
     usage: "&cProper usage: /groupcreate [group] [priority]"
   groupdelete:
     description: Deletes a specified group. You can't delete the default group.

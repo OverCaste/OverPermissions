@@ -11,7 +11,7 @@ public class GroupPermissionAddByPlayerEvent extends GroupPermissionAddEvent {
     }
 
     public GroupPermissionAddByPlayerEvent(String groupName, String worldName, String permission, boolean temporary, Player adder) {
-        super(groupName, worldName, permission, temporary);
+        super(groupName, permission, worldName, temporary);
         this.player = adder;
     }
 

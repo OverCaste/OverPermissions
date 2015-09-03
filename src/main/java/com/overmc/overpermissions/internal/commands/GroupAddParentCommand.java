@@ -1,18 +1,21 @@
 package com.overmc.overpermissions.internal.commands;
 
-import static com.overmc.overpermissions.internal.Messages.*;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import org.bukkit.command.*;
-import org.bukkit.entity.Player;
-
 import com.overmc.overpermissions.api.PermissionGroup;
 import com.overmc.overpermissions.events.GroupParentAddByPlayerEvent;
 import com.overmc.overpermissions.events.GroupParentAddEvent;
 import com.overmc.overpermissions.internal.Messages;
 import com.overmc.overpermissions.internal.OverPermissions;
+import com.overmc.overpermissions.internal.util.CommandUtils;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.overmc.overpermissions.internal.Messages.*;
 
 // ./groupaddparent [group] [parent]
 public class GroupAddParentCommand implements TabExecutor {

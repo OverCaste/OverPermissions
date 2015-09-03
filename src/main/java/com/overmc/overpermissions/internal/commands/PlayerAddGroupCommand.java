@@ -1,19 +1,22 @@
 package com.overmc.overpermissions.internal.commands;
 
-import static com.overmc.overpermissions.internal.Messages.*;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import org.bukkit.command.*;
-import org.bukkit.entity.Player;
-
 import com.overmc.overpermissions.api.PermissionGroup;
 import com.overmc.overpermissions.api.PermissionUser;
 import com.overmc.overpermissions.events.PlayerGroupAddByPlayerEvent;
 import com.overmc.overpermissions.events.PlayerGroupAddEvent;
 import com.overmc.overpermissions.internal.Messages;
 import com.overmc.overpermissions.internal.OverPermissions;
+import com.overmc.overpermissions.internal.util.CommandUtils;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.overmc.overpermissions.internal.Messages.*;
 
 // ./playeraddgroup [player] [group]
 public class PlayerAddGroupCommand implements TabExecutor {
@@ -86,7 +89,6 @@ public class PlayerAddGroupCommand implements TabExecutor {
         String value = args[index].toLowerCase();
         if (index == 0) {
             CommandUtils.loadPlayers(value, ret);
-            ;
         } else if (index == 1) {
             CommandUtils.loadGroups(plugin.getGroupManager(), value, ret);
         }

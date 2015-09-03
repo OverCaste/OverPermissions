@@ -1,18 +1,5 @@
 package com.overmc.overpermissions.internal.commands;
 
-import static com.overmc.overpermissions.internal.Messages.*;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.PluginCommand;
-import org.bukkit.command.TabExecutor;
-import org.bukkit.entity.Player;
-
 import com.google.common.base.Joiner;
 import com.overmc.overpermissions.api.PermissionUser;
 import com.overmc.overpermissions.events.PlayerMetaAddByPlayerEvent;
@@ -21,6 +8,19 @@ import com.overmc.overpermissions.events.PlayerMetaRemoveByPlayerEvent;
 import com.overmc.overpermissions.events.PlayerMetaRemoveEvent;
 import com.overmc.overpermissions.internal.Messages;
 import com.overmc.overpermissions.internal.OverPermissions;
+import com.overmc.overpermissions.internal.util.CommandUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static com.overmc.overpermissions.internal.Messages.*;
 
 // ./playersetmeta [player] [key] (world) [value]
 public class PlayerSetMetaCommand implements TabExecutor {

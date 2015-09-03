@@ -1,22 +1,25 @@
 package com.overmc.overpermissions.internal.commands;
 
-import static com.overmc.overpermissions.internal.Messages.*;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import org.bukkit.Bukkit;
-import org.bukkit.command.*;
-import org.bukkit.entity.Player;
-
 import com.overmc.overpermissions.api.PermissionUser;
 import com.overmc.overpermissions.events.PlayerPermissionAddByPlayerEvent;
 import com.overmc.overpermissions.events.PlayerPermissionAddEvent;
 import com.overmc.overpermissions.exceptions.TimeFormatException;
 import com.overmc.overpermissions.internal.Messages;
 import com.overmc.overpermissions.internal.OverPermissions;
+import com.overmc.overpermissions.internal.util.CommandUtils;
 import com.overmc.overpermissions.internal.util.TimeUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static com.overmc.overpermissions.internal.Messages.*;
 
 // ./playeraddtemp [player] [permission] [time] (world)
 public class PlayerAddTempCommand implements TabExecutor {
@@ -79,13 +82,13 @@ public class PlayerAddTempCommand implements TabExecutor {
             public void run( ) {
                 if (global) {
                     if (user.addGlobalTempPermissionNode(permission, time, TimeUnit.MILLISECONDS)) {
-                        sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADDTEMP_GLOBAL, permission, user, (time / 1000L)));
+                        sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADDTEMP_GLOBAL, permission, CommandUtils.getPlayerName(playerName), TimeUtils.parseReadableDate(time)));
                     } else {
                         sender.sendMessage(Messages.format(ERROR_PLAYER_PERMISSION_ALREADY_SET_GLOBAL, permission));
                     }
                 } else {
                     if (user.addTempPermissionNode(permission, worldName, time, TimeUnit.MILLISECONDS)) {
-                        sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADDTEMP_WORLD, permission, user, CommandUtils.getWorldName(worldName), (time / 1000L)));
+                        sender.sendMessage(Messages.format(SUCCESS_PLAYER_ADDTEMP_WORLD, permission, CommandUtils.getPlayerName(playerName), CommandUtils.getWorldName(worldName), TimeUtils.parseReadableDate(time)));
                     } else {
                         sender.sendMessage(Messages.format(ERROR_PLAYER_PERMISSION_ALREADY_SET_WORLD, permission, CommandUtils.getWorldName(worldName)));
                     }

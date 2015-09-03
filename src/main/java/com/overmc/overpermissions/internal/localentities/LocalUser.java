@@ -1,19 +1,18 @@
 package com.overmc.overpermissions.internal.localentities;
 
-import java.util.*;
-import java.util.concurrent.*;
-
-import org.bukkit.entity.Player;
-import org.bukkit.permissions.Permission;
-import org.bukkit.permissions.PermissionAttachment;
-import org.bukkit.plugin.Plugin;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.overmc.overpermissions.api.*;
 import com.overmc.overpermissions.internal.TemporaryPermissionManager;
 import com.overmc.overpermissions.internal.datasources.UserDataSource;
-import com.overmc.overpermissions.internal.util.PermissionUtils;
+import org.bukkit.permissions.Permission;
+import org.bukkit.plugin.Plugin;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
 /**
  * By definition, PermissionUsers should be treated like Bukkit's Player objects, and only names or weak references should be stored.
@@ -30,11 +29,6 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
 
     // World specific data
     private final ConcurrentMap<String, LocalUserWorldData> worldDataMap = new ConcurrentHashMap<>();
-
-    // The player and attachment for SuperPerms support
-    private Player player;
-    private PermissionAttachment attachment;
-    private final Object attachmentLock = new Object();
 
     public LocalUser(UUID uniqueId, Plugin plugin, TemporaryPermissionManager tempManager, UserDataSource userDataSource, boolean wildcardSupport) {
         super(userDataSource, wildcardSupport);
@@ -78,7 +72,7 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
         for (String groupName : userDataSource.getParents()) {
             PermissionGroup group = groupManager.getGroup(groupName);
             if (group == null) {
-                throw new RuntimeException("Invalid parent defined for player " + (player != null ? player.getName() : getUniqueId()) + ": " + groupName);
+                throw new RuntimeException("Invalid parent defined for player " + getUniqueId() + ": " + groupName);
             }
             parents.addIfAbsent(group);
         }
@@ -110,40 +104,17 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
     public void recalculatePermission(String permissionNode) {
         Preconditions.checkNotNull(permissionNode, "permission node");
         super.recalculatePermission(permissionNode);
-        String baseNode = PermissionUtils.getBaseNode(permissionNode);
-        synchronized (attachmentLock) {
-            if (attachment != null) {
-                attachment.setPermission(baseNode, getPermission(baseNode, player.getWorld().getName()));
-            }
-        }
     }
 
     @Override
     public void recalculatePermissions(Iterable<String> nodes) {
         Preconditions.checkNotNull(nodes, "nodes");
         super.recalculatePermissions(nodes);
-
-        synchronized (attachmentLock) {
-            if (attachment != null) {
-                for (String node : nodes) {
-                    String baseNode = PermissionUtils.getBaseNode(node);
-                    attachment.setPermission(baseNode, getPermission(baseNode, player.getWorld().getName()));
-                }
-            }
-        }
     }
 
     @Override
     public void recalculatePermissions( ) {
         super.recalculatePermissions();
-        synchronized (attachmentLock) {
-            if (attachment != null) {
-                for (String node : getInternalPermissionNodes()) {
-                    String baseNode = PermissionUtils.getBaseNode(node);
-                    attachment.setPermission(baseNode, getPermission(baseNode, player.getWorld().getName()));
-                }
-            }
-        }
     }
 
     @Override
@@ -711,19 +682,5 @@ public class LocalUser extends LocalTransientPermissionEntity implements Permiss
     @Override
     protected void cancelTempPermission(String node) {
         tempManager.cancelGlobalTemporaryPermission(this, node);
-    }
-
-    public void setPlayer(Player player) {
-        synchronized (attachmentLock) {
-            this.player = player;
-            if (this.attachment != null) {
-                this.attachment.remove();
-            }
-            if (player == null) {
-                this.attachment = null;
-            } else {
-                this.attachment = player.addAttachment(plugin);
-            }
-        }
     }
 }

@@ -25,5 +25,5 @@
 
 ## And then to retrieve the uuid:
  * If the player's online, retrieve the UUID that way, as it's faster.
- * Otherwise, if the player exists in the persistant database or cache, retrieve the uuid there.
+ * Otherwise, if the player exists in the persistent database or cache, retrieve the uuid there.
  * Finally, if no other locations are met, retrieve a new UUID and store/cache it as required.

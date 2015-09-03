@@ -1,8 +1,8 @@
 package com.overmc.overpermissions.internal;
 
-import static org.bukkit.ChatColor.*;
-
 import org.bukkit.command.Command;
+
+import static org.bukkit.ChatColor.*;
 
 public final class Messages {
 
@@ -62,16 +62,16 @@ public final class Messages {
     public static final String SUCCESS_GROUP_ADD_WORLD = GREEN + "Successfully added permission %s to group %s in world %s.";
     public static final String SUCCESS_GROUP_REMOVE_GLOBAL = GREEN + "Successfully removed permission %s from group %s.";
     public static final String SUCCESS_GROUP_REMOVE_WORLD = GREEN + "Successfully removed permission %s from group %s in world %s.";
-    public static final String SUCCESS_GROUP_ADD_TEMP_WORLD = GREEN + "Successfully added permission %s to group %s for %s seconds globally.";
-    public static final String SUCCESS_GROUP_ADD_TEMP_GLOBAL = GREEN + "Successfully added permission %s to group %s for %s seconds in world %s.";
+    public static final String SUCCESS_GROUP_ADD_TEMP_GLOBAL = GREEN + "Successfully added permission %s to group %s for %s globally.";
+    public static final String SUCCESS_GROUP_ADD_TEMP_WORLD = GREEN + "Successfully added permission %s to group %s for %s in world %s.";
     public static final String SUCCESS_GROUP_REMOVE_TEMP_GLOBAL = GREEN + "Successfully removed temporary permission %s from group %s.";
     public static final String SUCCESS_GROUP_REMOVE_TEMP_WORLD = GREEN + "Successfully removed temporary permission %s from group %s in world %s.";
     public static final String SUCCESS_PLAYER_ADD_GLOBAL = GREEN + "Successfully added permission %s to player %s.";
     public static final String SUCCESS_PLAYER_ADD_WORLD = GREEN + "Successfully added permission %s to player %s in world %s.";
     public static final String SUCCESS_PLAYER_REMOVE_GLOBAL = GREEN + "Successfully removed permission %s from player %s.";
     public static final String SUCCESS_PLAYER_REMOVE_WORLD = GREEN + "Successfully removed permission %s from player %s in world %s.";
-    public static final String SUCCESS_PLAYER_ADDTEMP_GLOBAL = GREEN + "Successfully added permission %s to player %s for %s seconds.";
-    public static final String SUCCESS_PLAYER_ADDTEMP_WORLD = GREEN + "Successfully added permission %s to player %s in world %s for %s seconds.";
+    public static final String SUCCESS_PLAYER_ADDTEMP_GLOBAL = GREEN + "Successfully added permission %s to player %s for %s.";
+    public static final String SUCCESS_PLAYER_ADDTEMP_WORLD = GREEN + "Successfully added permission %s to player %s in world %s for %s.";
     public static final String SUCCESS_PLAYER_REMOVETEMP_GLOBAL = GREEN + "Successfully removed temporary permission %s from player %s.";
     public static final String SUCCESS_PLAYER_REMOVETEMP_WORLD = GREEN + "Successfully removed temporary permission %s from player %s in world %s.";
     public static final String SUCCESS_PLAYER_PROMOTE = GREEN + "Successfully promoted player %s from group %s to group %s.";

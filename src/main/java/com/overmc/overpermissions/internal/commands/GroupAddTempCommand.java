@@ -1,22 +1,25 @@
 package com.overmc.overpermissions.internal.commands;
 
-import static com.overmc.overpermissions.internal.Messages.*;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import org.bukkit.Bukkit;
-import org.bukkit.command.*;
-import org.bukkit.entity.Player;
-
 import com.overmc.overpermissions.api.PermissionGroup;
 import com.overmc.overpermissions.events.GroupPermissionAddByPlayerEvent;
 import com.overmc.overpermissions.events.GroupPermissionAddEvent;
 import com.overmc.overpermissions.exceptions.TimeFormatException;
 import com.overmc.overpermissions.internal.Messages;
 import com.overmc.overpermissions.internal.OverPermissions;
+import com.overmc.overpermissions.internal.util.CommandUtils;
 import com.overmc.overpermissions.internal.util.TimeUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static com.overmc.overpermissions.internal.Messages.*;
 
 // ./groupaddtemp [group] [permission] [time] (world)
 public class GroupAddTempCommand implements TabExecutor {
@@ -58,7 +61,7 @@ public class GroupAddTempCommand implements TabExecutor {
         }
         final long timeInMillis;
         try {
-            timeInMillis = TimeUtils.parseMilliseconds(args[2]) + System.currentTimeMillis();
+            timeInMillis = TimeUtils.parseMilliseconds(args[2]);
         } catch (TimeFormatException e) {
             sender.sendMessage(Messages.format(ERROR_INVALID_TIME, args[2]));
             return true;
@@ -78,13 +81,13 @@ public class GroupAddTempCommand implements TabExecutor {
             public void run( ) {
                 if (global) {
                     if (group.addGlobalTempPermissionNode(permissionNode, timeInMillis, TimeUnit.MILLISECONDS)) {
-                        sender.sendMessage(Messages.format(SUCCESS_GROUP_ADD_TEMP_GLOBAL, permissionNode, group.getName(), TimeUnit.MILLISECONDS.toSeconds(timeInMillis)));
+                        sender.sendMessage(Messages.format(SUCCESS_GROUP_ADD_TEMP_GLOBAL, permissionNode, group.getName(), TimeUtils.parseReadableDate(timeInMillis)));
                     } else {
                         sender.sendMessage(Messages.format(ERROR_GROUP_PERMISSION_ALREADY_SET_GLOBAL, permissionNode));
                     }
                 } else {
                     if (group.addTempPermissionNode(permissionNode, worldName, timeInMillis, TimeUnit.MILLISECONDS)) {
-                        sender.sendMessage(Messages.format(SUCCESS_GROUP_ADD_TEMP_WORLD, permissionNode, group.getName(), TimeUnit.MILLISECONDS.toSeconds(timeInMillis), CommandUtils
+                        sender.sendMessage(Messages.format(SUCCESS_GROUP_ADD_TEMP_WORLD, permissionNode, group.getName(), TimeUtils.parseReadableDate(timeInMillis), CommandUtils
                                 .getWorldName(worldName)));
                     } else {
                         sender.sendMessage(Messages.format(ERROR_GROUP_PERMISSION_ALREADY_SET_WORLD, permissionNode, CommandUtils.getWorldName(worldName)));

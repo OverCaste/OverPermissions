@@ -1,10 +1,11 @@
 package com.overmc.overpermissions.internal.commands;
 
-import static com.overmc.overpermissions.internal.Messages.*;
-
-import java.util.ArrayList;
-import java.util.List;
-
+import com.overmc.overpermissions.api.PermissionGroup;
+import com.overmc.overpermissions.events.GroupPermissionAddByPlayerEvent;
+import com.overmc.overpermissions.events.GroupPermissionAddEvent;
+import com.overmc.overpermissions.internal.Messages;
+import com.overmc.overpermissions.internal.OverPermissions;
+import com.overmc.overpermissions.internal.util.CommandUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -12,11 +13,10 @@ import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
-import com.overmc.overpermissions.api.PermissionGroup;
-import com.overmc.overpermissions.events.GroupPermissionAddByPlayerEvent;
-import com.overmc.overpermissions.events.GroupPermissionAddEvent;
-import com.overmc.overpermissions.internal.Messages;
-import com.overmc.overpermissions.internal.OverPermissions;
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.overmc.overpermissions.internal.Messages.*;
 
 // ./groupadd [group] [permission] (worldName)
 public final class GroupAddCommand implements TabExecutor {

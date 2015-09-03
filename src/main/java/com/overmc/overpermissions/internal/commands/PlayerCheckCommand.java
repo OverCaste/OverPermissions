@@ -1,18 +1,23 @@
 package com.overmc.overpermissions.internal.commands;
 
-import static com.overmc.overpermissions.internal.Messages.*;
-
-import java.util.*;
-
-import org.bukkit.Bukkit;
-import org.bukkit.command.*;
-import org.bukkit.entity.Player;
-
-import com.overmc.nodedisplayapi.*;
+import com.overmc.nodedisplayapi.BoxLargeAndSmallCharset;
+import com.overmc.nodedisplayapi.ElementBox;
+import com.overmc.nodedisplayapi.ElementBoxNode;
 import com.overmc.overpermissions.api.PermissionGroup;
 import com.overmc.overpermissions.api.PermissionUser;
 import com.overmc.overpermissions.internal.Messages;
 import com.overmc.overpermissions.internal.OverPermissions;
+import com.overmc.overpermissions.internal.util.CommandUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
+
+import java.util.*;
+
+import static com.overmc.overpermissions.internal.Messages.*;
 
 // ./playercheck [player] [permission] (world)
 public class PlayerCheckCommand implements TabExecutor { // TODO cleanup, add wildcard support
@@ -57,7 +62,7 @@ public class PlayerCheckCommand implements TabExecutor { // TODO cleanup, add wi
         List<String> listBuffer = new ArrayList<>(); // As to not reuse an array list many times when unnecessary.
         for (PermissionGroup group : user.getAllParents()) {
             listBuffer.clear();
-            Set<String> effectivePermissions = new HashSet<String>();
+            Set<String> effectivePermissions = new HashSet<>();
             effectivePermissions.addAll(group.getPermissionNodes().getGlobalNodes());
             if (!global) {
                 effectivePermissions.addAll(group.getPermissionNodes().getWorldNodes().get(world));
@@ -80,7 +85,7 @@ public class PlayerCheckCommand implements TabExecutor { // TODO cleanup, add wi
             }
         }
         listBuffer.clear();
-        Set<String> effectivePermissions = new HashSet<String>();
+        Set<String> effectivePermissions = new HashSet<>();
         effectivePermissions.addAll(user.getPermissionNodes().getGlobalNodes());
         if (!global) {
             effectivePermissions.addAll(user.getPermissionNodes().getWorldNodes().get(world));
@@ -121,7 +126,7 @@ public class PlayerCheckCommand implements TabExecutor { // TODO cleanup, add wi
             return true;
         }
 
-        ElementBox box = new ElementBox(16, new BoxLargeAndSmallCharset(), nodes, Arrays.asList("Permission '" + permission + "'"));
+        ElementBox box = new ElementBox(16, new BoxLargeAndSmallCharset(), nodes, Collections.singletonList("Permission '" + permission + "'"));
         for (String s : box.write()) {
             int i = 0;
             while (s.charAt(i) == ' ') {

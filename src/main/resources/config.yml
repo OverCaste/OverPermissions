@@ -1,18 +1,18 @@
-#The default group for people to be put into. Default is the only one extant at initialization.
+#The default group for people to be put into. The default rank is given to new players as they join, and always exists.
 default-group: 'default'
 
 #Whether people should be disconnected if the plugin fails to initialize.
 kick-on-failure: true
 
 #Whether OverPermissions should allow wildcard (*) support.
-# STANDARD - Fairly fast, this is the recommended setting. It allows you to use nodes like (*, node.*, my.*.node but NOT (no*e.*.othe*node)
+# STANDARD - Fairly fast, this is the recommended setting. It allows you to use nodes like (*, node.*, my.* but NOT (no*e.*.othe*node, or my.*.node)
 # NONE - The fastest possible though not by very much. Any node with * in it will be checked literally.
 wildcard-support: STANDARD
 
 #Should OverPermissions inject it's permission resolver into Bukkit. You will need a CraftBukkit fork if you want to use this.
 #If permissions are injected, other plugins won't be able to add attachments. If you receive errors along those lines, disable this option.
-# NONE - Don't inject classes into the Bukkit SuperPermissions system. This option takes the most memory.
-# FULL - Inject classes into the Bukkit SuperPermissions system. This will save quite a bit of memory, and remain fast.
+# NONE - Don't inject classes into the Bukkit SuperPermissions system.
+# FULL - Inject classes into the Bukkit SuperPermissions system. This is almost 100% required if you are using vanilla Bukkit.
 injection-mode: FULL
 
 #Should OverPermissions treat all players as 'online'?
