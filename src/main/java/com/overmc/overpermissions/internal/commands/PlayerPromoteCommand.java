@@ -69,12 +69,12 @@ public class PlayerPromoteCommand implements TabExecutor {
                     sender.sendMessage(Messages.format(ERROR_GROUP_NO_CHILDREN, playerOnlyGroup.getName()));
                 } else if (children.size() == 1) {
                     PermissionGroup promoteTo = Iterables.getOnlyElement(children);
-                    if (!promoteTo.getName().equalsIgnoreCase(choice)) {
+                    if (choice != null && !promoteTo.getName().equalsIgnoreCase(choice)) {
                         sender.sendMessage(Messages.format(ERROR_PROMOTE_CHOICE_NOT_FOUND, playerName, choice));
                         return;
                     }
                     if (!user.addParent(promoteTo) || !user.removeParent(playerOnlyGroup)) {
-                        throw new AssertionError("A group was it's own parent? (" + promoteTo.getName() + ", " + playerOnlyGroup.getName() + ", " + CommandUtils.getPlayerName(playerName) + ")");
+                        throw new AssertionError("Failed to add user parent, or remove old parent? (" + promoteTo.getName() + ", " + playerOnlyGroup.getName() + ", " + CommandUtils.getPlayerName(playerName) + ")");
                     }
                     sender.sendMessage(Messages.format(SUCCESS_PLAYER_PROMOTE, playerName, playerOnlyGroup.getName(), promoteTo.getName()));
                 } else {
