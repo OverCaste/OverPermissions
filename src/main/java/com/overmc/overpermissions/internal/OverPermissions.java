@@ -116,7 +116,7 @@ public final class OverPermissions extends JavaPlugin {
             default:
                 getLogger().warning("Type value " + type + " wasn't recognized. Defaulting to mysql.");
             case "mysql": {
-                database = new MySQLManager(getLogger(), exec,
+                database = new MySQLManager(getLogger(), exec, defaultGroup,
                         getConfig().getString("sql.address", "localhost"),
                         getConfig().getString("sql.port", ""),
                         getConfig().getString("sql.dbname", "OverPermissions"),
@@ -133,13 +133,6 @@ public final class OverPermissions extends JavaPlugin {
         groupManager = new LocalGroupManager(database, tempManager, wildcardSupport);
         groupManager.reloadGroups();
         userManager = new LocalUserManager(this, groupManager, uuidHandler, tempManager, database, getDefaultGroupName(), wildcardSupport);
-    }
-
-    private void initDefaultGroup( ) {
-        if (!groupManager.doesGroupExist(defaultGroup)) { // group doesn't exist.
-            groupManager.createGroup(defaultGroup, 0);
-            getLogger().info("Successfully created default group: " + defaultGroup);
-        }
     }
 
     private void initCommands( ) throws Exception {
@@ -214,7 +207,6 @@ public final class OverPermissions extends JavaPlugin {
             initKickOnFail();
             initDependencies();
             initManagers();
-            initDefaultGroup();
             initCommands();
             injectBukkitActions();
             registerEvents();

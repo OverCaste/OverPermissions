@@ -1,18 +1,24 @@
 package com.overmc.overpermissions.internal.databases.mysql;
 
-import static com.overmc.overpermissions.internal.databases.mysql.MySQLManager.attemptClose;
+import com.google.common.base.Preconditions;
+import com.overmc.overpermissions.internal.datasources.GroupManagerDataSource;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import com.overmc.overpermissions.internal.datasources.GroupManagerDataSource;
+import static com.overmc.overpermissions.internal.databases.mysql.MySQLManager.attemptClose;
 
 public class MySQLGroupManagerDataSource implements GroupManagerDataSource {
     private final MySQLManager sqlManager;
+    private final String defaultGroup;
 
-    public MySQLGroupManagerDataSource(MySQLManager sqlManager) {
+    public MySQLGroupManagerDataSource(MySQLManager sqlManager, String defaultGroup) {
         this.sqlManager = sqlManager;
+        this.defaultGroup = defaultGroup;
     }
 
     @Override
@@ -50,8 +56,14 @@ public class MySQLGroupManagerDataSource implements GroupManagerDataSource {
 
     @Override
     public void deleteGroup(String name) {
+        Preconditions.checkArgument(!defaultGroup.equals(name), "You can't delete the default group!");
         PreparedStatement pst = null;
         try(Connection con = sqlManager.getConnection()) {
+            //Set player groups to the default once they get kicked.
+            pst = con.prepareStatement("UPDATE Player_Groups SET group_uid=(SELECT uid from Permission_Groups WHERE name=?) WHERE group_uid=(SELECT uid from Permission_Groups WHERE name = ?)");
+            pst.setString(1, defaultGroup);
+            pst.setString(2, name);
+            pst.executeUpdate();
             pst = con.prepareStatement("DELETE FROM Permission_Groups WHERE name = ?");
             pst.setString(1, name);
             pst.executeUpdate();

@@ -1,26 +1,17 @@
 package com.overmc.overpermissions.internal.databases.mysql;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.logging.Logger;
-
 import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 import com.overmc.overpermissions.exceptions.DatabaseConnectionException;
 import com.overmc.overpermissions.exceptions.StartException;
 import com.overmc.overpermissions.internal.databases.ConnectionPool;
 import com.overmc.overpermissions.internal.databases.Database;
 import com.overmc.overpermissions.internal.databases.SingleConnectionPool;
-import com.overmc.overpermissions.internal.datasources.GroupDataSource;
-import com.overmc.overpermissions.internal.datasources.GroupManagerDataSource;
-import com.overmc.overpermissions.internal.datasources.TemporaryPermissionEntityDataSource;
-import com.overmc.overpermissions.internal.datasources.UUIDHandler;
-import com.overmc.overpermissions.internal.datasources.UserDataSource;
+import com.overmc.overpermissions.internal.datasources.*;
+
+import java.sql.*;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.logging.Logger;
 
 public final class MySQLManager implements Database {
     public static final int GLOBAL_WORLD_UID = 1;
@@ -33,14 +24,16 @@ public final class MySQLManager implements Database {
     private final ConnectionPool connectionPool;
 
     private final UUIDHandler uuidHandler;
+    private final String defaultGroup;
 
     public Connection getConnection( ) throws SQLException, DatabaseConnectionException {
         return connectionPool.getConnection();
     }
 
-    public MySQLManager(Logger logger, ExecutorService executor, String serverName, String serverPort, String dbName, String dbUsername, String dbPassword, boolean usePool, boolean forceOnlineMode) throws Exception {
+    public MySQLManager(Logger logger, ExecutorService executor, String defaultGroup, String serverName, String serverPort, String dbName, String dbUsername, String dbPassword, boolean usePool, boolean forceOnlineMode) throws Exception {
         this.executor = executor;
         this.logger = logger;
+        this.defaultGroup = defaultGroup;
         if (serverPort.length() == 0) {
             serverPort = "3306"; // The default MySQL port
         }
@@ -52,6 +45,7 @@ public final class MySQLManager implements Database {
         } else {
             connectionPool = new SingleConnectionPool(dbUsername, dbPassword, url, dbName);
         }
+        initDefaultGroup();
         uuidHandler = new MySQLUUIDHandler(this, forceOnlineMode);
     }
 
@@ -240,8 +234,8 @@ public final class MySQLManager implements Database {
                     + "("
                     + "group_uid int UNSIGNED NOT NULL,"
                     + "player_uid int UNSIGNED NOT NULL,"
-                    + "FOREIGN KEY(player_uid) REFERENCES Players(uid) ON DELETE CASCADE ON UPDATE CASCADE,"
-                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid) ON DELETE CASCADE ON UPDATE CASCADE,"
+                    + "FOREIGN KEY(player_uid) REFERENCES Players(uid),"
+                    + "FOREIGN KEY(group_uid) REFERENCES Permission_Groups(uid),"
                     + "PRIMARY KEY(group_uid, player_uid)"
                     + ")");
 
@@ -324,6 +318,17 @@ public final class MySQLManager implements Database {
         }
     }
 
+    private void initDefaultGroup() throws SQLException {
+        try (Connection con = getConnection()) {
+            PreparedStatement pst = con.prepareStatement("INSERT IGNORE INTO Permission_Groups(priority, name) VALUES (?, ?)");
+            pst.setInt(1, 0);
+            pst.setString(2, defaultGroup);
+            pst.executeUpdate();
+        } catch (SQLException e) {
+            throw e;
+        }
+    }
+
     @Override
     public GroupDataSource createGroupDataSource(String groupName) {
         return new MySQLGroupDataSource(executor, this, groupName);
@@ -331,7 +336,7 @@ public final class MySQLManager implements Database {
 
     @Override
     public GroupManagerDataSource createGroupManagerDataSource( ) {
-        return new MySQLGroupManagerDataSource(this);
+        return new MySQLGroupManagerDataSource(this, defaultGroup);
     }
 
     @Override

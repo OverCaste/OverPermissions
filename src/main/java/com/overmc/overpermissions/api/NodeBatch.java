@@ -1,9 +1,14 @@
 package com.overmc.overpermissions.api;
 
-import java.util.*;
-
 import com.google.common.base.Preconditions;
-import com.google.common.collect.*;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * A batch of permissions to be set all at once.
@@ -49,7 +54,7 @@ public final class NodeBatch {
         public Builder addNode(String node, String worldName) { // TODO documentation
             Preconditions.checkNotNull(node, "The node can't be null!");
             Preconditions.checkNotNull(node, "The world can't be null!");
-            worldNodes.put(node, worldName.toLowerCase());
+            worldNodes.put(worldName.toLowerCase(), node);
             return this;
         }
 
